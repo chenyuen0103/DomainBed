@@ -1262,18 +1262,20 @@ class Fishr(Algorithm):
         self.optimizer.zero_grad()
         loss = self.bce_extended(logits, y).sum()
         with backpack(BatchGrad()):
+            # loss.backward(
+            #     inputs=list(self.classifier.parameters()), retain_graph=True, create_graph=True
+            # )
             loss.backward(
-                inputs=list(self.classifier.parameters()), retain_graph=True, create_graph=True
+                inputs=self.classifier, retain_graph=True, create_graph=True
             )
 
         # compute individual grads for all samples across all domains simultaneously
-        # for name, weights in self.classifier.named_parameters():
-        #     print(f"Attributes of '{name}' weights:")
-        #     # print(dir(weights))
-        #     # Optionally, print only non-dunder (non-special) attributes/methods
-        #     print([attr for attr in dir(weights) if not attr.startswith('__')])
-        # Break after checking the first parameter to keep the output manageable
-        #
+        breakpoint()
+        for name, param in self.classifier.named_parameters():
+            print(name)
+            print(".grad.shape:             ", param.grad.shape)
+            print(".grad_batch.shape:       ", param.grad_batch.shape)
+
         breakpoint()
         dict_grads = OrderedDict(
             [
