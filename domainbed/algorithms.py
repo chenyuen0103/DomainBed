@@ -1268,7 +1268,7 @@ class Fishr(Algorithm):
         # compute individual grads for all samples across all domains simultaneously
         for name, weights in self.classifier.named_parameters():
             print(f"Attributes of '{name}' weights:")
-            print(dir(weights))
+            # print(dir(weights))
             # Optionally, print only non-dunder (non-special) attributes/methods
             print([attr for attr in dir(weights) if not attr.startswith('__')])
             breakpoint()
