@@ -1263,11 +1263,13 @@ class Fishr(Algorithm):
         loss = self.bce_extended(logits, y).sum()
         with backpack(BatchGrad()):
             # loss.backward(
-            #     inputs=list(self.classifier.parameters()), retain_graph=True, create_graph=True
+            #     inputs=self.classifier, retain_graph=True, create_graph=True
             # )
             loss.backward(
-                inputs=self.classifier, retain_graph=True, create_graph=True
+                inputs=list(self.classifier.parameters())
+                # , retain_graph=True, create_graph=True
             )
+
 
         # compute individual grads for all samples across all domains simultaneously
         breakpoint()
