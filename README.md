@@ -82,9 +82,9 @@ Train a model:
 
 ```sh
 python3 -m domainbed.scripts.train\
-       --data_dir=./domainbed/data/MNIST/\
-       --algorithm Fishr\
-       --dataset ColoredMNIST\
+       --data_dir=./domainbed/data/\
+       --algorithm IGA\
+       --dataset PACS\
        --test_env 2
 ```
 
@@ -92,8 +92,8 @@ Launch a sweep:
 
 ```sh
 python -m domainbed.scripts.sweep launch\
-       --data_dir=/my/datasets/path\
-       --output_dir=/my/sweep/output/path\
+       --data_dir=./domainbed/data/\
+       --output_dir=./domainbed/results\
        --command_launcher MyLauncher
 ```
 
