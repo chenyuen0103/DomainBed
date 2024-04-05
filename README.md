@@ -101,8 +101,8 @@ Here, `MyLauncher` is your cluster's command launcher, as implemented in `comman
 
 ```sh
 python -m domainbed.scripts.sweep launch\
-       --data_dir=/my/datasets/path\
-       --output_dir=/my/sweep/output/path\
+       --data_dir=./domainbed/data/\
+       --output_dir=./domainbed/results\
        --command_launcher MyLauncher\
        --algorithms ERM DANN\
        --datasets RotatedMNIST VLCS\
@@ -116,7 +116,7 @@ To view the results of your sweep:
 
 ````sh
 python -m domainbed.scripts.collect_results\
-       --input_dir=/my/sweep/output/path
+       --input_dir=/domainbed/results
 ````
 
 ## Running unit tests

@@ -1274,6 +1274,7 @@ class Fishr(Algorithm):
         #     print([attr for attr in dir(weights) if not attr.startswith('__')])
         # Break after checking the first parameter to keep the output manageable
         #
+        breakpoint()
         dict_grads = OrderedDict(
             [
                 (name, weights.grad_batch.clone().view(weights.grad_batch.size(0), -1))
