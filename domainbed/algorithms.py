@@ -12,6 +12,7 @@ try:
     from backpack import backpack, extend
     from backpack.extensions import BatchGrad
 except:
+    breakpoint()
     backpack = None
 
 from domainbed import networks
@@ -1272,19 +1273,21 @@ class Fishr(Algorithm):
         #     # Optionally, print only non-dunder (non-special) attributes/methods
         #     print([attr for attr in dir(weights) if not attr.startswith('__')])
         # Break after checking the first parameter to keep the output manageable
-
-        dict_grads = OrderedDict(
-            [
-                (name, weights.grad_batch.clone().view(weights.grad_batch.size(0), -1))
-                for name, weights in self.classifier.named_parameters()
-            ]
-        )
+        #
         # dict_grads = OrderedDict(
         #     [
-        #         (name, weights.grad.clone().view(weights.grad.size(0), -1))
+        #         (name, weights.grad_batch.clone().view(weights.grad_batch.size(0), -1))
         #         for name, weights in self.classifier.named_parameters()
         #     ]
         # )
+
+        dict_grads = OrderedDict(
+            [
+                (name, weights.grad.clone().view(weights.grad.size(0), -1))
+                for name, weights in self.classifier.named_parameters()
+            ]
+        )
+        breakpoint()
         return dict_grads
 
     def _get_grads_var_per_domain(self, dict_grads, len_minibatches):
