@@ -1259,8 +1259,7 @@ class Fishr(Algorithm):
 
     def _get_grads(self, logits, y):
         self.optimizer.zero_grad()
-        from backpack import extend
-        loss = extend(self.bce_extended(logits, y)).sum()
+        loss = self.bce_extended(logits, y).sum()
         with backpack(BatchGrad()):
             loss.backward(
                 inputs=list(self.classifier.parameters()), retain_graph=True, create_graph=True
