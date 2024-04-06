@@ -1,0 +1,214 @@
+Environment:
+	Python: 3.9.18
+	PyTorch: 2.2.2
+	Torchvision: 0.17.2
+	CUDA: None
+	CUDNN: None
+	NumPy: 1.26.0
+	PIL: 10.0.1
+Args:
+	algorithm: ERM
+	checkpoint_freq: None
+	data_dir: None
+	dataset: RotatedMNIST
+	holdout_fraction: 0.2
+	hparams: None
+	hparams_seed: 0
+	output_dir: train_output
+	save_model_every_checkpoint: False
+	seed: 0
+	skip_model_save: False
+	steps: None
+	task: domain_generalization
+	test_envs: [0]
+	trial_seed: 0
+	uda_holdout_fraction: 0
+HParams:
+	batch_size: 64
+	class_balanced: False
+	data_augmentation: True
+	lr: 0.001
+	nonlinear_classifier: False
+	resnet18: False
+	resnet_dropout: 0.0
+	weight_decay: 0.0
+Traceback (most recent call last):
+  File "/Users/yuenc2/Desktop/DomainBed/domainbed/scripts/train.py", line 99, in <module>
+    dataset = vars(datasets)[args.dataset](args.data_dir,
+  File "/Users/yuenc2/Desktop/DomainBed/domainbed/datasets.py", line 167, in __init__
+    super(RotatedMNIST, self).__init__(root, [0, 15, 30, 45, 60, 75],
+  File "/Users/yuenc2/Desktop/DomainBed/domainbed/datasets.py", line 96, in __init__
+    raise ValueError('Data directory not specified!')
+ValueError: Data directory not specified!
+Environment:
+	Python: 3.9.18
+	PyTorch: 2.2.2
+	Torchvision: 0.17.2
+	CUDA: None
+	CUDNN: None
+	NumPy: 1.26.0
+	PIL: 10.0.1
+Args:
+	algorithm: ERM
+	checkpoint_freq: None
+	data_dir: ./data
+	dataset: RotatedMNIST
+	holdout_fraction: 0.2
+	hparams: None
+	hparams_seed: 0
+	output_dir: train_output
+	save_model_every_checkpoint: False
+	seed: 0
+	skip_model_save: False
+	steps: None
+	task: domain_generalization
+	test_envs: [0]
+	trial_seed: 0
+	uda_holdout_fraction: 0
+HParams:
+	batch_size: 64
+	class_balanced: False
+	data_augmentation: True
+	lr: 0.001
+	nonlinear_classifier: False
+	resnet18: False
+	resnet_dropout: 0.0
+	weight_decay: 0.0
+Downloading http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz
+Downloading http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz to ./data/MNIST/raw/train-images-idx3-ubyte.gz
+  0%|          | 0/9912422 [00:00<?, ?it/s] 26%|##5       | 2555904/9912422 [00:00<00:00, 24807614.22it/s] 56%|#####6    | 5570560/9912422 [00:00<00:00, 27889255.19it/s] 86%|########6 | 8552448/9912422 [00:00<00:00, 28756388.22it/s]100%|##########| 9912422/9912422 [00:00<00:00, 28391515.02it/s]
+Extracting ./data/MNIST/raw/train-images-idx3-ubyte.gz to ./data/MNIST/raw
+
+Downloading http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz
+Downloading http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz to ./data/MNIST/raw/train-labels-idx1-ubyte.gz
+  0%|          | 0/28881 [00:00<?, ?it/s]100%|##########| 28881/28881 [00:00<00:00, 38394831.64it/s]
+Extracting ./data/MNIST/raw/train-labels-idx1-ubyte.gz to ./data/MNIST/raw
+
+Downloading http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz
+Downloading http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz to ./data/MNIST/raw/t10k-images-idx3-ubyte.gz
+  0%|          | 0/1648877 [00:00<?, ?it/s]100%|##########| 1648877/1648877 [00:00<00:00, 20157659.50it/s]
+Extracting ./data/MNIST/raw/t10k-images-idx3-ubyte.gz to ./data/MNIST/raw
+
+Downloading http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz
+Downloading http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz to ./data/MNIST/raw/t10k-labels-idx1-ubyte.gz
+  0%|          | 0/4542 [00:00<?, ?it/s]100%|##########| 4542/4542 [00:00<00:00, 23635891.77it/s]
+Extracting ./data/MNIST/raw/t10k-labels-idx1-ubyte.gz to ./data/MNIST/raw
+
+Traceback (most recent call last):
+  File "/Users/yuenc2/Desktop/DomainBed/domainbed/scripts/train.py", line 210, in <module>
+    for x,y in next(train_minibatches_iterator)]
+  File "/Users/yuenc2/Desktop/DomainBed/domainbed/lib/fast_data_loader.py", line 43, in __iter__
+    yield next(self._infinite_iterator)
+  File "/Users/yuenc2/anaconda3/envs/fishr/lib/python3.9/site-packages/torch/utils/data/dataloader.py", line 631, in __next__
+    data = self._next_data()
+  File "/Users/yuenc2/anaconda3/envs/fishr/lib/python3.9/site-packages/torch/utils/data/dataloader.py", line 1329, in _next_data
+    idx, data = self._get_data()
+  File "/Users/yuenc2/anaconda3/envs/fishr/lib/python3.9/site-packages/torch/utils/data/dataloader.py", line 1295, in _get_data
+    success, data = self._try_get_data()
+  File "/Users/yuenc2/anaconda3/envs/fishr/lib/python3.9/site-packages/torch/utils/data/dataloader.py", line 1133, in _try_get_data
+    data = self._data_queue.get(timeout=timeout)
+  File "/Users/yuenc2/anaconda3/envs/fishr/lib/python3.9/multiprocessing/queues.py", line 113, in get
+    if not self._poll(timeout):
+  File "/Users/yuenc2/anaconda3/envs/fishr/lib/python3.9/multiprocessing/connection.py", line 257, in poll
+    return self._poll(timeout)
+  File "/Users/yuenc2/anaconda3/envs/fishr/lib/python3.9/multiprocessing/connection.py", line 424, in _poll
+    r = wait([self], timeout)
+  File "/Users/yuenc2/anaconda3/envs/fishr/lib/python3.9/multiprocessing/connection.py", line 931, in wait
+    ready = selector.select(timeout)
+  File "/Users/yuenc2/anaconda3/envs/fishr/lib/python3.9/selectors.py", line 416, in select
+    fd_event_list = self._selector.poll(timeout)
+KeyboardInterrupt
+Error in atexit._run_exitfuncs:
+Traceback (most recent call last):
+  File "/Users/yuenc2/anaconda3/envs/fishr/lib/python3.9/multiprocessing/popen_fork.py", line 27, in poll
+    pid, sts = os.waitpid(self.pid, flag)
+  File "/Users/yuenc2/anaconda3/envs/fishr/lib/python3.9/site-packages/torch/utils/data/_utils/signal_handling.py", line 66, in handler
+    _error_if_any_worker_fails()
+RuntimeError: DataLoader worker (pid 93936) is killed by signal: Terminated: 15. 
+Error in atexit._run_exitfuncs:
+Traceback (most recent call last):
+  File "/Users/yuenc2/anaconda3/envs/fishr/lib/python3.9/logging/__init__.py", line 2140, in shutdown
+    h.acquire()
+  File "/Users/yuenc2/anaconda3/envs/fishr/lib/python3.9/site-packages/torch/utils/data/_utils/signal_handling.py", line 66, in handler
+    _error_if_any_worker_fails()
+RuntimeError: DataLoader worker (pid 93927) is killed by signal: Terminated: 15. 
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/yuenc2/anaconda3/envs/fishr/lib/python3.9/logging/__init__.py", line 2150, in shutdown
+    h.release()
+  File "/Users/yuenc2/anaconda3/envs/fishr/lib/python3.9/logging/__init__.py", line 908, in release
+    self.lock.release()
+RuntimeError: cannot release un-acquired lock
+Environment:
+	Python: 3.9.18
+	PyTorch: 2.2.2
+	Torchvision: 0.17.2
+	CUDA: None
+	CUDNN: None
+	NumPy: 1.26.0
+	PIL: 10.0.1
+Args:
+	algorithm: HessianAlignment
+	checkpoint_freq: None
+	data_dir: ./data
+	dataset: RotatedMNIST
+	holdout_fraction: 0.2
+	hparams: None
+	hparams_seed: 0
+	output_dir: train_output
+	save_model_every_checkpoint: False
+	seed: 0
+	skip_model_save: False
+	steps: None
+	task: domain_generalization
+	test_envs: [0]
+	trial_seed: 0
+	uda_holdout_fraction: 0
+HParams:
+	batch_size: 64
+	class_balanced: False
+	data_augmentation: True
+	lr: 0.001
+	nonlinear_classifier: False
+	resnet18: False
+	resnet_dropout: 0.0
+	weight_decay: 0.0
+Traceback (most recent call last):
+  File "/Applications/PyCharm.app/Contents/plugins/python/helpers/pydev/pydevd.py", line 2235, in <module>
+    main()
+  File "/Applications/PyCharm.app/Contents/plugins/python/helpers/pydev/pydevd.py", line 2217, in main
+    globals = debugger.run(setup['file'], None, None, is_module)
+  File "/Applications/PyCharm.app/Contents/plugins/python/helpers/pydev/pydevd.py", line 1527, in run
+    return self._exec(is_module, entry_point_fn, module_name, file, globals, locals)
+  File "/Applications/PyCharm.app/Contents/plugins/python/helpers/pydev/pydevd.py", line 1534, in _exec
+    pydev_imports.execfile(file, globals, locals)  # execute the script
+  File "/Applications/PyCharm.app/Contents/plugins/python/helpers/pydev/_pydev_imps/_pydev_execfile.py", line 18, in execfile
+    exec(compile(contents+"\n", file, 'exec'), glob, loc)
+  File "/Users/yuenc2/Desktop/DomainBed/domainbed/scripts/train.py", line 210, in <module>
+    for x,y in next(train_minibatches_iterator)]
+  File "/Users/yuenc2/Desktop/DomainBed/domainbed/lib/fast_data_loader.py", line 43, in __iter__
+    yield next(self._infinite_iterator)
+  File "/Users/yuenc2/anaconda3/envs/fishr/lib/python3.9/site-packages/torch/utils/data/dataloader.py", line 631, in __next__
+    data = self._next_data()
+  File "/Users/yuenc2/anaconda3/envs/fishr/lib/python3.9/site-packages/torch/utils/data/dataloader.py", line 1329, in _next_data
+    idx, data = self._get_data()
+  File "/Applications/PyCharm.app/Contents/plugins/python/helpers/pydev/_pydevd_bundle/pydevd_trace_dispatch.py", line 92, in trace_dispatch
+    return _trace_dispatch(py_db, frame, event, arg)
+  File "_pydevd_bundle/pydevd_cython_darwin_39_64.pyx", line 1331, in _pydevd_bundle.pydevd_cython_darwin_39_64.trace_dispatch
+  File "_pydevd_bundle/pydevd_cython_darwin_39_64.pyx", line 1214, in _pydevd_bundle.pydevd_cython_darwin_39_64.fix_top_level_trace_and_get_trace_func
+  File "/Users/yuenc2/anaconda3/envs/fishr/lib/python3.9/posixpath.py", line 143, in basename
+    sep = _get_sep(p)
+  File "/Users/yuenc2/anaconda3/envs/fishr/lib/python3.9/site-packages/torch/utils/data/_utils/signal_handling.py", line 66, in handler
+    _error_if_any_worker_fails()
+RuntimeError: DataLoader worker (pid 94501) is killed by signal: Abort trap: 6. 
+We've got an error while stopping in post-mortem: <class 'RuntimeError'>
+
+Error in atexit._run_exitfuncs:
+
+Exception ignored in: <domainbed.lib.misc.Tee object at 0x17724f7f0>
+Traceback (most recent call last):
+  File "/Users/yuenc2/Desktop/DomainBed/domainbed/lib/misc.py", line 223, in flush
+  File "/Users/yuenc2/anaconda3/envs/fishr/lib/python3.9/site-packages/torch/utils/data/_utils/signal_handling.py", line 63, in handler
+Exception ignored in sys.unraisablehook

@@ -83,8 +83,8 @@ Train a model:
 ```sh
 python3 -m domainbed.scripts.train\
        --data_dir=./domainbed/data/\
-       --algorithm IGA\
-       --dataset PACS\
+       --algorithm Fishr\
+       --dataset ColoredMNIST\
        --test_env 2
 ```
 
