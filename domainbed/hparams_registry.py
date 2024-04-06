@@ -23,7 +23,6 @@ def _hparams(algorithm, dataset, random_seed):
         random_state = np.random.RandomState(
             misc.seed_hash(random_seed, name)
         )
-        breakpoint()
         hparams[name] = (default_val, random_val_fn(random_state))
 
     # Unconditional hparam definitions.
@@ -141,6 +140,7 @@ def _hparams(algorithm, dataset, random_seed):
         _hparam('eqrm_quantile', 0.75, lambda r: r.uniform(0.5, 0.99))
         _hparam('eqrm_burnin_iters', 2500, lambda r: 10 ** r.uniform(2.5, 3.5))
         _hparam('eqrm_lr', 1e-6, lambda r: 10 ** r.uniform(-7, -5))
+    breakpoint()
     elif algorithm == 'HessianAlignment':
         _hparam('grad_alpha', 1e-4, lambda r: 10 ** r.uniform(-5, -3))
         _hparam('hess_beta', 1e-4, lambda r: 10 ** r.uniform(-5, -3))
