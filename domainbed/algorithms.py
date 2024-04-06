@@ -93,13 +93,11 @@ class ERM(Algorithm):
     """
 
     def __init__(self, input_shape, num_classes, num_domains, hparams):
-        super(ERM, self).__init__(input_shape, num_classes, num_domains,
-                                  hparams)
+        super(ERM, self).__init__(input_shape, num_classes, num_domains, hparams)
         self.featurizer = networks.Featurizer(input_shape, self.hparams)
         self.classifier = networks.Classifier(
-            self.featurizer.n_outputs,
-            num_classes,
-            self.hparams['nonlinear_classifier'])
+            self.featurizer.n_outputs, num_classes, self.hparams['nonlinear_classifier']
+        )
 
         self.network = nn.Sequential(self.featurizer, self.classifier)
         self.optimizer = torch.optim.Adam(
@@ -107,6 +105,32 @@ class ERM(Algorithm):
             lr=self.hparams["lr"],
             weight_decay=self.hparams['weight_decay']
         )
+
+    def update(self, minibatches, unlabeled=None):
+        all_x = torch.cat([x for x, y in minibatches])
+        all_y = torch.cat([y for x, y in minibatches])
+        loss = F.cross_entropy(self.predict(all_x), all_y)
+
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+
+        return {'loss': loss.item()}
+
+    def predict(self, x):
+        return self.network(x)
+
+
+class HessianAlignment(ERM):
+    """
+    Hessian Alignment
+    """
+
+    def __init__(self, input_shape, num_classes, num_domains, hparams):
+        super(HessianAlignment, self).__init__(input_shape, num_classes, num_domains,
+                                  hparams)
+        self.grad_alpha = hparams['grad_alpha']
+        self.hess_alpha = hparams['hess_alpha']
     def hessian(self, x, logits):
         """
         Compute the Hessian of the cross-entropy loss for n-class classification.
@@ -293,7 +317,7 @@ class ERM(Algorithm):
         # loss = F.cross_entropy(self.predict(all_x), all_y)
         logits = self.predict(all_x)
         breakpoint()
-        loss = self.exact_hessian_loss(logits, all_x, all_y, all_envs, alpha=10e-5, beta=10e-5)[0]
+        loss = self.exact_hessian_loss(logits, all_x, all_y, all_envs, alpha=self.grad_alpha, beta=self.hess_alpha)[0]
 
         self.optimizer.zero_grad()
         loss.backward()
@@ -304,30 +328,9 @@ class ERM(Algorithm):
     def predict(self, x):
         return self.network(x)
 
-class HessianAlignment(ERM):
-    """
-    Hessian Alignment
-    """
-
-    def __init__(self, input_shape, num_classes, num_domains, hparams):
-        super(HessianAlignment, self).__init__(input_shape, num_classes, num_domains,
-                                  hparams)
 
 
-    def update(self, minibatches, unlabeled=None):
-        all_x = torch.cat([x for x, y in minibatches])
-        all_y = torch.cat([y for x, y in minibatches])
-        # loss = F.cross_entropy(self.predict(all_x), all_y)
-        loss = self.exact_hessian_loss(all_x, all_y, alpha=10e-5, beta=10e-5)[0]
 
-        self.optimizer.zero_grad()
-        loss.backward()
-        self.optimizer.step()
-
-        return {'loss': loss.item()}
-
-    def predict(self, x):
-        return self.network(x)
 
 class Fish(Algorithm):
     """
