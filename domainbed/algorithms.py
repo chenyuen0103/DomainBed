@@ -317,7 +317,8 @@ class HessianAlignment(ERM):
     def update(self, minibatches, unlabeled=None):
         all_x = torch.cat([x for x, y in minibatches])
         all_y = torch.cat([y for x, y in minibatches])
-        loss = F.cross_entropy(self.predict(all_x), all_y)
+        # loss = F.cross_entropy(self.predict(all_x), all_y)
+        loss = self.exact_hessian_loss(all_x, all_y, alpha=10e-5, beta=10e-5)[0]
 
         self.optimizer.zero_grad()
         loss.backward()
