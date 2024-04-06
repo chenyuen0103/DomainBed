@@ -37,7 +37,7 @@ def _hparams(algorithm, dataset, random_seed):
 
     # Algorithm-specific hparam definitions. Each block of code below
     # corresponds to exactly one algorithm.
-
+    breakpoint()
     if algorithm in ['DANN', 'CDANN']:
         _hparam('lambda', 1.0, lambda r: 10**r.uniform(-2, 2))
         _hparam('weight_decay_d', 0., lambda r: 10**r.uniform(-6, -2))
@@ -140,7 +140,7 @@ def _hparams(algorithm, dataset, random_seed):
         _hparam('eqrm_quantile', 0.75, lambda r: r.uniform(0.5, 0.99))
         _hparam('eqrm_burnin_iters', 2500, lambda r: 10 ** r.uniform(2.5, 3.5))
         _hparam('eqrm_lr', 1e-6, lambda r: 10 ** r.uniform(-7, -5))
-    breakpoint()
+
     elif algorithm == 'HessianAlignment':
         _hparam('grad_alpha', 1e-4, lambda r: 10 ** r.uniform(-5, -3))
         _hparam('hess_beta', 1e-4, lambda r: 10 ** r.uniform(-5, -3))
