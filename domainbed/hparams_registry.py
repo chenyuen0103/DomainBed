@@ -143,7 +143,6 @@ def _hparams(algorithm, dataset, random_seed):
     elif algorithm == 'HessianAlignment':
         _hparam('grad_alpha', 1e-4, lambda r: 10 ** r.uniform(-5, -3))
         _hparam('hess_beta', 1e-4, lambda r: 10 ** r.uniform(-5, -3))
-        breakpoint()
 
 
     # Dataset-and-algorithm-specific hparam definitions. Each block of code
