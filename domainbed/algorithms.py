@@ -1465,6 +1465,7 @@ class Fishr(Algorithm):
         return {'loss': objective.item(), 'nll': all_nll.item(), 'penalty': penalty.item()}
 
     def compute_fishr_penalty(self, all_logits, all_y, len_minibatches):
+        breakpoint()
         dict_grads = self._get_grads(all_logits, all_y)
         grads_var_per_domain = self._get_grads_var_per_domain(dict_grads, len_minibatches)
         return self._compute_distance_grads_var(grads_var_per_domain)
