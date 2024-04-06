@@ -23,8 +23,8 @@ from domainbed.lib.fast_data_loader import InfiniteDataLoader, FastDataLoader
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Domain generalization')
-    parser.add_argument('--data_dir', type=str, default="./data")
-    parser.add_argument('--dataset', type=str, default="RotatedMNIST")
+    parser.add_argument('--data_dir', type=str, default="../data")
+    parser.add_argument('--dataset', type=str, default="ColoredMNIST")
     parser.add_argument('--algorithm', type=str, default="HessianAlignment")
     parser.add_argument('--task', type=str, default="domain_generalization",
         choices=["domain_generalization", "domain_adaptation"])
@@ -73,6 +73,7 @@ if __name__ == "__main__":
         print('\t{}: {}'.format(k, v))
 
     if args.hparams_seed == 0:
+        breakpoint()
         hparams = hparams_registry.default_hparams(args.algorithm, args.dataset)
     else:
         hparams = hparams_registry.random_hparams(args.algorithm, args.dataset,

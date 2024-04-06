@@ -83,7 +83,7 @@ Train a model:
 ```sh
 python3 -m domainbed.scripts.train\
        --data_dir=./domainbed/data/\
-       --algorithm Fishr\
+       --algorithm HessianAlignment\
        --dataset ColoredMNIST\
        --test_env 2
 ```
