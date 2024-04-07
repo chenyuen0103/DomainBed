@@ -132,7 +132,6 @@ if __name__ == "__main__":
     uda_splits = []
     for env_i, env in enumerate(dataset): # env is a dataset
         uda = []
-        print(f"Splitting env {env_i} into in/out splits")
 
         out, in_ = misc.split_dataset(env,
             int(len(env)*args.holdout_fraction),

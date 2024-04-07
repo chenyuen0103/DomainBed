@@ -174,6 +174,7 @@ class HessianAlignment(ERM):
         # Ensure logits are in proper shape
         p = F.softmax(logits, dim=-1)
 
+
         # Generate one-hot encoding for y
         y_onehot = torch.zeros_like(p)
         y_onehot.scatter_(1, y.long().unsqueeze(-1), 1)
@@ -254,7 +255,7 @@ class HessianAlignment(ERM):
             loss = loss_fn(yhat_env, y_env)
 
             # Compute gradients w.r.t. x using PyTorch
-            grads_pytorch = torch.autograd.grad(outputs=loss, inputs=list(self.featurizer.parameters()), create_graph=True)[0]
+            grads_pytorch = torch.autograd.grad(outputs=loss, inputs=list(self.classifier.parameters()), create_graph=True)[0]
             # Check if the manually computed gradients and PyTorch gradients are close
             breakpoint()
             assert torch.allclose(grads, grads_pytorch), "Gradient computation discrepancy"
