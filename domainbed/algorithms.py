@@ -165,6 +165,7 @@ class HessianAlignment(ERM):
         return hessians
 
     def gradient(self, x, logits, y):
+        breakpoint()
         # Ensure logits are in proper shape
         p = F.softmax(logits, dim=-1)
 
