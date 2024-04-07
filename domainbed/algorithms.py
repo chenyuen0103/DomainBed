@@ -227,6 +227,7 @@ class HessianAlignment(ERM):
     def exact_hessian_loss(self, logits, x, y, envs_indices, alpha=10e-5, beta=10e-5):
         # for params in model.parameters():
         #     params.requires_grad = True
+        x = self.featurizer(x)
         num_classes = logits.size(1)
         total_loss = torch.tensor(0.0, requires_grad=True)
         env_gradients = []
