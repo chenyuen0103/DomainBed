@@ -212,29 +212,34 @@ class HessianAlignment(ERM):
         return grad_w
 
     def compute_pytorch_hessian(self, x, y):
-        from torch.autograd.functional import hessian
-        def loss_wrt_params(params):
-            # Update the model's parameters
-            with torch.no_grad():
-                original_params = self.classifier.weight.clone()
-                self.classifier.weight.copy_(params.view_as(self.classifier.weight))
+        # Reset gradients to zero
+        self.classifier.zero_grad()
 
-            # Compute the predictions
-            predictions = self.classifier(x)
+        # Define the function for which we need the Hessian matrix.
+        # This needs to be a function that takes the parameters as input
+        # and returns a scalar output (the loss).
+        def loss_func(params):
+            # Temporarily set classifier parameters to the given params
+            original_params = torch.nn.utils.parameters_to_vector(self.classifier.parameters())
+            torch.nn.utils.vector_to_parameters(params, self.classifier.parameters())
 
-            # Compute the loss
-            loss = self.loss_function(predictions, y)
+            # Forward pass to compute logits
+            logits = self.classifier(x)
 
-            # Restore the original parameters
-            self.classifier.weight.copy_(original_params)
+            # Compute loss
+            criterion = torch.nn.CrossEntropyLoss()
+            loss = criterion(logits, y.long())
+
+            # Reset parameters to their original values
+            torch.nn.utils.vector_to_parameters(original_params, self.classifier.parameters())
+
             return loss
 
-            # Compute the Hessian
+        # Compute the Hessian matrix of the loss function with respect to the classifier parameters
+        params = torch.nn.utils.parameters_to_vector(self.classifier.parameters())
+        hessian_matrix = torch.autograd.functional.hessian(loss_func, params)
 
-        params = self.classifier.weight
-        hessian_matrix = hessian(loss_wrt_params, params)
         return hessian_matrix
-
 
     def exact_hessian_loss(self, logits, x, y, envs_indices, alpha=10e-5, beta=10e-5):
         # for params in model.parameters():
