@@ -201,27 +201,29 @@ class HessianAlignment(ERM):
 
         return grad_w
 
-
-
-    def compute_pytorch_hessian(self, model, x, y):
-        batch_size = x.shape[0]
-        for param in model.parameters():
-            param.requires_grad = True
-
-        logits = model(x).squeeze()
+    def compute_pytorch_hessian(self, x, y):
+        self.classifier.zero_grad()  # Reset gradients to zero
+        logits = self.classifier(x)
 
         criterion = torch.nn.CrossEntropyLoss()
         loss = criterion(logits, y.long())
 
-        # First order gradients
-        grads = torch.autograd.grad(loss, model.linear.weight, create_graph=True)[0]
+        # Compute first-order gradients (gradients of loss with respect to model parameters)
+        grads = torch.autograd.grad(loss, list(self.classifier.parameters()), create_graph=True)
 
         hessian = []
-        for i in range(grads.size(1)):
-            row = torch.autograd.grad(grads[0][i], model.linear.weight, create_graph=True, retain_graph=True)[0]
-            hessian.append(row)
+        for grad in grads:
+            grad_components = []
+            for g in grad.view(-1):  # Flatten grad to compute Hessian one element at a time
+                # Compute the gradient of each element of grad with respect to all parameters
+                grad_grads = torch.autograd.grad(g, list(self.classifier.parameters()), retain_graph=True)
+                grad_grads_flattened = torch.cat([gg.view(-1) for gg in grad_grads])  # Flatten and concatenate
+                grad_components.append(grad_grads_flattened)
+            hessian.append(torch.stack(grad_components))
+        hessian = torch.stack(hessian)
 
-        return torch.stack(hessian).squeeze()
+        # Depending on your specific requirement, you may need to adjust the shape or processing of the Hessian
+        return hessian
 
 
     def exact_hessian_loss(self, logits, x, y, envs_indices, alpha=10e-5, beta=10e-5):
