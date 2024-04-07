@@ -254,7 +254,7 @@ class HessianAlignment(ERM):
             loss = loss_fn(yhat_env, y_env)
 
             # Compute gradients w.r.t. x using PyTorch
-            grads_pytorch = torch.autograd.grad(outputs=loss, inputs=x_env, create_graph=True)[0]
+            grads_pytorch = torch.autograd.grad(outputs=loss, inputs=list(self.featurizer.parameters()), create_graph=True)[0]
             # Check if the manually computed gradients and PyTorch gradients are close
             breakpoint()
             assert torch.allclose(grads, grads_pytorch), "Gradient computation discrepancy"
