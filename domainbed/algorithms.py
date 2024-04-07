@@ -1439,6 +1439,7 @@ class Fishr(Algorithm):
 
     def update(self, minibatches, unlabeled=None):
         assert len(minibatches) == self.num_domains
+        breakpoint()
         all_x = torch.cat([x for x, y in minibatches])
         all_y = torch.cat([y for x, y in minibatches])
         len_minibatches = [x.shape[0] for x, y in minibatches]
@@ -1466,7 +1467,6 @@ class Fishr(Algorithm):
         return {'loss': objective.item(), 'nll': all_nll.item(), 'penalty': penalty.item()}
 
     def compute_fishr_penalty(self, all_logits, all_y, len_minibatches):
-        breakpoint()
         dict_grads = self._get_grads(all_logits, all_y)
         grads_var_per_domain = self._get_grads_var_per_domain(dict_grads, len_minibatches)
         return self._compute_distance_grads_var(grads_var_per_domain)
