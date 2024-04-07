@@ -227,9 +227,6 @@ class HessianAlignment(ERM):
         total_loss = torch.tensor(0.0, requires_grad=True)
         env_gradients = []
         env_hessians = []
-        # env_hessians_original = []
-        # initial_state = model.state_dict()
-        # logits = model(x)
         envs_indices_unique = envs_indices.unique()
         for env_idx in envs_indices_unique:
             # breakpoint()
@@ -252,6 +249,16 @@ class HessianAlignment(ERM):
             yhat_env = yhat_env[0] if isinstance(yhat_env, tuple) else yhat_env
 
             grads = self.gradient(x_env, yhat_env, y_env)
+            # Assuming loss computation for a specific environment
+            loss_fn = torch.nn.CrossEntropyLoss()
+            loss = loss_fn(yhat_env, y_env)
+
+            # Compute gradients w.r.t. x using PyTorch
+            grads_pytorch = torch.autograd.grad(outputs=loss, inputs=x_env, create_graph=True)[0]
+            # Check if the manually computed gradients and PyTorch gradients are close
+            breakpoint()
+            assert torch.allclose(grads, grads_pytorch), "Gradient computation discrepancy"
+
             # grads_original = self.gradient_original(x_env, yhat_env, y_env)
             # hessian = self.compute_pytorch_hessian(model, x[idx], y[idx])
             if num_classes == 2:
