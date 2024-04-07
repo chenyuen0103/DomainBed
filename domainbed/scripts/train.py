@@ -21,6 +21,20 @@ from domainbed import algorithms
 from domainbed.lib import misc
 from domainbed.lib.fast_data_loader import InfiniteDataLoader, FastDataLoader
 
+class EnvDataset(torch.utils.data.Dataset):
+    """Custom dataset to include environment index with each sample."""
+    def __init__(self, dataset, env_index):
+        self.dataset = dataset
+        self.env_index = env_index
+
+    def __len__(self):
+        return len(self.dataset)
+
+    def __getitem__(self, idx):
+        input_data, label = self.dataset[idx]
+        return input_data, label, self.env_index
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Domain generalization')
     parser.add_argument('--data_dir', type=str, default="../data")
@@ -116,7 +130,7 @@ if __name__ == "__main__":
     in_splits = []
     out_splits = []
     uda_splits = []
-    for env_i, env in enumerate(dataset):
+    for env_i, env in enumerate(dataset): # env is a dataset
         uda = []
 
         out, in_ = misc.split_dataset(env,
@@ -127,6 +141,11 @@ if __name__ == "__main__":
             uda, in_ = misc.split_dataset(in_,
                 int(len(in_)*args.uda_holdout_fraction),
                 misc.seed_hash(args.trial_seed, env_i))
+
+        # Wrap env datasets with EnvDataset to include environment index
+        in_ = EnvDataset(in_, env_i)
+        out = EnvDataset(out, env_i)
+        uda = EnvDataset(uda, env_i) if len(uda) else None
 
         if hparams['class_balanced']:
             in_weights = misc.make_weights_for_balanced_classes(in_)
