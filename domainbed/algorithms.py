@@ -152,6 +152,35 @@ class HessianAlignment(ERM):
 
         return hessians
 
+    def hessian_original(self, x, logits):
+        p = F.softmax(logits, dim=1).clone()[:, 1]  # probability for class 1
+
+        # Compute scaling factors for Hessian (p * (1 - p)) for each sample in the batch
+        scale_factor = p * (1 - p)  # Shape: [batch_size]
+
+        # Expand scale_factor to shape [batch_size, 1, 1] for batched outer product
+        scale_factor = scale_factor.view(-1, 1, 1)
+
+        # Reshape x for outer product: [batch_size, num_features, 1]
+        x_reshaped = x.unsqueeze(2)
+
+        # Compute batched outer product: [batch_size, num_features, num_features]
+        # einsum
+        outer_product = torch.matmul(x_reshaped, x_reshaped.transpose(1, 2))
+
+        # Scale by p * (1 - p) and average across the batch
+        hessian_w_class0 = torch.mean(scale_factor * outer_product, dim=0)
+
+        # Hessian for class 1 is the negative of the Hessian for class 0
+        hessian_w_class1 = -hessian_w_class0
+
+        # Stack the Hessians for both classes: [2, num_features, num_features]
+        hessian_w2 = torch.stack([hessian_w_class0, hessian_w_class1])
+
+        # assert torch.allclose(hessian_w2, hessian_w), "Hessian computation is incorrect"
+        return hessian_w2
+
+
     def gradient(self, x, logits, y):
         breakpoint()
         # Ensure logits are in proper shape
@@ -1432,7 +1461,7 @@ class Fishr(Algorithm):
 
     def update(self, minibatches, unlabeled=None):
         assert len(minibatches) == self.num_domains
-        breakpoint()
+
         all_x = torch.cat([x for x, y in minibatches])
         all_y = torch.cat([y for x, y in minibatches])
         len_minibatches = [x.shape[0] for x, y in minibatches]
