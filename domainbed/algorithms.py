@@ -267,7 +267,7 @@ class HessianAlignment(ERM):
             assert torch.allclose(grads, grads_pytorch), "Gradient computation discrepancy"
 
             # grads_original = self.gradient_original(x_env, yhat_env, y_env)
-            hessian_pytorch = self.compute_pytorch_hessian(self.classifier, x_env, y_env)
+            hessian_pytorch = self.compute_pytorch_hessian( x_env, y_env)
             if num_classes == 2:
                 hessian = self.hessian_original(x_env, yhat_env)
             else:
