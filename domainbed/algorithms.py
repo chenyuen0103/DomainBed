@@ -170,7 +170,7 @@ class HessianAlignment(ERM):
 
         return hessian_w2
 
-    def gradient(x, logits, y):
+    def gradient(self, x, logits, y):
         """
         Compute gradients of the cross-entropy loss with respect to model parameters (weights),
         assuming a simplified linear model.
