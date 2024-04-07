@@ -131,35 +131,23 @@ class HessianAlignment(ERM):
                                   hparams)
         self.grad_alpha = hparams['grad_alpha']
         self.hess_beta = hparams['hess_beta']
+
     def hessian(self, x, logits):
-        """
-        Compute the Hessian of the cross-entropy loss for n-class classification.
+        # Assuming x has the shape [batch_size, 2, 28, 28]
+        # Flatten x to match the expected shape [batch_size, num_features]
+        x_flattened = x.view(x.size(0), -1)
 
-        Args:
-            x (torch.Tensor): Input features with shape [batch_size, num_features].
-            logits (torch.Tensor): Output logits with shape [batch_size, num_classes].
-
-        Returns:
-            torch.Tensor: Hessian with shape [num_classes, num_features, num_features].
-        """
         batch_size, num_classes = logits.shape
+        num_features = x_flattened.shape[1]
 
-        # Compute the probabilities for each class
-        p = F.softmax(logits, dim=1)  # Shape: [batch_size, num_classes]
+        p = F.softmax(logits, dim=1)
 
-        # Compute the scaling factors for the Hessian (p_i * (1 - p_i))
-        scale_factors = p * (1 - p)  # Shape: [batch_size, num_classes]
-
-        # Expand the scale_factors to shape [batch_size, num_classes, 1, 1]
+        scale_factors = p * (1 - p)
         scale_factors = scale_factors.transpose(0, 1).unsqueeze(-1).unsqueeze(-1)
 
-        # Reshape x for outer product: [batch_size, num_features, 1]
-        x_reshaped = x.unsqueeze(2)
-
-        # Compute the batched outer product: [batch_size, num_classes, num_features, num_features]
+        x_reshaped = x_flattened.unsqueeze(2)
         outer_products = torch.matmul(x_reshaped, x_reshaped.transpose(1, 2))
 
-        # Scale the outer products by the scaling factors and average across the batch
         hessians = torch.mean(scale_factors * outer_products, dim=1)
 
         return hessians
@@ -180,7 +168,12 @@ class HessianAlignment(ERM):
         # grad_w_class0 = torch.matmul((y_onehot[:, 0] - p[:, 0]).T, x) / x.size(0)
 
         # multiclasses
-        grad_w = torch.matmul((y_onehot - p).T, x) / x.size(0)
+        # grad_w = torch.matmul((y_onehot - p).T, x) / x.size(0)
+        x_flattened = x.view(x.size(0), -1)
+
+        # Calculate gradient with respect to weights
+        # Assuming a simplistic model where weights directly connect input pixels to output logits
+        grad_w = torch.matmul((y_onehot - p).T, x_flattened) / x.size(0)
 
         # Stack the gradients for both classes
         # grad_w2 = torch.stack([grad_w_class1, grad_w_class0], dim=0)
