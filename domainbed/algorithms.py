@@ -131,6 +131,16 @@ class HessianAlignment(ERM):
                                   hparams)
         self.grad_alpha = hparams['grad_alpha']
         self.hess_beta = hparams['hess_beta']
+        self.classifier = networks.Classifier_nobiases(
+            self.featurizer.n_outputs, num_classes, self.hparams['nonlinear_classifier']
+        )
+
+        self.network = nn.Sequential(self.featurizer, self.classifier)
+        self.optimizer = torch.optim.Adam(
+            self.network.parameters(),
+            lr=self.hparams["lr"],
+            weight_decay=self.hparams['weight_decay']
+        )
 
     def hessian(self, x, logits):
         # Assuming x has the shape [batch_size, 2, 28, 28]
@@ -202,24 +212,25 @@ class HessianAlignment(ERM):
         return grad_w
 
     def compute_pytorch_hessian(self, x, y):
-        self.classifier.zero_grad()  # Reset gradients to zero
-        logits = self.classifier(x)
+        self.classifier.zero_grad()  # Ensure previous gradient computations are cleared
+        logits = self.classifier(x)  # Forward pass to get logits
 
+        # Compute the loss using CrossEntropyLoss for classification tasks
         criterion = torch.nn.CrossEntropyLoss()
-        loss = criterion(logits, y.long())
+        loss = criterion(logits, y.long())  # Ensure labels are long type for CrossEntropyLoss
 
-        # Compute first-order gradients (gradients of loss with respect to model parameters)
-        grads = torch.autograd.grad(loss, list(self.classifier.parameters()), create_graph=True)
+        # Compute first-order gradients with respect to model parameters
+        grads = torch.autograd.grad(loss, self.classifier.parameters(), create_graph=True)
 
-        hessians = {}
+        hessians = {}  # Initialize an empty dictionary to store Hessian matrices
         for param, grad in zip(self.classifier.parameters(), grads):
-            hessian_for_param = []
-            grad = grad.view(-1)  # Flatten the gradient
+            hessian_for_param = []  # List to store Hessian for current parameter
+            grad = grad.view(-1)  # Flatten the gradient to iterate over each element
             for g in grad:
-                # Compute the gradient of each element of grad with respect to the parameter
+                # Compute the gradient of each gradient element with respect to the parameter
                 grad_grads = torch.autograd.grad(g, param, retain_graph=True)
-                hessian_for_param.append(grad_grads[0].view(-1))
-            # Stack to form the Hessian for this parameter
+                hessian_for_param.append(grad_grads[0].view(-1))  # Flatten and store
+            # Stack all the second-order gradients to form the Hessian matrix for the parameter
             hessians[param] = torch.stack(hessian_for_param)
 
         return hessians
