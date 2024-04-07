@@ -145,7 +145,7 @@ if __name__ == "__main__":
         # Wrap env datasets with EnvDataset to include environment index
         in_ = EnvDataset(in_, env_i)
         out = EnvDataset(out, env_i)
-        uda = EnvDataset(uda, env_i) if uda is not None and len(uda):
+        uda = EnvDataset(uda, env_i) if uda is not None and len(uda) else []
 
 
         if hparams['class_balanced']:
