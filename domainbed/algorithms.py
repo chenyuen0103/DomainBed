@@ -289,7 +289,8 @@ class HessianAlignment(ERM):
             y_env = y[idx]
             logits_env = logits[idx]
             env_fraction = len(idx) / len(envs_indices)
-            loss = self.loss_fn(logits_env.squeeze(), y_env.long())
+            # loss = self.loss_fn(logits_env.squeeze(), y_env.long())
+            loss = F.cross_entropy(logits_env, y_env.long())
             # Compute the 2-norm of the difference between the gradient for this environment and the average gradient
             grad_diff_norm = torch.norm(grads[0] - avg_gradient, p=2)
 
