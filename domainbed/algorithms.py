@@ -211,19 +211,18 @@ class HessianAlignment(ERM):
         # Compute first-order gradients (gradients of loss with respect to model parameters)
         grads = torch.autograd.grad(loss, list(self.classifier.parameters()), create_graph=True)
 
-        hessian = []
-        for grad in grads:
-            grad_components = []
-            for g in grad.view(-1):  # Flatten grad to compute Hessian one element at a time
-                # Compute the gradient of each element of grad with respect to all parameters
-                grad_grads = torch.autograd.grad(g, list(self.classifier.parameters()), retain_graph=True)
-                grad_grads_flattened = torch.cat([gg.view(-1) for gg in grad_grads])  # Flatten and concatenate
-                grad_components.append(grad_grads_flattened)
-            hessian.append(torch.stack(grad_components))
-        hessian = torch.stack(hessian)
+        hessians = {}
+        for param, grad in zip(self.classifier.parameters(), grads):
+            hessian_for_param = []
+            grad = grad.view(-1)  # Flatten the gradient
+            for g in grad:
+                # Compute the gradient of each element of grad with respect to the parameter
+                grad_grads = torch.autograd.grad(g, param, retain_graph=True)
+                hessian_for_param.append(grad_grads[0].view(-1))
+            # Stack to form the Hessian for this parameter
+            hessians[param] = torch.stack(hessian_for_param)
 
-        # Depending on your specific requirement, you may need to adjust the shape or processing of the Hessian
-        return hessian
+        return hessians
 
 
     def exact_hessian_loss(self, logits, x, y, envs_indices, alpha=10e-5, beta=10e-5):
