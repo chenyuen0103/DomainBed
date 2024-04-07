@@ -212,26 +212,28 @@ class HessianAlignment(ERM):
         return grad_w
 
     def compute_pytorch_hessian(self, x, y):
-        self.classifier.zero_grad()
-        logits = self.classifier(x)
-        criterion = torch.nn.CrossEntropyLoss()
-        loss = criterion(logits, y.long())
+        from torch.autograd.functional import hessian
+        def loss_wrt_params(params):
+            # Update the model's parameters
+            with torch.no_grad():
+                original_params = self.classifier.weight.clone()
+                self.classifier.weight.copy_(params.view_as(self.classifier.weight))
 
-        # Compute first-order gradients with respect to model parameters
-        grads = torch.autograd.grad(loss, self.classifier.parameters(), create_graph=True)
+            # Compute the predictions
+            predictions = self.classifier(x)
 
-        hessian_components = []  # To store flattened Hessians for all parameters
-        for param, grad in zip(self.classifier.parameters(), grads):
-            grad = grad.view(-1)  # Flatten the gradient
-            for g in grad:
-                # Compute the gradient of each gradient component with respect to the parameter
-                grad_grads = torch.autograd.grad(g, param, retain_graph=True)
-                # Flatten and store each second derivative
-                hessian_components.extend([gg.view(-1) for gg in grad_grads])
+            # Compute the loss
+            loss = self.loss_function(predictions, y)
 
-        # Concatenate all the second-order gradients to form a 1D Hessian tensor
-        hessian = torch.cat(hessian_components)
-        return hessian
+            # Restore the original parameters
+            self.classifier.weight.copy_(original_params)
+            return loss
+
+            # Compute the Hessian
+
+        params = self.classifier.weight
+        hessian_matrix = hessian(loss_wrt_params, params)
+        return hessian_matrix
 
 
     def exact_hessian_loss(self, logits, x, y, envs_indices, alpha=10e-5, beta=10e-5):
