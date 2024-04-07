@@ -170,32 +170,35 @@ class HessianAlignment(ERM):
 
         return hessian_w2
 
-    def gradient(self, x, logits, y):
-        # Ensure logits are in proper shape
-        p = F.softmax(logits, dim=-1)
+    def gradient(x, logits, y):
+        """
+        Compute gradients of the cross-entropy loss with respect to model parameters (weights),
+        assuming a simplified linear model.
 
+        Args:
+            x (torch.Tensor): Input tensor of shape [batch_size, channels, height, width].
+            logits (torch.Tensor): Logits tensor of shape [batch_size, num_classes].
+            y (torch.Tensor): Ground truth labels of shape [batch_size].
+
+        Returns:
+            torch.Tensor: Gradient of shape [num_classes, num_features] matching a simplified
+                          model's weight gradient shape.
+        """
+        # Ensure logits are in the proper shape and compute softmax probabilities
+        p = F.softmax(logits, dim=-1)
 
         # Generate one-hot encoding for y
         y_onehot = torch.zeros_like(p)
-        y_onehot.scatter_(1, y.long().unsqueeze(-1), 1)
+        y_onehot.scatter_(1, y.unsqueeze(1), 1)
 
-        # Compute the gradient for each class
-        # Gradient computation is simplified by directly using the broadcasted subtraction and matrix multiplication
-        # Note: No need to unsqueeze and manually divide by the batch size, torch.matmul handles this efficiently
-        # grad_w_class1 = torch.matmul((y_onehot[:, 1] - p[:, 1]).T, x) / x.size(0)
-        # grad_w_class0 = torch.matmul((y_onehot[:, 0] - p[:, 0]).T, x) / x.size(0)
-
-        # multiclasses
-        # grad_w = torch.matmul((y_onehot - p).T, x) / x.size(0)
+        # Flatten x to treat it as input to a linear model: [batch_size, num_features]
         x_flattened = x.view(x.size(0), -1)
 
-        # Calculate gradient with respect to weights
-        # Assuming a simplistic model where weights directly connect input pixels to output logits
-        grad_w = torch.matmul((y_onehot - p).T, x_flattened) / x.size(0)
+        # Calculate the gradient of the cross-entropy loss with respect to the inputs
+        # This resembles the gradient calculation for a model's weights in a simplified linear scenario
+        grad_loss = p - y_onehot
+        grad_w = torch.matmul(grad_loss.T, x_flattened) / x.size(0)
 
-        # Stack the gradients for both classes
-        # grad_w2 = torch.stack([grad_w_class1, grad_w_class0], dim=0)
-        # assert torch.allclose(grad_w, grad_w2), "Gradient computation is incorrect"
         return grad_w
 
 
