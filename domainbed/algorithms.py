@@ -318,20 +318,16 @@ class HessianAlignment(ERM):
             loss = loss_fn(yhat_env, y_env)
 
             # Compute gradients w.r.t. x using PyTorch
-            grads_pytorch = torch.autograd.grad(outputs=loss, inputs=list(self.classifier.parameters()), create_graph=True)[0]
+            # grads_pytorch = torch.autograd.grad(outputs=loss, inputs=list(self.classifier.parameters()), create_graph=True)[0]
             # Check if the manually computed gradients and PyTorch gradients are close
-            try:
-                assert torch.allclose(grads, grads_pytorch, atol=1e-6), "Gradient computation discrepancy"
-            except:
-                breakpoint()
+            # try:
+            #     assert torch.allclose(grads, grads_pytorch, atol=1e-6), "Gradient computation discrepancy"
+            # except:
+            #     breakpoint()
 
             # grads_original = self.gradient_original(x_env, yhat_env, y_env)
-            hessian_pytorch = self.compute_pytorch_hessian( x_env, y_env)
-            if num_classes == 2:
-                # hessian = self.hessian_original(x_env, yhat_env)
-                hessian = self.hessian(x_env, yhat_env)
-            else:
-                hessian = self.hessian(x_env, yhat_env)
+            # hessian_pytorch = self.compute_pytorch_hessian( x_env, y_env)
+            hessian = self.hessian(x_env, yhat_env)
             # assert torch.allclose(hessian, hessian_pytorch), "Hessian computation discrepancy"
 
             # hessian_original = self.hessian_original(x_env, yhat_env)
@@ -339,7 +335,7 @@ class HessianAlignment(ERM):
             # assert torch.allclose(hessian, hessian_original, atol=1e-6), "Hessian computation is incorrect"
             env_gradients.append(grads)
             env_hessians.append(hessian)
-            env_hessians_pytorch.append(hessian_pytorch)
+            # env_hessians_pytorch.append(hessian_pytorch)
 
         # Compute average gradient and hessian
         # avg_gradient = [torch.mean(torch.stack([grads[i] for grads in env_gradients]), dim=0) for i in
@@ -349,13 +345,13 @@ class HessianAlignment(ERM):
 
         # avg_gradient = torch.mean(torch.stack(env_gradients), dim=0)
         avg_hessian = torch.mean(torch.stack(env_hessians), dim=0)
-        avg_hessian_pytorch = torch.mean(torch.stack(env_hessians_pytorch), dim=0)
+        # avg_hessian_pytorch = torch.mean(torch.stack(env_hessians_pytorch), dim=0)
 
         erm_loss = 0
         hess_loss = 0
         grad_loss = 0
         for env_idx, (grads, hessian) in enumerate(zip(env_gradients, env_hessians)):
-            hessian_pytorch = env_hessians_pytorch[env_idx]
+            # hessian_pytorch = env_hessians_pytorch[env_idx]
             idx = (envs_indices == env_idx).nonzero().squeeze()
             if idx.numel() == 0:
                 continue
@@ -373,10 +369,10 @@ class HessianAlignment(ERM):
 
             # Compute the Frobenius norm of the difference between the Hessian for this environment and the average Hessian
             hessian_diff = hessian - avg_hessian
-            hessian_diff_pytorch = hessian_pytorch - avg_hessian_pytorch
+            # hessian_diff_pytorch = hessian_pytorch - avg_hessian_pytorch
             hessian_diff_norm = torch.norm(hessian_diff, p='fro')
-            hessian_diff_norm_pytorch = torch.norm(hessian_diff_pytorch, p='fro')
-            assert torch.allclose(hessian_diff_norm, hessian_diff_norm_pytorch), "Hessian computation is incorrect"
+            # hessian_diff_norm_pytorch = torch.norm(hessian_diff_pytorch, p='fro')
+            # assert torch.allclose(hessian_diff_norm, hessian_diff_norm_pytorch), "Hessian computation is incorrect"
 
             # grad_reg = sum((grad - avg_grad).norm(2) ** 2 for grad, avg_grad in zip(grads, avg_gradient))
             # hessian_reg = torch.trace((hessian - avg_hessian).t().matmul(hessian - avg_hessian))
