@@ -144,35 +144,60 @@ class HessianAlignment(ERM):
 
 
     def hessian(self, x, logits):
-        batch_size, d = x.shape  # Shape: [batch_size, d]
-        num_classes = logits.shape[1]  # Number of classes
-        dC = num_classes * d  # Total number of parameters in the flattened gradient
+        batch_size, d = x.shape
+        num_classes = logits.shape[1]
+        dC = num_classes * d
 
-        # Compute probabilities
-        p = F.softmax(logits, dim=1)  # Shape: [batch_size, num_classes]
+        p = F.softmax(logits, dim=1)
 
-        # Compute p_k(1-p_k) for diagonal blocks and -p_k*p_l for off-diagonal blocks
-        # Diagonal part
-        p_diag = p * (1 - p)  # Shape: [batch_size, num_classes]
-        # Off-diagonal part
-        p_off_diag = -p.unsqueeze(2) * p.unsqueeze(1)  # Shape: [batch_size, num_classes, num_classes]
-        # Fill the diagonal part in off-diagonal tensor
-        indices = torch.arange(num_classes)
-        p_off_diag[:, indices, indices] = p_diag
+        # Compute the gradient for each class and each feature
+        grad = torch.einsum('bi,bj->bij', (p - torch.eye(num_classes, device=p.device)[torch.max(p, 1)[1]]), x)
 
-        # Outer product of x
-        X_outer = torch.einsum('bi,bj->bij', x, x)  # Shape: [batch_size, d, d]
+        # Compute the Hessian using the outer product of the gradient
+        # Note: This computes the block-diagonal of the Hessian where each block corresponds to a class.
+        H = torch.einsum('bik,bjl->ijkl', grad, grad)
 
-        # Combine the probabilities with the outer product of x
-        H = torch.einsum('bkl,bij->bklij', p_off_diag, X_outer)  # Shape: [batch_size, num_classes, num_classes, d, d]
+        # Sum over the batch to accumulate the Hessian information
+        H_summed = H.sum(0)
 
-        # Sum over the batch and reshape to get final Hessian
-        H = H.sum(0).reshape(dC, dC)  # Shape: [dC, dC]
+        # Normalize the Hessian by the batch size
+        H_normalized = H_summed / batch_size
 
-        # Normalize Hessian by the batch size
-        H /= batch_size
+        # Reshape to match the expected output dimension
+        H_final = H_normalized.reshape(dC, dC)
 
-        return H
+        return H_final
+
+
+        # batch_size, d = x.shape  # Shape: [batch_size, d]
+        # num_classes = logits.shape[1]  # Number of classes
+        # dC = num_classes * d  # Total number of parameters in the flattened gradient
+        #
+        # # Compute probabilities
+        # p = F.softmax(logits, dim=1)  # Shape: [batch_size, num_classes]
+        #
+        # # Compute p_k(1-p_k) for diagonal blocks and -p_k*p_l for off-diagonal blocks
+        # # Diagonal part
+        # p_diag = p * (1 - p)  # Shape: [batch_size, num_classes]
+        # # Off-diagonal part
+        # p_off_diag = -p.unsqueeze(2) * p.unsqueeze(1)  # Shape: [batch_size, num_classes, num_classes]
+        # # Fill the diagonal part in off-diagonal tensor
+        # indices = torch.arange(num_classes)
+        # p_off_diag[:, indices, indices] = p_diag
+        #
+        # # Outer product of x
+        # X_outer = torch.einsum('bi,bj->bij', x, x)  # Shape: [batch_size, d, d]
+        #
+        # # Combine the probabilities with the outer product of x
+        # H = torch.einsum('bkl,bij->bklij', p_off_diag, X_outer)  # Shape: [batch_size, num_classes, num_classes, d, d]
+        #
+        # # Sum over the batch and reshape to get final Hessian
+        # H = H.sum(0).reshape(dC, dC)  # Shape: [dC, dC]
+        #
+        # # Normalize Hessian by the batch size
+        # H /= batch_size
+        #
+        # return H
         # Compute each block H^{(k, l)}
         # for k in range(num_classes):
         #     for l in range(num_classes):
