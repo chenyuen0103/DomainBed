@@ -143,7 +143,8 @@ class HessianAlignment(ERM):
         )
 
     def hessian(self, x, logits):
-        batch_size, num_classes, num_features = x.shape
+        batch_size, num_features = x.shape
+        num_classes = logits.size(1)
         dC = num_classes * num_features  # Total number of parameters across all classes
 
         # Compute probabilities
@@ -151,7 +152,7 @@ class HessianAlignment(ERM):
         device = x.device
         # Initialize Hessian with zeros
         Hessian = torch.zeros(dC, dC).to(device)
-
+        breakpoint()
         # Compute each block H^{(k, l)}
         for k in range(num_classes):
             for l in range(num_classes):
