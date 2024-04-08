@@ -151,20 +151,28 @@ class HessianAlignment(ERM):
         p = F.softmax(logits, dim=1).to(device)
 
         # Initialize Hessian matrix for all classes
-        H = torch.zeros(num_classes, num_features, num_features).to(device)
+        H = torch.zeros(num_classes, num_features, num_features, device=device)
 
         for k in range(num_classes):
-            # Compute p_k(1-p_k) for class k
-            p_k = p[:, k].reshape(-1, 1)
-            diagonal_terms = p_k * (1 - p_k)
-            # breakpoint()
-            # Outer product for each sample, then average over batch
-            for i in range(batch_size):
-                xi = x[i, :].reshape(-1, 1)  # Reshape x_i to column vector
-                outer_product = torch.matmul(xi, xi.t())
-                H[k] += diagonal_terms[i] * outer_product
+            for l in range(num_classes):
+                if k == l:
+                    # Compute p_k(1-p_k) for diagonal elements (same class k)
+                    p_k = p[:, k].reshape(-1, 1)
+                    terms = p_k * (1 - p_k)
+                else:
+                    # Compute -p_k*p_l for off-diagonal elements (different classes k and l)
+                    p_k = p[:, k].reshape(-1, 1)
+                    p_l = p[:, l].reshape(-1, 1)
+                    terms = -p_k * p_l
 
-            H[k] /= batch_size
+                # Sum over all samples
+                for i in range(batch_size):
+                    xi = x[i, :].reshape(-1, 1)  # Reshape x_i to column vector
+                    outer_product = torch.matmul(xi, xi.t())
+                    H[k, :, :] += terms[i] * outer_product
+
+        # Average over batch
+        H /= batch_size
 
         return H
 
