@@ -153,9 +153,13 @@ class HessianAlignment(ERM):
 
         # Overwrite diagonal of off-diagonal scale matrix with diagonal scale values
         batch_size, num_classes, _ = p_off_diag_scale.shape
-        breakpoint()
-        p_off_diag_scale.view(batch_size, -1)[:, ::num_classes + 1] = p_diag_scale.view(-1)
+        batch_size, num_classes = p_diag_scale.shape
 
+        # Create a mask for the diagonal
+        diag_mask = torch.eye(num_classes, dtype=bool).expand(batch_size, num_classes, num_classes)
+
+        # Now, we can use this mask to selectively update the diagonal elements
+        p_off_diag_scale[diag_mask] = p_diag_scale.flatten()
         # Flatten x to match the expected shape [batch_size, num_features]
         x_flattened = x.view(x.size(0), -1)
         num_features = x_flattened.shape[1]
