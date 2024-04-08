@@ -151,7 +151,7 @@ class HessianAlignment(ERM):
         p = F.softmax(logits, dim=1).to(device)
 
         # Initialize Hessian matrix for all classes
-        H = torch.zeros(num_classes, num_features, num_features)
+        H = torch.zeros(num_classes, num_features, num_features).to(device)
 
         for k in range(num_classes):
             # Compute p_k(1-p_k) for class k
