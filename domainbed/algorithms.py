@@ -166,20 +166,24 @@ class HessianAlignment(ERM):
         diag_multiplier_expanded = diag_multiplier.unsqueeze(-1).unsqueeze(-1)  # Shape: [batch_size, num_classes, 1, 1]
 
         # Compute Hessian blocks
-        Hessian_blocks = diag_multiplier_expanded * X_outer.unsqueeze(1) + p_outer * offdiag_multiplier.unsqueeze(
-            -1).unsqueeze(-1)
+        offdiag_multiplier_expanded = offdiag_multiplier.unsqueeze(-1).unsqueeze(-1)  # Add two dimensions for d, d
 
-        # Sum over batch dimension to get the Hessian
-        Hessian = torch.sum(Hessian_blocks, dim=0).to(x.device) # Shape: [num_classes, d, d]
+        # Now, adjust the computation of Hessian blocks to ensure correct shape alignment
+        # The key here is ensuring that offdiag_multiplier_expanded aligns with p_outer in dimensions for broadcasting
+        Hessian_blocks = diag_multiplier_expanded * X_outer.unsqueeze(1) + p_outer * offdiag_multiplier_expanded
 
-        # Reshape Hessian to [num_classes * d, num_classes * d]
-        Hessian = Hessian.view(num_classes * d, num_classes * d)
+        # Verify that the dimensions align by printing their shapes if necessary
+        print("X_outer:", X_outer.shape)
+        print("p_expanded:", p_expanded.shape)
+        print("diag_multiplier_expanded:", diag_multiplier_expanded.shape)
+        print("offdiag_multiplier_expanded:", offdiag_multiplier_expanded.shape)
+        print("Hessian_blocks:", Hessian_blocks.shape)
 
-        # Normalize Hessian by the batch size
-        Hessian /= batch_size
-
+        # Continue with the sum and reshape operations as before
+        Hessian = torch.sum(Hessian_blocks, dim=0).to(x.device)  # Shape: [num_classes, d, d]
+        Hessian = Hessian.view(num_classes * d, num_classes * d)  # Reshape
+        Hessian /= batch_size  # Normalize
         return Hessian
-
         # Compute each block H^{(k, l)}
         # for k in range(num_classes):
         #     for l in range(num_classes):
@@ -207,7 +211,7 @@ class HessianAlignment(ERM):
         # Normalize Hessian by the batch size
         # Hessian /= batch_size
 
-        return Hessian
+        # return Hessian
 
     def hessian_original(self, x, logits):
         # Flatten x if it's not already in the shape [batch_size, num_features]
