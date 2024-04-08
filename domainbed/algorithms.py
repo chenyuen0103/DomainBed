@@ -162,7 +162,7 @@ class HessianAlignment(ERM):
 
         # Outer product of x
         X_outer = torch.einsum('bi,bj->bij', x, x)  # Shape: [batch_size, d, d]
-
+        breakpoint()
         # Combine the probabilities with the outer product of x
         H = torch.einsum('bkl,bij->bklij', p_off_diag, X_outer)  # Shape: [batch_size, num_classes, num_classes, d, d]
 
