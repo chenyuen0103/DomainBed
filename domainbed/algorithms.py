@@ -143,42 +143,41 @@ class HessianAlignment(ERM):
         )
 
     def hessian(self, x, logits):
-        batch_size, num_features = x.shape
+        batch_size, d = x.shape
         num_classes = logits.size(1)
-        dC = num_classes * num_features  # Total number of parameters across all classes
+        dC = num_classes * d  # Total number of parameters across all classes
 
         # Compute probabilities
         p = F.softmax(logits, dim=1)  # Shape: [batch_size, num_classes]
         device = x.device
         # Initialize Hessian with zeros
         Hessian = torch.zeros(dC, dC).to(device)
-        breakpoint()
         # Compute each block H^{(k, l)}
         for k in range(num_classes):
             for l in range(num_classes):
-                block = torch.zeros(num_features, num_features)
                 if k == l:
                     # Diagonal block
-                    pk = p[:, k].unsqueeze(1)  # Shape: [batch_size, 1]
-                    for i in range(num_features):
-                        for j in range(num_features):
-                            xixj = x[:, i] * x[:, j]  # Element-wise product of feature i and j
-                            block[i, j] = torch.sum(pk * (1 - pk) * xixj)
+                    pk = p[:, k]  # Shape: [batch_size]
+                    grad_k = pk * (1 - pk)  # Shape: [batch_size]
+                    X_outer = torch.bmm(x.unsqueeze(2), x.unsqueeze(1))  # Shape: [batch_size, d, d]
+                    block = torch.sum(X_outer * grad_k.view(-1, 1, 1), dim=0)  # Shape: [d, d]
                 else:
                     # Off-diagonal block
-                    pk = p[:, k].unsqueeze(1)  # Shape: [batch_size, 1]
-                    pl = p[:, l].unsqueeze(1)  # Shape: [batch_size, 1]
-                    for i in range(num_features):
-                        for j in range(num_features):
-                            xixj = x[:, i] * x[:, j]  # Element-wise product of feature i and j
-                            block[i, j] = -torch.sum(pk * pl * xixj)
+                    pk = p[:, k]  # Shape: [batch_size]
+                    pl = p[:, l]  # Shape: [batch_size]
+                    grad_kl = -pk * pl  # Shape: [batch_size]
+                    X_outer = torch.bmm(x.unsqueeze(2), x.unsqueeze(1))  # Shape: [batch_size, d, d]
+                    block = torch.sum(X_outer * grad_kl.view(-1, 1, 1), dim=0)  # Shape: [d, d]
 
                 # Place block into Hessian
-                row_start = k * num_features
-                row_end = (k + 1) * num_features
-                col_start = l * num_features
-                col_end = (l + 1) * num_features
+                row_start = k * d
+                row_end = (k + 1) * d
+                col_start = l * d
+                col_end = (l + 1) * d
                 Hessian[row_start:row_end, col_start:col_end] = block
+
+        # Normalize Hessian by the batch size
+        Hessian /= batch_size
 
         return Hessian
 
