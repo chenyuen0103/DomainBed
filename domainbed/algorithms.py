@@ -146,21 +146,33 @@ class HessianAlignment(ERM):
         # Assuming x has the shape [batch_size, 2, 28, 28]
         # Flatten x to match the expected shape [batch_size, num_features]
         x_flattened = x.view(x.size(0), -1)
+        p = F.softmax(logits, dim=1)
+        p_diag_scale = p * (1 - p)  # Shape: [batch_size, num_classes]
 
-        batch_size, num_classes = logits.shape
+        # Compute scale factors for off-diagonal elements
+        p_off_diag_scale = -p.unsqueeze(2) * p.unsqueeze(1)  # Shape: [batch_size, num_classes, num_classes]
+
+        # Overwrite diagonal of off-diagonal scale matrix with diagonal scale values
+        batch_size, num_classes, _ = p_off_diag_scale.shape
+        p_off_diag_scale.view(batch_size, -1)[:, ::num_classes + 1] = p_diag_scale.view(-1)
+
+        # Flatten x to match the expected shape [batch_size, num_features]
+        x_flattened = x.view(x.size(0), -1)
         num_features = x_flattened.shape[1]
 
-        p = F.softmax(logits, dim=1)
+        # Compute outer product of features
+        # Shape: [batch_size, num_features, num_features]
+        outer_products = torch.bmm(x_flattened.unsqueeze(2), x_flattened.unsqueeze(1))
 
-        scale_factors = p * (1 - p)
-        scale_factors = scale_factors.transpose(0, 1).unsqueeze(-1).unsqueeze(-1)
+        # Apply scale factors to outer products
+        # Shape: [batch_size, num_classes, num_features, num_features]
+        hessian_scaled = p_off_diag_scale.unsqueeze(2).unsqueeze(3) * outer_products.unsqueeze(1)
 
-        x_reshaped = x_flattened.unsqueeze(2)
-        outer_products = torch.matmul(x_reshaped, x_reshaped.transpose(1, 2))
+        # Sum over the batch dimension to get the final Hessian matrix for each class pair
+        # Shape: [num_classes, num_classes, num_features, num_features]
+        hessian = hessian_scaled.sum(dim=0)
 
-        hessians = torch.mean(scale_factors * outer_products, dim=1)
-
-        return hessians
+        return hessian
 
     def hessian_original(self, x, logits):
         # Flatten x if it's not already in the shape [batch_size, num_features]
@@ -211,35 +223,36 @@ class HessianAlignment(ERM):
 
         return grad_w
 
-    def compute_pytorch_hessian(self, x, y):
-        # Reset gradients to zero
+    def compute_pytorch_hessian(self, x, y, criterion):
+        # Ensure model is in evaluation mode to disable dropout, batchnorm, etc.
+        self.classifier.eval()
+
+        # Zero gradients in the model
         self.classifier.zero_grad()
 
-        # Define the function for which we need the Hessian matrix.
-        # This needs to be a function that takes the parameters as input
-        # and returns a scalar output (the loss).
-        def loss_func(params):
-            # Temporarily set classifier parameters to the given params
-            original_params = torch.nn.utils.parameters_to_vector(self.classifier.parameters())
-            torch.nn.utils.vector_to_parameters(params, self.classifier.parameters())
+        # Forward pass
+        logits = self.classifier(input)
+        loss = criterion(logits, y)
 
-            # Forward pass to compute logits
-            logits = self.classifier(x)
+        # Compute gradients of loss w.r.t. all parameters
+        loss.backward(create_graph=True)
 
-            # Compute loss
-            criterion = torch.nn.CrossEntropyLoss()
-            loss = criterion(logits, y.long())
+        # Manually compute Hessian for the first parameter
+        # (as an example, we'll compute it for the first weight of the classifier layer)
+        weight = list(self.classifier.parameters())[0]
+        grad_weight = weight.grad
 
-            # Reset parameters to their original values
-            torch.nn.utils.vector_to_parameters(original_params, self.classifier.parameters())
+        hessian_size = weight.numel()
+        hessian_manual = torch.zeros(hessian_size, hessian_size)
 
-            return loss
+        for i in range(hessian_size):
+            # Compute gradient of the i-th component of the gradient w.r.t. weights
+            grad_grad_i = torch.autograd.grad(grad_weight.flatten()[i], weight, retain_graph=True)[0]
 
-        # Compute the Hessian matrix of the loss function with respect to the classifier parameters
-        params = torch.nn.utils.parameters_to_vector(self.classifier.parameters())
-        hessian_matrix = torch.autograd.functional.hessian(loss_func, params)
+            # Fill the Hessian matrix row
+            hessian_manual[i] = grad_grad_i.flatten()
 
-        return hessian_matrix
+        return hessian_manual
 
     def exact_hessian_loss(self, logits, x, y, envs_indices, alpha=10e-5, beta=10e-5):
         # for params in model.parameters():
