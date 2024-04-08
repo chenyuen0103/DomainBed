@@ -170,14 +170,14 @@ class HessianAlignment(ERM):
 
         # Now, adjust the computation of Hessian blocks to ensure correct shape alignment
         # The key here is ensuring that offdiag_multiplier_expanded aligns with p_outer in dimensions for broadcasting
-        Hessian_blocks = diag_multiplier_expanded * X_outer.unsqueeze(1) + p_outer * offdiag_multiplier_expanded
-
         # Verify that the dimensions align by printing their shapes if necessary
         print("X_outer:", X_outer.shape)
         print("p_expanded:", p_expanded.shape)
         print("diag_multiplier_expanded:", diag_multiplier_expanded.shape)
         print("offdiag_multiplier_expanded:", offdiag_multiplier_expanded.shape)
-        print("Hessian_blocks:", Hessian_blocks.shape)
+        Hessian_blocks = diag_multiplier_expanded * X_outer.unsqueeze(1) + p_outer * offdiag_multiplier_expanded
+
+
 
         # Continue with the sum and reshape operations as before
         Hessian = torch.sum(Hessian_blocks, dim=0).to(x.device)  # Shape: [num_classes, d, d]
