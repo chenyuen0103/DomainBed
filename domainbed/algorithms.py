@@ -162,7 +162,7 @@ class HessianAlignment(ERM):
 
         # Normalize the Hessian by the batch size
         H_normalized = H_summed / batch_size
-
+        breakpoint()
         # Reshape to match the expected output dimension
         H_final = H_normalized.reshape(dC, dC)
 
