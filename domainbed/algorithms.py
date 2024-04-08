@@ -143,38 +143,43 @@ class HessianAlignment(ERM):
         )
 
     def hessian(self, x, logits):
-        # Assuming x has been reshaped to [batch_size, num_features] and logits are [batch_size, num_classes]
-        batch_size, num_features = x.shape
-        num_classes = logits.shape[1]
+        batch_size, num_classes, num_features = x.shape
+        dC = num_classes * num_features  # Total number of parameters across all classes
+
+        # Compute probabilities
+        p = F.softmax(logits, dim=1)  # Shape: [batch_size, num_classes]
         device = x.device
-        # Compute softmax probabilities
-        p = F.softmax(logits, dim=1).to(device)
+        # Initialize Hessian with zeros
+        Hessian = torch.zeros(dC, dC).to(device)
 
-        # Initialize Hessian matrix for all classes
-        H = torch.zeros(num_classes, num_features, num_features, device=device)
-
+        # Compute each block H^{(k, l)}
         for k in range(num_classes):
             for l in range(num_classes):
+                block = torch.zeros(num_features, num_features)
                 if k == l:
-                    # Compute p_k(1-p_k) for diagonal elements (same class k)
-                    p_k = p[:, k].reshape(-1, 1)
-                    terms = p_k * (1 - p_k)
+                    # Diagonal block
+                    pk = p[:, k].unsqueeze(1)  # Shape: [batch_size, 1]
+                    for i in range(num_features):
+                        for j in range(num_features):
+                            xixj = x[:, i] * x[:, j]  # Element-wise product of feature i and j
+                            block[i, j] = torch.sum(pk * (1 - pk) * xixj)
                 else:
-                    # Compute -p_k*p_l for off-diagonal elements (different classes k and l)
-                    p_k = p[:, k].reshape(-1, 1)
-                    p_l = p[:, l].reshape(-1, 1)
-                    terms = -p_k * p_l
+                    # Off-diagonal block
+                    pk = p[:, k].unsqueeze(1)  # Shape: [batch_size, 1]
+                    pl = p[:, l].unsqueeze(1)  # Shape: [batch_size, 1]
+                    for i in range(num_features):
+                        for j in range(num_features):
+                            xixj = x[:, i] * x[:, j]  # Element-wise product of feature i and j
+                            block[i, j] = -torch.sum(pk * pl * xixj)
 
-                # Sum over all samples
-                for i in range(batch_size):
-                    xi = x[i, :].reshape(-1, 1)  # Reshape x_i to column vector
-                    outer_product = torch.matmul(xi, xi.t())
-                    H[k, :, :] += terms[i] * outer_product
+                # Place block into Hessian
+                row_start = k * num_features
+                row_end = (k + 1) * num_features
+                col_start = l * num_features
+                col_end = (l + 1) * num_features
+                Hessian[row_start:row_end, col_start:col_end] = block
 
-        # Average over batch
-        H /= batch_size
-
-        return H
+        return Hessian
 
     def hessian_original(self, x, logits):
         # Flatten x if it's not already in the shape [batch_size, num_features]
