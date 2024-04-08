@@ -1521,8 +1521,8 @@ class Fishr(Algorithm):
             #     inputs=self.classifier, retain_graph=True, create_graph=True
             # )
             loss.backward(
-                inputs=list(self.classifier.parameters())
-                # , retain_graph=True, create_graph=True
+                # inputs=list(self.classifier.parameters()),
+                retain_graph=True, create_graph=True
             )
 
 
