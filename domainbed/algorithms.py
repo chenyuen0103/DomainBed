@@ -223,7 +223,7 @@ class HessianAlignment(ERM):
 
         return grad_w
 
-    def compute_pytorch_hessian(self, x, y, criterion):
+    def compute_pytorch_hessian(self, x, y):
         # Ensure model is in evaluation mode to disable dropout, batchnorm, etc.
         self.classifier.eval()
 
@@ -231,7 +231,8 @@ class HessianAlignment(ERM):
         self.classifier.zero_grad()
 
         # Forward pass
-        logits = self.classifier(input)
+        logits = self.classifier(x)
+        criterion = F.cross_entropy()
         loss = criterion(logits, y)
 
         # Compute gradients of loss w.r.t. all parameters
