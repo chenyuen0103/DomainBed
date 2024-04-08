@@ -144,60 +144,35 @@ class HessianAlignment(ERM):
 
 
     def hessian(self, x, logits):
-        batch_size, d = x.shape
-        num_classes = logits.shape[1]
-        dC = num_classes * d
+        batch_size, d = x.shape  # Shape: [batch_size, d]
+        num_classes = logits.shape[1]  # Number of classes
+        dC = num_classes * d  # Total number of parameters in the flattened gradient
 
-        p = F.softmax(logits, dim=1)
+        # Compute probabilities
+        p = F.softmax(logits, dim=1)  # Shape: [batch_size, num_classes]
 
-        # Compute the gradient for each class and each feature
-        grad = torch.einsum('bi,bj->bij', (p - torch.eye(num_classes, device=p.device)[torch.max(p, 1)[1]]), x)
+        # Compute p_k(1-p_k) for diagonal blocks and -p_k*p_l for off-diagonal blocks
+        # Diagonal part
+        p_diag = p * (1 - p)  # Shape: [batch_size, num_classes]
+        # Off-diagonal part
+        p_off_diag = -p.unsqueeze(2) * p.unsqueeze(1)  # Shape: [batch_size, num_classes, num_classes]
+        # Fill the diagonal part in off-diagonal tensor
+        indices = torch.arange(num_classes)
+        p_off_diag[:, indices, indices] = p_diag
 
-        # Compute the Hessian using the outer product of the gradient
-        # Note: This computes the block-diagonal of the Hessian where each block corresponds to a class.
-        H = torch.einsum('bik,bjl->ijkl', grad, grad)
+        # Outer product of x
+        X_outer = torch.einsum('bi,bj->bij', x, x)  # Shape: [batch_size, d, d]
 
-        # Sum over the batch to accumulate the Hessian information
-        H_summed = H.sum(0)
+        # Combine the probabilities with the outer product of x
+        H = torch.einsum('bkl,bij->bklij', p_off_diag, X_outer)  # Shape: [batch_size, num_classes, num_classes, d, d]
 
-        # Normalize the Hessian by the batch size
-        H_normalized = H_summed / batch_size
-        breakpoint()
-        # Reshape to match the expected output dimension
-        H_final = H_normalized.reshape(dC, dC)
+        # Sum over the batch and reshape to get final Hessian
+        H = H.sum(0).reshape(dC, dC)  # Shape: [dC, dC]
 
-        return H_final
+        # Normalize Hessian by the batch size
+        H /= batch_size
 
-
-        # batch_size, d = x.shape  # Shape: [batch_size, d]
-        # num_classes = logits.shape[1]  # Number of classes
-        # dC = num_classes * d  # Total number of parameters in the flattened gradient
-        #
-        # # Compute probabilities
-        # p = F.softmax(logits, dim=1)  # Shape: [batch_size, num_classes]
-        #
-        # # Compute p_k(1-p_k) for diagonal blocks and -p_k*p_l for off-diagonal blocks
-        # # Diagonal part
-        # p_diag = p * (1 - p)  # Shape: [batch_size, num_classes]
-        # # Off-diagonal part
-        # p_off_diag = -p.unsqueeze(2) * p.unsqueeze(1)  # Shape: [batch_size, num_classes, num_classes]
-        # # Fill the diagonal part in off-diagonal tensor
-        # indices = torch.arange(num_classes)
-        # p_off_diag[:, indices, indices] = p_diag
-        #
-        # # Outer product of x
-        # X_outer = torch.einsum('bi,bj->bij', x, x)  # Shape: [batch_size, d, d]
-        #
-        # # Combine the probabilities with the outer product of x
-        # H = torch.einsum('bkl,bij->bklij', p_off_diag, X_outer)  # Shape: [batch_size, num_classes, num_classes, d, d]
-        #
-        # # Sum over the batch and reshape to get final Hessian
-        # H = H.sum(0).reshape(dC, dC)  # Shape: [dC, dC]
-        #
-        # # Normalize Hessian by the batch size
-        # H /= batch_size
-        #
-        # return H
+        return H
         # Compute each block H^{(k, l)}
         # for k in range(num_classes):
         #     for l in range(num_classes):
@@ -315,6 +290,7 @@ class HessianAlignment(ERM):
         total_loss = torch.tensor(0.0, requires_grad=True)
         env_gradients = []
         env_hessians = []
+        env_hessians_pytorch = []
         envs_indices_unique = envs_indices.unique()
         for env_idx in envs_indices_unique:
             # breakpoint()
@@ -354,14 +330,14 @@ class HessianAlignment(ERM):
                 hessian = self.hessian(x_env, yhat_env)
             else:
                 hessian = self.hessian(x_env, yhat_env)
-            breakpoint()
-            assert torch.allclose(hessian, hessian_pytorch), "Hessian computation discrepancy"
+            # assert torch.allclose(hessian, hessian_pytorch), "Hessian computation discrepancy"
 
             # hessian_original = self.hessian_original(x_env, yhat_env)
             # assert torch.allclose(grads, grads_original), "Gradient computation is incorrect"
             # assert torch.allclose(hessian, hessian_original, atol=1e-6), "Hessian computation is incorrect"
             env_gradients.append(grads)
             env_hessians.append(hessian)
+            env_hessians_pytorch.append(hessian_pytorch)
 
         # Compute average gradient and hessian
         # avg_gradient = [torch.mean(torch.stack([grads[i] for grads in env_gradients]), dim=0) for i in
@@ -371,12 +347,13 @@ class HessianAlignment(ERM):
 
         # avg_gradient = torch.mean(torch.stack(env_gradients), dim=0)
         avg_hessian = torch.mean(torch.stack(env_hessians), dim=0)
+        avg_hessian_pytorch = torch.mean(torch.stack(env_hessians_pytorch), dim=0)
 
         erm_loss = 0
         hess_loss = 0
         grad_loss = 0
         for env_idx, (grads, hessian) in enumerate(zip(env_gradients, env_hessians)):
-            # hessian_original = env_hessians_original[env_idx]
+            hessian_pytorch = env_hessians_pytorch[env_idx]
             idx = (envs_indices == env_idx).nonzero().squeeze()
             if idx.numel() == 0:
                 continue
@@ -394,10 +371,11 @@ class HessianAlignment(ERM):
 
             # Compute the Frobenius norm of the difference between the Hessian for this environment and the average Hessian
             hessian_diff = hessian - avg_hessian
-            # hessian_diff_original = hessian_original - avg_hessian_original
+            hessian_diff_pytorch = hessian_pytorch - avg_hessian_pytorch
             hessian_diff_norm = torch.norm(hessian_diff, p='fro')
-            # hessian_diff_norm_original = torch.norm(hessian_diff_original, p='fro')
-            # assert torch.allclose(hessian_diff_norm, hessian_diff_norm_original), "Hessian computation is incorrect"
+            hessian_diff_norm_pytorch = torch.norm(hessian_diff_pytorch, p='fro')
+            breakpoint()
+            assert torch.allclose(hessian_diff_norm, hessian_diff_norm_pytorch), "Hessian computation is incorrect"
 
             # grad_reg = sum((grad - avg_grad).norm(2) ** 2 for grad, avg_grad in zip(grads, avg_gradient))
             # hessian_reg = torch.trace((hessian - avg_hessian).t().matmul(hessian - avg_hessian))
