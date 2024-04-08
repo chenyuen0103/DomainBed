@@ -1527,13 +1527,7 @@ class Fishr(Algorithm):
 
 
         # compute individual grads for all samples across all domains simultaneously
-        breakpoint()
-        for name, param in self.classifier.named_parameters():
-            print(name)
-            print(".grad.shape:             ", param.grad.shape)
-            print(".grad_batch.shape:       ", param.grad_batch.shape)
 
-        breakpoint()
         dict_grads = OrderedDict(
             [
                 (name, weights.grad_batch.clone().view(weights.grad_batch.size(0), -1))
@@ -1547,7 +1541,6 @@ class Fishr(Algorithm):
         #         for name, weights in self.classifier.named_parameters()
         #     ]
         # )
-        breakpoint()
         return dict_grads
 
     def _get_grads_var_per_domain(self, dict_grads, len_minibatches):
