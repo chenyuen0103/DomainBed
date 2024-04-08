@@ -155,7 +155,8 @@ class HessianAlignment(ERM):
 
         # Expand p for element-wise multiplication with outer product
         p_expanded = p.unsqueeze(-1).unsqueeze(-1)  # Shape: [batch_size, num_classes, 1, 1]
-        p_outer = torch.einsum('bkl,bij->bklij', p_expanded, X_outer)  # Shape: [batch_size, num_classes, d, d]
+        # p_outer = torch.einsum('bkl,bij->bklij', p_expanded, X_outer)  # Shape: [batch_size, num_classes, d, d]
+        p_outer= p_expanded * X_outer.unsqueeze(1)  # Broadcasting multiplication
 
         # For diagonal blocks: Use p * (1-p) as the multiplier for X_outer
         # For off-diagonal blocks: Use -p_k * p_l as the multiplier, which is computed using p_outer directly
