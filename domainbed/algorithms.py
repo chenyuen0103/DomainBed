@@ -152,32 +152,50 @@ class HessianAlignment(ERM):
         device = x.device
         # Initialize Hessian with zeros
         Hessian = torch.zeros(dC, dC).to(device)
-        # Compute each block H^{(k, l)}
-        for k in range(num_classes):
-            for l in range(num_classes):
-                if k == l:
-                    # Diagonal block
-                    pk = p[:, k]  # Shape: [batch_size]
-                    grad_k = pk * (1 - pk)  # Shape: [batch_size]
-                    X_outer = torch.bmm(x.unsqueeze(2), x.unsqueeze(1))  # Shape: [batch_size, d, d]
-                    block = torch.sum(X_outer * grad_k.view(-1, 1, 1), dim=0)  # Shape: [d, d]
-                else:
-                    # Off-diagonal block
-                    pk = p[:, k]  # Shape: [batch_size]
-                    pl = p[:, l]  # Shape: [batch_size]
-                    grad_kl = -pk * pl  # Shape: [batch_size]
-                    X_outer = torch.bmm(x.unsqueeze(2), x.unsqueeze(1))  # Shape: [batch_size, d, d]
-                    block = torch.sum(X_outer * grad_kl.view(-1, 1, 1), dim=0)  # Shape: [d, d]
 
-                # Place block into Hessian
-                row_start = k * d
-                row_end = (k + 1) * d
-                col_start = l * d
-                col_end = (l + 1) * d
-                Hessian[row_start:row_end, col_start:col_end] = block
+        # Compute Hessian blocks for each class
+        for k in range(num_classes):
+            # Extract the probabilities for class k
+            pk = p[:, k].unsqueeze(1)  # Shape: [batch_size, 1]
+
+            # Compute gradient of the log-likelihood with respect to class k parameters
+            grad_log_likelihood = x * (pk - pk * pk)  # Shape: [batch_size, num_features]
+
+            # Compute the Hessian block for class k (variance of the estimator)
+            H_k = torch.matmul(grad_log_likelihood.T,
+                               grad_log_likelihood) / batch_size  # Shape: [num_features, num_features]
+
+            # Place the Hessian block for class k into the overall Hessian matrix
+            idx_from = k * d
+            idx_to = idx_from + d
+            Hessian[idx_from:idx_to, idx_from:idx_to] = H_k
+
+        # Compute each block H^{(k, l)}
+        # for k in range(num_classes):
+        #     for l in range(num_classes):
+        #         if k == l:
+        #             # Diagonal block
+        #             pk = p[:, k]  # Shape: [batch_size]
+        #             grad_k = pk * (1 - pk)  # Shape: [batch_size]
+        #             X_outer = torch.bmm(x.unsqueeze(2), x.unsqueeze(1))  # Shape: [batch_size, d, d]
+        #             block = torch.sum(X_outer * grad_k.view(-1, 1, 1), dim=0)  # Shape: [d, d]
+        #         else:
+        #             # Off-diagonal block
+        #             pk = p[:, k]  # Shape: [batch_size]
+        #             pl = p[:, l]  # Shape: [batch_size]
+        #             grad_kl = -pk * pl  # Shape: [batch_size]
+        #             X_outer = torch.bmm(x.unsqueeze(2), x.unsqueeze(1))  # Shape: [batch_size, d, d]
+        #             block = torch.sum(X_outer * grad_kl.view(-1, 1, 1), dim=0)  # Shape: [d, d]
+        #
+        #         # Place block into Hessian
+        #         row_start = k * d
+        #         row_end = (k + 1) * d
+        #         col_start = l * d
+        #         col_end = (l + 1) * d
+        #         Hessian[row_start:row_end, col_start:col_end] = block
 
         # Normalize Hessian by the batch size
-        Hessian /= batch_size
+        # Hessian /= batch_size
 
         return Hessian
 
@@ -250,7 +268,7 @@ class HessianAlignment(ERM):
         grad_weight = weight.grad
 
         hessian_size = weight.numel()
-        hessian_manual = torch.zeros(hessian_size, hessian_size)
+        hessian_manual = torch.zeros(hessian_size, hessian_size).to(x.device)
 
         for i in range(hessian_size):
             # Compute gradient of the i-th component of the gradient w.r.t. weights
@@ -380,7 +398,6 @@ class HessianAlignment(ERM):
         all_envs = torch.cat([env for x, y, env in minibatches])
         # loss = F.cross_entropy(self.predict(all_x), all_y)
         logits = self.predict(all_x)
-        breakpoint()
         loss = self.exact_hessian_loss(logits, all_x, all_y, all_envs, alpha=self.grad_alpha, beta=self.hess_beta)[0]
 
         self.optimizer.zero_grad()
