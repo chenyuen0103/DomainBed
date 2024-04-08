@@ -232,8 +232,7 @@ class HessianAlignment(ERM):
 
         # Forward pass
         logits = self.classifier(x)
-        criterion = F.cross_entropy()
-        loss = criterion(logits, y)
+        loss = F.cross_entropy(logits, y)
 
         # Compute gradients of loss w.r.t. all parameters
         loss.backward(create_graph=True)
