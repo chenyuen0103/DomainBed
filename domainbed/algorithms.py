@@ -157,7 +157,7 @@ class HessianAlignment(ERM):
             # Compute p_k(1-p_k) for class k
             p_k = p[:, k].reshape(-1, 1)
             diagonal_terms = p_k * (1 - p_k)
-            breakpoint()
+            # breakpoint()
             # Outer product for each sample, then average over batch
             for i in range(batch_size):
                 xi = x[i, :].reshape(-1, 1)  # Reshape x_i to column vector
