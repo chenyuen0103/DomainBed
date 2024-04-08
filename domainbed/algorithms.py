@@ -145,7 +145,6 @@ class HessianAlignment(ERM):
     def hessian(self, x, logits):
         # Assuming x has the shape [batch_size, 2, 28, 28]
         # Flatten x to match the expected shape [batch_size, num_features]
-        x_flattened = x.view(x.size(0), -1)
         p = F.softmax(logits, dim=1)
         p_diag_scale = p * (1 - p)  # Shape: [batch_size, num_classes]
 
@@ -297,7 +296,8 @@ class HessianAlignment(ERM):
             # grads_original = self.gradient_original(x_env, yhat_env, y_env)
             hessian_pytorch = self.compute_pytorch_hessian( x_env, y_env)
             if num_classes == 2:
-                hessian = self.hessian_original(x_env, yhat_env)
+                # hessian = self.hessian_original(x_env, yhat_env)
+                hessian = self.hessian(x_env, yhat_env)
             else:
                 hessian = self.hessian(x_env, yhat_env)
             breakpoint()
