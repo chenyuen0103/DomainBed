@@ -148,41 +148,35 @@ class HessianAlignment(ERM):
         dC = num_classes * d  # Total number of parameters across all classes
 
         # Compute probabilities using softmax
+        # Compute probabilities using softmax
         p = F.softmax(logits, dim=1)  # Shape: [batch_size, num_classes]
 
-        # Compute outer product of x for each example and expand dims to prepare for broadcasting
+        # Compute outer product of x for each example
         X_outer = torch.einsum('bi,bj->bij', x, x)  # Shape: [batch_size, d, d]
 
-        # Expand p for element-wise multiplication with outer product
-        p_expanded = p.unsqueeze(-1).unsqueeze(-1)  # Shape: [batch_size, num_classes, 1, 1]
-        # p_outer = torch.einsum('bkl,bij->bklij', p_expanded, X_outer)  # Shape: [batch_size, num_classes, d, d]
-        p_outer= p_expanded * X_outer.unsqueeze(1)  # Broadcasting multiplication
-
         # For diagonal blocks: Use p * (1-p) as the multiplier for X_outer
-        # For off-diagonal blocks: Use -p_k * p_l as the multiplier, which is computed using p_outer directly
-        # Sum over the batch dimension
         diag_multiplier = p * (1 - p)  # Shape: [batch_size, num_classes]
+        diag_blocks = torch.einsum('bn,bij->bnij', diag_multiplier, X_outer)
+
+        # For off-diagonal blocks: Use -p_k * p_l as the multiplier
         offdiag_multiplier = -torch.einsum('bk,bl->bkl', p, p)  # Shape: [batch_size, num_classes, num_classes]
-        diag_multiplier_expanded = diag_multiplier.unsqueeze(-1).unsqueeze(-1)  # Shape: [batch_size, num_classes, 1, 1]
+        offdiag_blocks = torch.einsum('bkl,bij->bklbij', offdiag_multiplier, X_outer)
 
-        # Compute Hessian blocks
-        offdiag_multiplier_expanded = offdiag_multiplier.unsqueeze(-1).unsqueeze(-1)  # Add two dimensions for d, d
+        # Diagonal blocks are already correctly shaped and scaled
+        # Adjust off-diagonal blocks to subtract from diagonal blocks
+        # We create a mask to identify diagonal elements in the offdiag_blocks tensor
+        mask = torch.eye(num_classes, device=x.device).unsqueeze(-1).unsqueeze(-1)
+        mask = mask.expand(-1, -1, d, d)
 
-        # Now, adjust the computation of Hessian blocks to ensure correct shape alignment
-        # The key here is ensuring that offdiag_multiplier_expanded aligns with p_outer in dimensions for broadcasting
-        # Verify that the dimensions align by printing their shapes if necessary
-        print("X_outer:", X_outer.shape)
-        print("p_expanded:", p_expanded.shape)
-        print("diag_multiplier_expanded:", diag_multiplier_expanded.shape)
-        print("offdiag_multiplier_expanded:", offdiag_multiplier_expanded.shape)
-        Hessian_blocks = diag_multiplier_expanded * X_outer.unsqueeze(1) + p_outer * offdiag_multiplier_expanded
+        # Use mask to zero out diagonal elements in offdiag_blocks
+        offdiag_blocks_masked = offdiag_blocks * (1 - mask)
 
+        # Add diagonal and off-diagonal blocks together
+        Hessian_blocks = diag_blocks + offdiag_blocks_masked.sum(2)
 
+        # Sum over the batch dimension to get the final Hessian matrix
+        Hessian = Hessian_blocks.sum(0).view(dC, dC) / batch_size
 
-        # Continue with the sum and reshape operations as before
-        Hessian = torch.sum(Hessian_blocks, dim=0).to(x.device)  # Shape: [num_classes, d, d]
-        Hessian = Hessian.view(num_classes * d, num_classes * d)  # Reshape
-        Hessian /= batch_size  # Normalize
         return Hessian
         # Compute each block H^{(k, l)}
         # for k in range(num_classes):
