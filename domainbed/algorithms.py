@@ -143,40 +143,30 @@ class HessianAlignment(ERM):
         )
 
     def hessian(self, x, logits):
-        # Assuming x has the shape [batch_size, 2, 28, 28]
-        # Flatten x to match the expected shape [batch_size, num_features]
+        # Assuming x has been reshaped to [batch_size, num_features] and logits are [batch_size, num_classes]
+        batch_size, num_features = x.shape
+        num_classes = logits.shape[1]
+
+        # Compute softmax probabilities
         p = F.softmax(logits, dim=1)
-        p_diag_scale = p * (1 - p)  # Shape: [batch_size, num_classes]
 
-        # Compute scale factors for off-diagonal elements
-        p_off_diag_scale = -p.unsqueeze(2) * p.unsqueeze(1)  # Shape: [batch_size, num_classes, num_classes]
+        # Initialize Hessian matrix for all classes
+        H = torch.zeros(num_classes, num_features, num_features)
 
-        # Overwrite diagonal of off-diagonal scale matrix with diagonal scale values
-        batch_size, num_classes, _ = p_off_diag_scale.shape
-        batch_size, num_classes = p_diag_scale.shape
+        for k in range(num_classes):
+            # Compute p_k(1-p_k) for class k
+            p_k = p[:, k].reshape(-1, 1)
+            diagonal_terms = p_k * (1 - p_k)
 
-        # Create a mask for the diagonal
-        diag_mask = torch.eye(num_classes, dtype=bool).expand(batch_size, num_classes, num_classes)
+            # Outer product for each sample, then average over batch
+            for i in range(batch_size):
+                xi = x[i, :].reshape(-1, 1)  # Reshape x_i to column vector
+                outer_product = torch.matmul(xi, xi.t())
+                H[k] += diagonal_terms[i] * outer_product
 
-        # Now, we can use this mask to selectively update the diagonal elements
-        p_off_diag_scale[diag_mask] = p_diag_scale.flatten()
-        # Flatten x to match the expected shape [batch_size, num_features]
-        x_flattened = x.view(x.size(0), -1)
-        num_features = x_flattened.shape[1]
+            H[k] /= batch_size
 
-        # Compute outer product of features
-        # Shape: [batch_size, num_features, num_features]
-        outer_products = torch.bmm(x_flattened.unsqueeze(2), x_flattened.unsqueeze(1))
-
-        # Apply scale factors to outer products
-        # Shape: [batch_size, num_classes, num_features, num_features]
-        hessian_scaled = p_off_diag_scale.unsqueeze(2).unsqueeze(3) * outer_products.unsqueeze(1)
-
-        # Sum over the batch dimension to get the final Hessian matrix for each class pair
-        # Shape: [num_classes, num_classes, num_features, num_features]
-        hessian = hessian_scaled.sum(dim=0)
-
-        return hessian
+        return H
 
     def hessian_original(self, x, logits):
         # Flatten x if it's not already in the shape [batch_size, num_features]
