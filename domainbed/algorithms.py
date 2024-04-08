@@ -146,9 +146,9 @@ class HessianAlignment(ERM):
         # Assuming x has been reshaped to [batch_size, num_features] and logits are [batch_size, num_classes]
         batch_size, num_features = x.shape
         num_classes = logits.shape[1]
-
+        device = x.device
         # Compute softmax probabilities
-        p = F.softmax(logits, dim=1)
+        p = F.softmax(logits, dim=1).to(device)
 
         # Initialize Hessian matrix for all classes
         H = torch.zeros(num_classes, num_features, num_features)
