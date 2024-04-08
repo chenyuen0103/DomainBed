@@ -315,7 +315,7 @@ class HessianAlignment(ERM):
             grads = self.gradient(x_env, yhat_env, y_env)
             # Assuming loss computation for a specific environment
             loss_fn = torch.nn.CrossEntropyLoss()
-            loss = loss_fn(yhat_env, y_env)
+            # loss = loss_fn(yhat_env, y_env)
 
             # Compute gradients w.r.t. x using PyTorch
             # grads_pytorch = torch.autograd.grad(outputs=loss, inputs=list(self.classifier.parameters()), create_graph=True)[0]
