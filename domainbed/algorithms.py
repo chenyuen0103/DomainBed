@@ -153,6 +153,7 @@ class HessianAlignment(ERM):
 
         # Overwrite diagonal of off-diagonal scale matrix with diagonal scale values
         batch_size, num_classes, _ = p_off_diag_scale.shape
+        breakpoint()
         p_off_diag_scale.view(batch_size, -1)[:, ::num_classes + 1] = p_diag_scale.view(-1)
 
         # Flatten x to match the expected shape [batch_size, num_features]
