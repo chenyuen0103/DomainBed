@@ -374,7 +374,6 @@ class HessianAlignment(ERM):
             hessian_diff_pytorch = hessian_pytorch - avg_hessian_pytorch
             hessian_diff_norm = torch.norm(hessian_diff, p='fro')
             hessian_diff_norm_pytorch = torch.norm(hessian_diff_pytorch, p='fro')
-            breakpoint()
             assert torch.allclose(hessian_diff_norm, hessian_diff_norm_pytorch), "Hessian computation is incorrect"
 
             # grad_reg = sum((grad - avg_grad).norm(2) ** 2 for grad, avg_grad in zip(grads, avg_gradient))
