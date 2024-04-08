@@ -147,28 +147,37 @@ class HessianAlignment(ERM):
         num_classes = logits.size(1)
         dC = num_classes * d  # Total number of parameters across all classes
 
-        # Compute probabilities
+        # Compute probabilities using softmax
         p = F.softmax(logits, dim=1)  # Shape: [batch_size, num_classes]
-        device = x.device
-        # Initialize Hessian with zeros
-        Hessian = torch.zeros(dC, dC).to(device)
 
-        # Compute Hessian blocks for each class
-        for k in range(num_classes):
-            # Extract the probabilities for class k
-            pk = p[:, k].unsqueeze(1)  # Shape: [batch_size, 1]
+        # Compute outer product of x for each example and expand dims to prepare for broadcasting
+        X_outer = torch.einsum('bi,bj->bij', x, x)  # Shape: [batch_size, d, d]
 
-            # Compute gradient of the log-likelihood with respect to class k parameters
-            grad_log_likelihood = x * (pk - pk * pk)  # Shape: [batch_size, num_features]
+        # Expand p for element-wise multiplication with outer product
+        p_expanded = p.unsqueeze(-1).unsqueeze(-1)  # Shape: [batch_size, num_classes, 1, 1]
+        p_outer = torch.einsum('bkl,bij->bklij', p_expanded, X_outer)  # Shape: [batch_size, num_classes, d, d]
 
-            # Compute the Hessian block for class k (variance of the estimator)
-            H_k = torch.matmul(grad_log_likelihood.T,
-                               grad_log_likelihood) / batch_size  # Shape: [num_features, num_features]
+        # For diagonal blocks: Use p * (1-p) as the multiplier for X_outer
+        # For off-diagonal blocks: Use -p_k * p_l as the multiplier, which is computed using p_outer directly
+        # Sum over the batch dimension
+        diag_multiplier = p * (1 - p)  # Shape: [batch_size, num_classes]
+        offdiag_multiplier = -torch.einsum('bk,bl->bkl', p, p)  # Shape: [batch_size, num_classes, num_classes]
+        diag_multiplier_expanded = diag_multiplier.unsqueeze(-1).unsqueeze(-1)  # Shape: [batch_size, num_classes, 1, 1]
 
-            # Place the Hessian block for class k into the overall Hessian matrix
-            idx_from = k * d
-            idx_to = idx_from + d
-            Hessian[idx_from:idx_to, idx_from:idx_to] = H_k
+        # Compute Hessian blocks
+        Hessian_blocks = diag_multiplier_expanded * X_outer.unsqueeze(1) + p_outer * offdiag_multiplier.unsqueeze(
+            -1).unsqueeze(-1)
+
+        # Sum over batch dimension to get the Hessian
+        Hessian = torch.sum(Hessian_blocks, dim=0).to(x.device) # Shape: [num_classes, d, d]
+
+        # Reshape Hessian to [num_classes * d, num_classes * d]
+        Hessian = Hessian.view(num_classes * d, num_classes * d)
+
+        # Normalize Hessian by the batch size
+        Hessian /= batch_size
+
+        return Hessian
 
         # Compute each block H^{(k, l)}
         # for k in range(num_classes):
