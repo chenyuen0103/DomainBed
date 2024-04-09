@@ -23,10 +23,10 @@ from domainbed.lib.misc import (
 )
 
 
-from utils.scheduler import WarmupCosineSchedule
-from utils.data_utils import get_loader_train
-from utils.dist_util import get_world_size
-from utils.loss_utils import LossComputer
+from domainbed.utils.scheduler import WarmupCosineSchedule
+from domainbed.utils.data_utils import get_loader_train
+from domainbed.utils.dist_util import get_world_size
+from domainbed.utils.loss_utils import LossComputer
 import timm
 # from apex.parallel import DistributedDataParallel as DDP
 from torch.nn.parallel import DistributedDataParallel as DDP
