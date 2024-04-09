@@ -258,7 +258,6 @@ class ViT_S(nn.Module):
             pretrained=True,
             num_classes=self.num_classes,
             drop_rate = 0.1,)
-        assert
 
 
     def forward(self, x):
