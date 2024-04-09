@@ -257,9 +257,8 @@ class ViT_S(nn.Module):
             'vit_small_patch16_224_in21k',
             pretrained=True,
             num_classes=self.num_classes,
-            drop_rate = 0.1,
-            img_size = hparams['img_size'],
-        )
+            drop_rate = 0.1,)
+        assert
 
 
     def forward(self, x):
