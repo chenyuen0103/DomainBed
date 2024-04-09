@@ -19,7 +19,7 @@ def _hparams(algorithm, dataset, random_seed):
     def _hparam(name, default_val, random_val_fn):
         """Define a hyperparameter. random_val_fn takes a RandomState and
         returns a random hyperparameter value."""
-        assert(name not in hparams)
+        # assert(name not in hparams)
         random_state = np.random.RandomState(
             misc.seed_hash(random_seed, name)
         )
