@@ -7,7 +7,7 @@ def _define_hparam(hparams, hparam_name, default_val, random_val_fn):
     hparams[hparam_name] = (hparams, hparam_name, default_val, random_val_fn)
 
 
-def _hparams(algorithm, dataset, model,random_seed):
+def _hparams(algorithm, dataset, random_seed):
     """
     Global registry of hyperparams. Each entry is a (default, random) tuple.
     New algorithms / networks / etc. should add entries here.
