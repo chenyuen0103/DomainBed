@@ -155,7 +155,7 @@ class HessianAlignment(ERM):
         # Distributed training
 
         torch.distributed.init_process_group(backend='nccl')
-        self.network = DDP(self.network, device_ids=[args.device])
+        self.network = DDP(self.network, device_ids=[device])
 
 
     def hessian(self, x, logits):
