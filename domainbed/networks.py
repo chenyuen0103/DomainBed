@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models
-import timm
+# import timm
 from torch.nn.modules.module import T
 
 from domainbed.lib import wide_resnet
