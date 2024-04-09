@@ -37,6 +37,7 @@ class EnvDataset(torch.utils.data.Dataset):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Domain generalization')
+    parser.add_argument('--device', type=int, default=0)
     parser.add_argument('--data_dir', type=str, default="../data")
     parser.add_argument('--dataset', type=str, default="ColoredMNIST")
     parser.add_argument('--algorithm', type=str, default="HessianAlignment")
@@ -105,7 +106,7 @@ if __name__ == "__main__":
     torch.backends.cudnn.benchmark = False
 
     if torch.cuda.is_available():
-        device = "cuda"
+        device = f"cuda:{args.device}"
     else:
         device = "cpu"
 

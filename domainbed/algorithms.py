@@ -150,6 +150,7 @@ class HessianAlignment(ERM):
 
         # Compute probabilities
         p = F.softmax(logits, dim=1)  # Shape: [batch_size, num_classes]
+        print(p.shape)
 
         # Compute p_k(1-p_k) for diagonal blocks and -p_k*p_l for off-diagonal blocks
         # Diagonal part
@@ -173,6 +174,7 @@ class HessianAlignment(ERM):
         H /= batch_size
 
         return H
+
         # Compute each block H^{(k, l)}
         # for k in range(num_classes):
         #     for l in range(num_classes):
@@ -2343,3 +2345,206 @@ class EQRM(ERM):
         self.update_count += 1
 
         return {'loss': loss.item()}
+
+
+class HGP(Algorithm):
+    "Domain Generanization through Hessian Gradient Alignment-HGP"
+
+    def __init__(self, input_shape, num_classes, num_domains, hparams):
+        super(HGP, self).__init__(input_shape, num_classes, num_domains, hparams)
+        self.num_domains = num_domains
+
+        self.featurizer = networks.Featurizer(input_shape, self.hparams)
+        self.classifier = networks.Classifier(
+            self.featurizer.n_outputs,
+            num_classes,
+            self.hparams['nonlinear_classifier'],
+        )
+        self.network = nn.Sequential(self.featurizer, self.classifier)
+
+        self.register_buffer("update_count", torch.tensor([0]))
+        self.bce_extended = nn.CrossEntropyLoss()
+        self.penalty_alpha, self.penalty_beta = hparams['penalty_alpha'], hparams['penalty_beta']
+        self._init_optimizer()
+
+    def _init_optimizer(self):
+        self.optimizer = torch.optim.Adam(
+            self.network.parameters(),
+            lr=self.hparams["lr"],
+            weight_decay=self.hparams["weight_decay"],
+        )
+
+    def update(self, minibatches, unlabeled=False):
+
+        envs = []
+        for edx, (x, y) in enumerate(minibatches):
+            features = self.featurizer(x)
+            logits = self.classifier(features)
+            env = {}
+            env['nll'] = F.cross_entropy(logits, y)
+            env['sadg'], env['grad'] = self.compute_sadg_penalty(logits, y)
+            envs.append(env)
+
+        train_nll = torch.stack([env['nll'] for env in envs]).mean()
+
+        mean_grad = autograd.grad(train_nll, self.classifier.parameters(), create_graph=True, retain_graph=True)
+        flatten_mean_grad = self._flatten_grad(mean_grad)
+        norm_of_mean_grad = flatten_mean_grad.pow(2).sum().sqrt()
+        norm_of_mean_grad = norm_of_mean_grad + 1e-16
+        grad_of_norm_of_mean_grad = autograd.grad(norm_of_mean_grad, self.classifier.parameters(), create_graph=True,
+                                                  retain_graph=True)
+        flatten_grad_of_norm_of_mean_grad = self._flatten_grad(grad_of_norm_of_mean_grad)
+        mean_hessian_grad = torch.mul(norm_of_mean_grad, flatten_grad_of_norm_of_mean_grad)
+
+        loss = train_nll.clone()
+
+        sadg_penalty_list = []
+        all_flatten_grads = [self._flatten_grad(env['grad']) for env in envs]
+
+        grads_of_norm_of_grad = [
+            autograd.grad(env['sadg'], self.classifier.parameters(), create_graph=True, retain_graph=True) for env in
+            envs]
+        all_flatten_grads_of_norm_of_grad = [self._flatten_grad(grad_of_norm_of_grad) for grad_of_norm_of_grad in
+                                             grads_of_norm_of_grad]
+
+        hessian_grad = [torch.mul(envs[k]['sadg'], f_grad) for k, f_grad in
+                        enumerate(all_flatten_grads_of_norm_of_grad)]
+
+        if len(envs) > 0:
+            for i in range(len(all_flatten_grads)):
+                sadg_penalty_list.append(self.penalty_alpha * (hessian_grad[i] - mean_hessian_grad.detach()).pow(
+                    2).sum() + self.penalty_beta * (all_flatten_grads[i] - flatten_mean_grad.detach()).pow(2).sum())
+
+            N = len(sadg_penalty_list)
+            sadg_penalty = torch.stack(sadg_penalty_list).sum() / len(envs)
+        else:
+            sadg_penalty = torch.stack([self.penalty_alpha * torch.flatten(hessian_grad[0]).pow(2).sum(),
+                                        self.penalty_beta * envs[0]['sadg']]).sum()
+
+        loss += sadg_penalty
+
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+        self.update_count += 1
+        return {'loss': loss.item(), 'nll': train_nll.item(), 'penalty': sadg_penalty.item()}
+
+    def compute_sadg_penalty(self, logits, y):
+        gradient_norm = []
+        numels = []
+        loss = F.cross_entropy(logits, y)
+        grads = autograd.grad(loss, self.classifier.parameters(), create_graph=True, retain_graph=True)
+        for grad in grads:
+            grad = grad + 1e-16
+            gradient_norm.append(torch.norm(grad, p=2))
+            numels.append(torch.numel(grad))
+        gradient_loss = torch.norm(torch.stack(gradient_norm), p=2)
+        return gradient_loss, grads
+
+    def predict(self, x):
+        return self.network(x)
+
+    def _flatten_grad(self, grads):
+        flatten_grad = torch.cat([g.flatten() for g in grads])
+        return flatten_grad
+
+
+class Hutchinson(Algorithm):
+    "Domain Generanization through Hessian Gradient Alignment-Hutchinson"
+
+    def __init__(self, input_shape, num_classes, num_domains, hparams):
+        super(Hutchinson, self).__init__(input_shape, num_classes, num_domains, hparams)
+        self.num_domains = num_domains
+
+        self.featurizer = networks.Featurizer(input_shape, self.hparams)
+        self.classifier = networks.Classifier(
+            self.featurizer.n_outputs,
+            num_classes,
+            self.hparams['nonlinear_classifier'])
+
+        self.network = nn.Sequential(self.featurizer, self.classifier)
+
+        self.register_buffer("update_count", torch.tensor([0]))
+        self.bce_extended = nn.CrossEntropyLoss()
+        self.penalty_alpha, self.penalty_beta = hparams['penalty_alpha'], hparams['penalty_beta']
+        self._init_optimizer()
+
+    def _init_optimizer(self):
+        self.optimizer = torch.optim.Adam(
+            self.network.parameters(),
+            lr=self.hparams["lr"],
+            weight_decay=self.hparams["weight_decay"],
+        )
+
+    def update(self, minibatches, unlabeled=False):
+
+        envs = []
+        for edx, (x, y) in enumerate(minibatches):
+            features = self.featurizer(x)
+            logits = self.classifier(features)
+            env = {}
+            env['nll'] = F.cross_entropy(logits, y)
+            env['sadg'], env['grad'] = self.compute_sadg_penalty(logits, y)
+            envs.append(env)
+
+        train_nll = torch.stack([env['nll'] for env in envs]).mean()
+
+        mean_grad = autograd.grad(train_nll, self.classifier.parameters(), create_graph=True, retain_graph=True)
+        mean_hessian = self.calc_hessian_diag(mean_grad, repeat=300)
+        flatten_mean_grad = self._flatten_grad(mean_grad)
+
+        loss = train_nll.clone()
+
+        sadg_penalty_list = []
+        all_flatten_grads = [self._flatten_grad(env['grad']) for env in envs]
+        all_hessians = [self.calc_hessian_diag(env['grad'], repeat=300) for env in envs]
+
+        if len(envs) > 0:
+            for i in range(len(all_flatten_grads)):
+                sadg_penalty_list.append(
+                    self.penalty_alpha * (all_hessians[i] - mean_hessian.detach()).pow(2).sum() + self.penalty_beta * (
+                                all_flatten_grads[i] - flatten_mean_grad.detach()).pow(2).sum())
+
+            N = len(sadg_penalty_list)
+            sadg_penalty = torch.stack(sadg_penalty_list).sum() / len(envs)
+        else:
+            sadg_penalty = torch.stack([self.penalty_alpha * torch.flatten(all_hessians[0]).pow(2).sum(),
+                                        self.penalty_beta * envs[0]['sadg']]).sum()
+
+        loss += sadg_penalty
+
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+        self.update_count += 1
+        return {'loss': loss.item(), 'nll': train_nll.item(), 'penalty': sadg_penalty.item()}
+
+    def compute_sadg_penalty(self, logits, y):
+        gradient_norm = []
+        numels = []
+        loss = F.cross_entropy(logits, y)
+        grads = autograd.grad(loss, self.classifier.parameters(), create_graph=True, retain_graph=True)
+        for grad in grads:
+            grad = grad + 1e-16
+            gradient_norm.append(torch.norm(grad, p=2))
+            numels.append(torch.numel(grad))
+        gradient_loss = torch.norm(torch.stack(gradient_norm), p=2)
+        return gradient_loss, grads
+
+    def calc_hessian_diag(self, loss_grad, repeat=50):
+        diag = []
+        gg = torch.cat([g.flatten() for g in loss_grad])
+        for _ in range(repeat):
+            z = 2 * torch.randint_like(gg, high=2) - 1
+            loss = torch.dot(gg, z)
+            Hz = autograd.grad(loss, self.classifier.parameters(), retain_graph=True, create_graph=True)
+            Hz = torch.cat([torch.flatten(g) for g in Hz])
+            diag.append(z * Hz)
+        return sum(diag) / len(diag)
+
+    def predict(self, x):
+        return self.network(x)
+
+    def _flatten_grad(self, grads):
+        flatten_grad = torch.cat([g.flatten() for g in grads])
+        return flatten_grad

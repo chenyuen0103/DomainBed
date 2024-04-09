@@ -4,6 +4,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models
+import timm
+from torch.nn.modules.module import T
 
 from domainbed.lib import wide_resnet
 import copy
@@ -237,3 +239,22 @@ class WholeFish(nn.Module):
 
     def forward(self, x):
         return self.net(x)
+
+
+class ViT_S(nn.Module):
+    def __init__(self, input_shape, num_classes, hparams, weights=None):
+        super(ViT_S, self).__init__()
+        self.vit = timm.create_model('vit_small_patch16_224', pretrained=True)
+        self.vit.head = nn.Linear(self.vit.head.in_features, num_classes)
+        if weights is not None:
+            self.load_state_dict(copy.deepcopy(weights))
+
+    def reset_weights(self, weights):
+        self.load_state_dict(copy.deepcopy(weights))
+
+    def forward(self, x):
+        return self.vit(x)
+
+    def train(self: T, mode: bool = True) -> T:
+        self.vit.train(mode)
+        return self
