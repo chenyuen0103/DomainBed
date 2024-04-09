@@ -150,7 +150,6 @@ def _hparams(algorithm, dataset, random_seed):
         _hparam('img_size', 384, lambda r: 384)
         _hparam('warmup_steps', 100, lambda r: 100)
         _hparam('num_steps', 700, lambda r: 700)
-        _hparam('num_classes', dataset.num_classes, lambda r: dataset.num_classes)
 
 
     # Dataset-and-algorithm-specific hparam definitions. Each block of code
