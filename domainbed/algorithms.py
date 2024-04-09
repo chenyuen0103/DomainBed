@@ -153,7 +153,9 @@ class HessianAlignment(ERM):
         t_total = self.hparams['num_steps']
         scheduler = WarmupCosineSchedule(self.optimizer, warmup_steps=self.hparams["warmup_steps"], t_total=t_total)
         # Distributed training
-        self.network = DDP(self.network, message_size=250000000, gradient_predivide_factor=get_world_size())
+
+        torch.distributed.init_process_group(backend='nccl')
+        self.network = DDP(self.network, device_ids=[args.device])
 
 
     def hessian(self, x, logits):
