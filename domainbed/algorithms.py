@@ -152,10 +152,8 @@ class HessianAlignment(ERM):
         )
         t_total = self.hparams['num_steps']
         scheduler = WarmupCosineSchedule(self.optimizer, warmup_steps=self.hparams["warmup_steps"], t_total=t_total)
-        # Distributed training
 
-        torch.distributed.init_process_group(backend='nccl')
-        self.network = DDP(self.network, device_ids=[0,1,2])
+
 
 
     def hessian(self, x, logits):
@@ -419,10 +417,12 @@ class HessianAlignment(ERM):
         # loss = F.cross_entropy(self.predict(all_x), all_y)
         logits = self.predict(all_x)
         loss = self.exact_hessian_loss(logits, all_x, all_y, all_envs, alpha=self.grad_alpha, beta=self.hess_beta)[0]
-
         self.optimizer.zero_grad()
         loss.backward()
+        torch.nn.utils.clip_grad_norm_(self.network.parameters(), max_norm=1)
+
         self.optimizer.step()
+        self.scheduler.step()
 
         return {'loss': loss.item()}
 
