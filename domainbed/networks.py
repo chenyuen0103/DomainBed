@@ -245,10 +245,10 @@ class WholeFish(nn.Module):
 
 
 class ViT_S(nn.Module):
-    def __init__(self, num_classes, hparams, weights=None):
+    def __init__(self, hparams, weights=None):
         super(ViT_S, self).__init__()
         self.n_outputs = 768
-        self.num_classes = num_classes
+        self.num_classes = 0 # for feature extraction
         self.num_hparams = len(hparams)
         if weights is not None:
             self.load_state_dict(copy.deepcopy(weights))
@@ -258,13 +258,23 @@ class ViT_S(nn.Module):
             pretrained=True,
             num_classes=self.num_classes,
             drop_rate = 0.1,
-            img_size = (224, 224)
+            img_size = hparams['img_size'],
         )
 
-    def reset_weights(self, weights):
-        pass
-    def forward(self, x):
-        pass
 
-    def train(self: T, mode: bool = True) -> T:
-        pass
+    def forward(self, x):
+        """Encode x into a feature vector of size n_outputs."""
+        return self.model(x)
+
+    def train(self, mode=True):
+        """
+        Override the default train() to make the training behavior of ViT consistent with ResNet.
+        For ViT, we might want to specifically freeze certain parts of the model or apply specific training strategies.
+        """
+        super().train(mode)
+        # For ViT, there may not be batchnorm layers as in ResNet, but you can implement other training-specific adjustments here.
+
+        # Example: freeze certain transformer blocks (not common, but possible depending on the task)
+        # for name, param in self.network.named_parameters():
+        #     if 'block' in name and int(name.split('.')[1]) < 5:  # Example condition to freeze
+        #         param.requires_grad = False
