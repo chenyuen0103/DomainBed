@@ -141,7 +141,7 @@ def _hparams(algorithm, dataset, random_seed):
         _hparam('eqrm_lr', 1e-6, lambda r: 10 ** r.uniform(-7, -5))
 
     elif algorithm == 'HessianAlignment':
-        _hparam('vits', True, lambda r: False)
+        _hparam('model_type','ViT-S', lambda r: 'ViT-S')
         _hparam('grad_alpha', 1e-4, lambda r: 10 ** r.uniform(-5, -3))
         _hparam('hess_beta', 1e-4, lambda r: 10 ** r.uniform(-5, -3))
         _hparam('lr', 0.03, lambda r: 10 ** r.uniform(-2, -1))
