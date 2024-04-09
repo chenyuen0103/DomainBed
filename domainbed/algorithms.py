@@ -23,6 +23,15 @@ from domainbed.lib.misc import (
 )
 
 
+from utils.scheduler import WarmupCosineSchedule
+from utils.data_utils import get_loader_train
+from utils.dist_util import get_world_size
+from utils.loss_utils import LossComputer
+import timm
+# from apex.parallel import DistributedDataParallel as DDP
+from torch.nn.parallel import DistributedDataParallel as DDP
+
+
 ALGORITHMS = [
     'ERM',
     'Fish',
@@ -141,6 +150,11 @@ class HessianAlignment(ERM):
             lr=self.hparams["lr"],
             weight_decay=self.hparams['weight_decay']
         )
+        t_total = self.hparams['num_steps']
+        scheduler = WarmupCosineSchedule(self.optimizer, warmup_steps=self.hparams["warmup_steps"], t_total=t_total)
+        # Distributed training
+        if self.hparams["local_rank"] != -1:
+            self.network = DDP(self.network, message_size=250000000, gradient_predivide_factor=get_world_size())
 
 
     def hessian(self, x, logits):
@@ -335,8 +349,8 @@ class HessianAlignment(ERM):
             # hessian_original = self.hessian_original(x_env, yhat_env)
             # assert torch.allclose(grads, grads_original), "Gradient computation is incorrect"
             # assert torch.allclose(hessian, hessian_original, atol=1e-6), "Hessian computation is incorrect"
-            env_gradients.append(grads)
-            env_hessians.append(hessian)
+            env_gradients.append(grads.cpu())
+            env_hessians.append(hessian.cpu())
             # env_hessians_pytorch.append(hessian_pytorch)
 
         # Compute average gradient and hessian
@@ -2373,6 +2387,7 @@ class HGP(Algorithm):
             lr=self.hparams["lr"],
             weight_decay=self.hparams["weight_decay"],
         )
+
 
     def update(self, minibatches, unlabeled=False):
 

@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models
-# import timm
+import timm
 from torch.nn.modules.module import T
 
 from domainbed.lib import wide_resnet
@@ -193,6 +193,8 @@ def Featurizer(input_shape, hparams):
         return wide_resnet.Wide_ResNet(input_shape, 16, 2, 0.)
     elif input_shape[1:3] == (224, 224):
         return ResNet(input_shape, hparams)
+    elif input_shape[1:3] == (224, 224) and hparams['model_type'] == 'ViT-S':
+        return ViT_S(input_shape, hparams['n_classes'], hparams)
     else:
         raise NotImplementedError
 
@@ -242,19 +244,26 @@ class WholeFish(nn.Module):
 
 
 class ViT_S(nn.Module):
-    def __init__(self, input_shape, num_classes, hparams, weights=None):
+    def __init__(self, num_classes, hparams, weights=None):
         super(ViT_S, self).__init__()
-        self.vit = timm.create_model('vit_small_patch16_224', pretrained=True)
-        self.vit.head = nn.Linear(self.vit.head.in_features, num_classes)
+        self.n_outputs = 768
+        self.num_classes = num_classes
+        self.num_hparams = len(hparams)
         if weights is not None:
             self.load_state_dict(copy.deepcopy(weights))
 
-    def reset_weights(self, weights):
-        self.load_state_dict(copy.deepcopy(weights))
+        self.model = timm.create_model(
+            'vit_small_patch16_224_in21k',
+            pretrained=True,
+            num_classes=self.num_classes,
+            drop_rate = 0.1,
+            img_size = (224, 224)
+        )
 
+    def reset_weights(self, weights):
+        pass
     def forward(self, x):
-        return self.vit(x)
+        pass
 
     def train(self: T, mode: bool = True) -> T:
-        self.vit.train(mode)
-        return self
+        pass

@@ -94,7 +94,7 @@ Launch a sweep:
 python -m domainbed.scripts.sweep launch\
        --data_dir=./domainbed/data/\
        --output_dir=./domainbed/results\
-       --command_launcher MyLauncher
+       --command_launcher multi_gpu
 ```
 
 Here, `MyLauncher` is your cluster's command launcher, as implemented in `command_launchers.py`. At the time of writing, the entire sweep trains tens of thousands of models (all algorithms x all datasets x 3 independent trials x 20 random hyper-parameter choices). You can pass arguments to make the sweep smaller:
@@ -103,10 +103,10 @@ Here, `MyLauncher` is your cluster's command launcher, as implemented in `comman
 python -m domainbed.scripts.sweep launch\
        --data_dir=./domainbed/data/\
        --output_dir=./domainbed/results\
-       --command_launcher MyLauncher\
-       --algorithms ERM DANN\
-       --datasets RotatedMNIST VLCS\
-       --n_hparams 5\
+       --command_launcher multi_gpu\
+       --algorithms ERM\
+       --datasets RotatedMNIST\
+       --n_hparams 1\
        --n_trials 1
 ```
 
