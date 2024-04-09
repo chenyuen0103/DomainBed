@@ -254,16 +254,15 @@ class ViT_S(nn.Module):
             self.load_state_dict(copy.deepcopy(weights))
 
         self.model = timm.create_model(
-            'vit_small_patch16_224_in21k',
+            'vit_small_patch16_224.augreg_in21k',
             pretrained=True,
-            num_classes=self.num_classes,
             drop_rate = 0.1,)
 
 
     def forward(self, x):
         """Encode x into a feature vector of size n_outputs."""
         breakpoint()
-        return self.model(x)
+        return self.model.forward_head(x, pre_logits=True)
 
     def train(self, mode=True):
         """
