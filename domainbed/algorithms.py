@@ -140,7 +140,7 @@ class HessianAlignment(ERM):
                                   hparams)
         self.grad_alpha = hparams['grad_alpha']
         self.hess_beta = hparams['hess_beta']
-        breakpoint()
+        # breakpoint()
         self.classifier = networks.Classifier_nobiases(
             self.featurizer.n_outputs, num_classes, self.hparams['nonlinear_classifier']
         )
@@ -177,7 +177,7 @@ class HessianAlignment(ERM):
 
         # Outer product of x
         X_outer = torch.einsum('bi,bj->bij', x, x)  # Shape: [batch_size, d, d]
-        breakpoint()
+        # breakpoint()
         # Combine the probabilities with the outer product of x
         H = torch.einsum('bkl,bij->bklij', p_off_diag, X_outer)  # Shape: [batch_size, num_classes, num_classes, d, d]
 
