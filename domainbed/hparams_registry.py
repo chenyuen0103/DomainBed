@@ -34,7 +34,7 @@ def _hparams(algorithm, dataset, random_seed):
     # TODO: nonlinear classifiers disabled
     _hparam('nonlinear_classifier', False,
             lambda r: bool(r.choice([False, False])))
-    _hparam('model_type', 'ViT-S', lambda r: 'ViT-S')
+    # _hparam('model_type', 'ViT-S', lambda r: 'ViT-S')
     # Algorithm-specific hparam definitions. Each block of code below
     # corresponds to exactly one algorithm.
     if algorithm in ['DANN', 'CDANN']:
@@ -144,6 +144,8 @@ def _hparams(algorithm, dataset, random_seed):
         # _hparam('model_type','ViT-S', lambda r: 'ViT-S')
         _hparam('grad_alpha', 1e-4, lambda r: 10 ** r.uniform(-5, -3))
         _hparam('hess_beta', 1e-4, lambda r: 10 ** r.uniform(-5, -3))
+
+    if 'model_type' in hparams and hparams['model_type'] == 'ViT-S':
         _hparam('lr', 0.03, lambda r: 10 ** r.uniform(-2, -1))
         _hparam('weight_decay', 0.0005, lambda r: 10 ** r.uniform(-6, -2))
         _hparam('batch_size', 64, lambda r: int(2 ** r.uniform(5, 8)))
