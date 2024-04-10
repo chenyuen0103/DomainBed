@@ -164,7 +164,6 @@ class HessianAlignment(ERM):
 
         # Compute probabilities
         p = F.softmax(logits, dim=1)  # Shape: [batch_size, num_classes]
-        print(p.shape)
 
         # Compute p_k(1-p_k) for diagonal blocks and -p_k*p_l for off-diagonal blocks
         # Diagonal part

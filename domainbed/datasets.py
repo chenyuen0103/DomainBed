@@ -120,6 +120,7 @@ class MultipleEnvironmentMNIST(MultipleDomainDataset):
         self.num_classes = num_classes
 
 
+
 class ColoredMNIST(MultipleEnvironmentMNIST):
     ENVIRONMENTS = ['+90%', '+80%', '-90%']
 
@@ -192,6 +193,7 @@ class MultipleEnvironmentImageFolder(MultipleDomainDataset):
 
 
         if hparams['model_type'] == 'ViT-S':
+            self.N_STEPS = 700
             img_size = hparams['img_size']
             mean = (0.5, 0.5, 0.5)
             std = (0.5, 0.5, 0.5)
