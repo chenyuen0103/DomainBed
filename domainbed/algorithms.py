@@ -428,7 +428,7 @@ class HessianAlignment(ERM):
         return {'loss': loss.item()}
 
     def predict(self, x):
-        breakpoint()
+        # breakpoint()
         return self.network(x)
 
 
