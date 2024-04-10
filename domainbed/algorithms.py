@@ -151,8 +151,10 @@ class HessianAlignment(ERM):
             lr=self.hparams["lr"],
             weight_decay=self.hparams['weight_decay']
         )
-        t_total = self.hparams['num_steps']
-        self.scheduler = WarmupCosineSchedule(self.optimizer, warmup_steps=self.hparams["warmup_steps"], t_total=t_total)
+        if 'model_type' in hparams and hparams['model_type'] == 'ViT-S':
+            t_total = self.hparams['num_steps']
+            self.scheduler = WarmupCosineSchedule(self.optimizer, warmup_steps=self.hparams["warmup_steps"], t_total=t_total)
+
 
 
 
