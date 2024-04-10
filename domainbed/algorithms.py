@@ -140,6 +140,7 @@ class HessianAlignment(ERM):
                                   hparams)
         self.grad_alpha = hparams['grad_alpha']
         self.hess_beta = hparams['hess_beta']
+        breakpoint()
         self.classifier = networks.Classifier_nobiases(
             self.featurizer.n_outputs, num_classes, self.hparams['nonlinear_classifier']
         )
