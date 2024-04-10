@@ -132,6 +132,7 @@ if __name__ == "__main__":
     out_splits = []
     uda_splits = []
     for env_i, env in enumerate(dataset): # env is a dataset
+        print('Env {}: {} samples'.format(env_i, len(env)))
         uda = []
 
         out, in_ = misc.split_dataset(env,
