@@ -192,7 +192,7 @@ class MultipleEnvironmentImageFolder(MultipleDomainDataset):
 
 
 
-        if hparams['model_type'] == 'ViT-S':
+        if 'model_type' in hparams and hparams['model_type'] == 'ViT-S':
             self.N_STEPS = 700
             img_size = hparams['img_size']
             mean = (0.5, 0.5, 0.5)
