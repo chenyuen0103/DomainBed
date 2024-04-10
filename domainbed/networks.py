@@ -247,7 +247,7 @@ class WholeFish(nn.Module):
 class ViT_S(nn.Module):
     def __init__(self, hparams, weights=None):
         super(ViT_S, self).__init__()
-        self.n_outputs = 768
+        self.n_outputs = 384
         self.num_classes = 0 # for feature extraction
         self.num_hparams = len(hparams)
         if weights is not None:

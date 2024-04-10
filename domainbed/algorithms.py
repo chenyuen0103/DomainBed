@@ -152,7 +152,7 @@ class HessianAlignment(ERM):
             weight_decay=self.hparams['weight_decay']
         )
         t_total = self.hparams['num_steps']
-        scheduler = WarmupCosineSchedule(self.optimizer, warmup_steps=self.hparams["warmup_steps"], t_total=t_total)
+        self.scheduler = WarmupCosineSchedule(self.optimizer, warmup_steps=self.hparams["warmup_steps"], t_total=t_total)
 
 
 
@@ -428,6 +428,7 @@ class HessianAlignment(ERM):
         return {'loss': loss.item()}
 
     def predict(self, x):
+        breakpoint()
         return self.network(x)
 
 
