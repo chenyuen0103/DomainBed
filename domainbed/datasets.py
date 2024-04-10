@@ -196,7 +196,7 @@ class MultipleEnvironmentImageFolder(MultipleDomainDataset):
             mean = (0.5, 0.5, 0.5)
             std = (0.5, 0.5, 0.5)
             transform = transforms.Compose([
-                transforms.RandomResizedCrop((img_size, img_size), scale=(0.05, 1.0)),
+                transforms.RandomResizedCrop((img_size, img_size)),
                 transforms.ToTensor(),
                 transforms.Normalize(mean, std),
             ])
