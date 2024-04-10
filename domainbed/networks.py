@@ -262,6 +262,7 @@ class ViT_S(nn.Module):
     def forward(self, x):
         """Encode x into a feature vector of size n_outputs."""
         breakpoint()
+        x = x.view(x.size(0), 3, 224, 224)
         return self.model.forward_head(x, pre_logits=True)
 
     def train(self, mode=True):
