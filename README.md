@@ -104,10 +104,10 @@ python -m domainbed.scripts.sweep launch\
        --data_dir=./domainbed/data/\
        --output_dir=./domainbed/results\
        --command_launcher multi_gpu\
-       --algorithms ERM\
-       --datasets RotatedMNIST\
-       --n_hparams 1\
-       --n_trials 1
+       --algorithms ERM, IRM, Fishr, HessianAlignment\
+       --datasets RotatedMNIST, PACS\
+       --n_hparams 4\
+       --n_trials 5
 ```
 
 After all jobs have either succeeded or failed, you can delete the data from failed jobs with ``python -m domainbed.scripts.sweep delete_incomplete`` and then re-launch them by running ``python -m domainbed.scripts.sweep launch`` again. Specify the same command-line arguments in all calls to `sweep` as you did the first time; this is how the sweep script knows which jobs were launched originally.
