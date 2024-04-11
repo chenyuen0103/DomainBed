@@ -34,7 +34,9 @@ def _hparams(algorithm, dataset, random_seed, model_type='ViT-S'):
     # TODO: nonlinear classifiers disabled
     _hparam('nonlinear_classifier', False,
             lambda r: bool(r.choice([False, False])))
+    breakpoint()
     _hparam('model_type', model_type, lambda r: model_type)
+    breakpoint()
     # Algorithm-specific hparam definitions. Each block of code below
     # corresponds to exactly one algorithm.
     if algorithm in ['DANN', 'CDANN']:
