@@ -85,6 +85,7 @@ python3 -m domainbed.scripts.train\
        --data_dir=./domainbed/data/\
        --algorithm HessianAlignment\
        --dataset PACS\
+       --hparams '{"model_type": "ViT-S"}'\
        --test_env 2
 ```
 

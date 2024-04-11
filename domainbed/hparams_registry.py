@@ -144,7 +144,7 @@ def _hparams(algorithm, dataset, random_seed):
         # _hparam('model_type','ViT-S', lambda r: 'ViT-S')
         _hparam('grad_alpha', 1e-4, lambda r: 10 ** r.uniform(-5, -3))
         _hparam('hess_beta', 1e-4, lambda r: 10 ** r.uniform(-5, -3))
-
+    breakpoint()
     if 'model_type' in hparams and hparams['model_type'] == 'ViT-S':
         _hparam('lr', 0.03, lambda r: 10 ** r.uniform(-2, -1))
         _hparam('weight_decay', 0.0005, lambda r: 10 ** r.uniform(-6, -2))
