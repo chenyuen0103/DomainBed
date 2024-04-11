@@ -185,13 +185,14 @@ class ContextNet(nn.Module):
 
 def Featurizer(input_shape, hparams):
     """Auto-select an appropriate featurizer for the given input shape."""
+    breakpoint()
+
     if len(input_shape) == 1:
         return MLP(input_shape[0], hparams["mlp_width"], hparams)
     elif input_shape[1:3] == (28, 28):
         return MNIST_CNN(input_shape)
     elif input_shape[1:3] == (32, 32):
         return wide_resnet.Wide_ResNet(input_shape, 16, 2, 0.)
-    breakpoint()
     elif input_shape[1:3] == (224, 224) and 'model_type' in hparams and hparams['model_type'] == 'ViT-S':
         return ViT_S(hparams)
     elif input_shape[1:3] == (224, 224):
