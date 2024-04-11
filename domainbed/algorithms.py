@@ -315,7 +315,8 @@ class HessianAlignment(ERM):
             x_cpu = x.detach().cpu().numpy()  # Convert to NumPy array
 
             # Initialize PCA transformer with 1000 components
-            pca = PCA(n_components=1000)
+            n_components = min(1000, x_cpu.shape[1])
+            pca = PCA(n_components=n_components)
 
             # Fit PCA on the data and transform it
             breakpoint()
@@ -325,7 +326,7 @@ class HessianAlignment(ERM):
             # Optionally, you can move it back to the original device (e.g., CUDA device)
 
             x_pca_sklearn = torch.tensor(x_reduced, dtype=torch.float).to(x.device)
-            x_pca_svd  = self.pca(x, 1000)
+            x_pca_svd  = self.pca(x, n_components)
 
             assert torch.allclose(x_pca_sklearn, x_pca_svd), "PCA computation discrepancy"
             x = x_pca_sklearn
