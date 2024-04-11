@@ -344,7 +344,7 @@ class HessianAlignment(ERM):
 
             # x_pca_sklearn = torch.tensor(x_reduced, dtype=torch.float).to(x.device)
             x_pca_svd  = self.pca(x, n_components)
-            breakpoint()
+            # breakpoint()
             # assert torch.allclose(x_pca_sklearn, x_pca_svd), "PCA computation discrepancy"
             x = x_pca_svd
 
