@@ -318,11 +318,12 @@ class HessianAlignment(ERM):
             pca = PCA(n_components=1000)
 
             # Fit PCA on the data and transform it
+            breakpoint()
             x_reduced = pca.fit_transform(x_cpu)
 
             # Convert the reduced data back to a PyTorch tensor
             # Optionally, you can move it back to the original device (e.g., CUDA device)
-            breakpoint()
+
             x_pca_sklearn = torch.tensor(x_reduced, dtype=torch.float).to(x.device)
             x_pca_svd  = self.pca(x, 1000)
 
