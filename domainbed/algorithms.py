@@ -301,7 +301,7 @@ class HessianAlignment(ERM):
         return hessian_manual
 
     def pca(self, x, n_components):
-        # breakpoint()
+        breakpoint()
         U, S, V = torch.svd(x)
         return U[:, :n_components]
 
