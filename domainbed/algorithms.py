@@ -301,11 +301,27 @@ class HessianAlignment(ERM):
         return hessian_manual
 
     def pca(self, x, n_components):
-        breakpoint()
-        x_mean = torch.mean(x, dim=0)  # Compute the mean of each feature
+        # Ensure x is a float tensor for SVD
+        x = x.float()
+
+        # Center the data (subtract the mean of each feature from all data points)
+        x_mean = torch.mean(x, dim=0)
         x_centered = x - x_mean
+
+        # Compute the SVD of the centered data.
         U, S, V = torch.svd(x_centered)
-        return U[:, :n_components]
+
+        # U contains the left singular vectors (corresponds to the principal components),
+        # S contains the singular values (sqrt of eigenvalues of the covariance matrix),
+        # V contains the right singular vectors (corresponds to the directions in the original space).
+        # We are interested in U and S to compute the principal components.
+
+        # Take the first n_components of U (principal components) and multiply by the singular values.
+        # Note: To match PCA exactly, you'd use the square of S for eigenvalues, but here we project the data
+        #       onto the principal components directly.
+        x_pca = torch.matmul(U[:, :n_components], torch.diag(S[:n_components]))
+
+        return x_pca
 
     def exact_hessian_loss(self, logits, x, y, envs_indices, alpha=10e-5, beta=10e-5):
         # for params in model.parameters():
