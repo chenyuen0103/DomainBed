@@ -330,23 +330,23 @@ class HessianAlignment(ERM):
         # if the features dimension is larger than 1000, apply PCA to reduce the dimension to 1000
         if x.size(1) > 1000:
             # Ensure x is detached and moved to CPU for sklearn processing
-            x_cpu = x.detach().cpu().numpy()  # Convert to NumPy array
+            # x_cpu = x.detach().cpu().numpy()  # Convert to NumPy array
 
             # Initialize PCA transformer with 1000 components
-            n_components = min(1000, x_cpu.shape[0])
-            pca = PCA(n_components=n_components)
+            n_components = min(1000, x.shape[0])
+            # pca = PCA(n_components=n_components)
 
             # Fit PCA on the data and transform it
-            x_reduced = pca.fit_transform(x_cpu)
+            # x_reduced = pca.fit_transform(x_cpu)
 
             # Convert the reduced data back to a PyTorch tensor
             # Optionally, you can move it back to the original device (e.g., CUDA device)
 
-            x_pca_sklearn = torch.tensor(x_reduced, dtype=torch.float).to(x.device)
+            # x_pca_sklearn = torch.tensor(x_reduced, dtype=torch.float).to(x.device)
             x_pca_svd  = self.pca(x, n_components)
             breakpoint()
-            assert torch.allclose(x_pca_sklearn, x_pca_svd), "PCA computation discrepancy"
-            x = x_pca_sklearn
+            # assert torch.allclose(x_pca_sklearn, x_pca_svd), "PCA computation discrepancy"
+            x = x_pca_svd
 
         num_classes = logits.size(1)
         total_loss = torch.tensor(0.0, requires_grad=True)
