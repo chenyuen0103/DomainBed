@@ -87,7 +87,7 @@ if __name__ == "__main__":
     for k, v in sorted(vars(args).items()):
         print('\t{}: {}'.format(k, v))
 
-    if 'model_type' in json.loads(args.hparams):
+    if args.hparams and 'model_type' in json.loads(args.hparams):
         model_type = json.loads(args.hparams)['model_type']
     else:
         model_type = 'ViT-S'
