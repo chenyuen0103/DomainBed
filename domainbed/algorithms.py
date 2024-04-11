@@ -315,7 +315,7 @@ class HessianAlignment(ERM):
             x_cpu = x.detach().cpu().numpy()  # Convert to NumPy array
 
             # Initialize PCA transformer with 1000 components
-            n_components = min(1000, x_cpu.shape[1])
+            n_components = min(1000, x_cpu.shape[0])
             pca = PCA(n_components=n_components)
 
             # Fit PCA on the data and transform it
