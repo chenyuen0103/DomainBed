@@ -103,7 +103,7 @@ Here, `MyLauncher` is your cluster's command launcher, as implemented in `comman
 ```sh
 python -m domainbed.scripts.sweep launch\
        --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results\
+       --output_dir=./domainbed/results_vits\
        --command_launcher multi_gpu\
        --algorithms ERM Fishr HessianAlignment IRM\
        --datasets PACS RotatedMNIST\
