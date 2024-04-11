@@ -198,9 +198,9 @@ def _hparams(algorithm, dataset, random_seed, model_type='ViT-S'):
     return hparams
 
 
-def default_hparams(algorithm, dataset, model_type=None):
+def default_hparams(algorithm, dataset, model_type='ViT-S'):
     return {a: b for a, (b, c) in _hparams(algorithm, dataset, 0, model_type).items()}
 
 
-def random_hparams(algorithm, dataset, seed):
+def random_hparams(algorithm, dataset, seed, model_type='ViT-S'):
     return {a: c for a, (b, c) in _hparams(algorithm, dataset, seed).items()}
