@@ -87,16 +87,18 @@ if __name__ == "__main__":
     for k, v in sorted(vars(args).items()):
         print('\t{}: {}'.format(k, v))
 
-
+    if 'model_type' in json.loads(args.hparams):
+        model_type = json.loads(args.hparams)['model_type']
+    else:
+        model_type = 'ViT-S'
     if args.hparams_seed == 0:
-        hparams = hparams_registry.default_hparams(args.algorithm, args.dataset)
+        hparams = hparams_registry.default_hparams(args.algorithm, args.dataset, model_type)
     else:
         hparams = hparams_registry.random_hparams(args.algorithm, args.dataset,
-            misc.seed_hash(args.hparams_seed, args.trial_seed))
+            misc.seed_hash(args.hparams_seed, args.trial_seed), model_type)
     if args.hparams:
         hparams.update(json.loads(args.hparams))
-    if args.hparams:
-        hparams.update(json.loads(args.hparams))
+
 
     print('HParams:')
     for k, v in sorted(hparams.items()):
@@ -135,7 +137,7 @@ if __name__ == "__main__":
     out_splits = []
     uda_splits = []
     for env_i, env in enumerate(dataset): # env is a dataset
-        print('Env {}: {} samples'.format(env_i, len(env)))
+        # print('Env {}: {} samples'.format(env_i, len(env)))
         uda = []
 
         out, in_ = misc.split_dataset(env,
@@ -143,6 +145,7 @@ if __name__ == "__main__":
             misc.seed_hash(args.trial_seed, env_i))
 
         if env_i in args.test_envs:
+            breakpoint()
             uda, in_ = misc.split_dataset(in_,
                 int(len(in_)*args.uda_holdout_fraction),
                 misc.seed_hash(args.trial_seed, env_i))
@@ -175,6 +178,7 @@ if __name__ == "__main__":
         num_workers=dataset.N_WORKERS)
         for i, (env, env_weights) in enumerate(in_splits)
         if i not in args.test_envs]
+    print(f"Training only on training environments: {[i for i in range(len(in_splits)) if i not in args.test_envs]}")
 
     uda_loaders = [InfiniteDataLoader(
         dataset=env,

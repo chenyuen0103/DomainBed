@@ -7,7 +7,7 @@ def _define_hparam(hparams, hparam_name, default_val, random_val_fn):
     hparams[hparam_name] = (hparams, hparam_name, default_val, random_val_fn)
 
 
-def _hparams(algorithm, dataset, random_seed):
+def _hparams(algorithm, dataset, random_seed, model_type='ViT-S'):
     """
     Global registry of hyperparams. Each entry is a (default, random) tuple.
     New algorithms / networks / etc. should add entries here.
@@ -34,7 +34,7 @@ def _hparams(algorithm, dataset, random_seed):
     # TODO: nonlinear classifiers disabled
     _hparam('nonlinear_classifier', False,
             lambda r: bool(r.choice([False, False])))
-    _hparam('model_type', 'resnet', lambda r: 'resnet')
+    _hparam('model_type', model_type, lambda r: model_type)
     # Algorithm-specific hparam definitions. Each block of code below
     # corresponds to exactly one algorithm.
     if algorithm in ['DANN', 'CDANN']:
@@ -195,8 +195,8 @@ def _hparams(algorithm, dataset, random_seed):
     return hparams
 
 
-def default_hparams(algorithm, dataset):
-    return {a: b for a, (b, c) in _hparams(algorithm, dataset, 0).items()}
+def default_hparams(algorithm, dataset, model_type=None):
+    return {a: b for a, (b, c) in _hparams(algorithm, dataset, 0, model_type).items()}
 
 
 def random_hparams(algorithm, dataset, seed):
