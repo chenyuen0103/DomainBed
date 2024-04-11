@@ -145,7 +145,6 @@ if __name__ == "__main__":
             misc.seed_hash(args.trial_seed, env_i))
 
         if env_i in args.test_envs:
-            breakpoint()
             uda, in_ = misc.split_dataset(in_,
                 int(len(in_)*args.uda_holdout_fraction),
                 misc.seed_hash(args.trial_seed, env_i))
@@ -178,7 +177,7 @@ if __name__ == "__main__":
         num_workers=dataset.N_WORKERS)
         for i, (env, env_weights) in enumerate(in_splits)
         if i not in args.test_envs]
-    print(f"Training only on training environments: {[i for i in range(len(in_splits)) if i not in args.test_envs]}")
+    # print(f"Training only on training environments: {[i for i in range(len(in_splits)) if i not in args.test_envs]}")
 
     uda_loaders = [InfiniteDataLoader(
         dataset=env,
