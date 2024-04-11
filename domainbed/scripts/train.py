@@ -87,13 +87,15 @@ if __name__ == "__main__":
     for k, v in sorted(vars(args).items()):
         print('\t{}: {}'.format(k, v))
 
+
     if args.hparams_seed == 0:
         hparams = hparams_registry.default_hparams(args.algorithm, args.dataset)
     else:
         hparams = hparams_registry.random_hparams(args.algorithm, args.dataset,
             misc.seed_hash(args.hparams_seed, args.trial_seed))
     if args.hparams:
-        breakpoint()
+        hparams.update(json.loads(args.hparams))
+    if args.hparams:
         hparams.update(json.loads(args.hparams))
 
     print('HParams:')
