@@ -22,7 +22,7 @@ from domainbed.lib.misc import (
     MovingAverage, l2_between_dicts, proj, Nonparametric
 )
 
-
+from sklearn.decomposition import PCA
 from domainbed.utils.scheduler import WarmupCosineSchedule
 from domainbed.utils.data_utils import get_loader_train
 from domainbed.utils.dist_util import get_world_size
@@ -151,9 +151,9 @@ class HessianAlignment(ERM):
             lr=self.hparams["lr"],
             weight_decay=self.hparams['weight_decay']
         )
-        if 'model_type' in hparams and hparams['model_type'] == 'ViT-S':
-            t_total = self.hparams['num_steps']
-            self.scheduler = WarmupCosineSchedule(self.optimizer, warmup_steps=self.hparams["warmup_steps"], t_total=t_total)
+        # if 'model_type' in hparams and hparams['model_type'] == 'ViT-S':
+        #     t_total = 5001
+        #     self.scheduler = WarmupCosineSchedule(self.optimizer, warmup_steps=self.hparams["warmup_steps"], t_total=t_total)
 
 
 
@@ -300,10 +300,34 @@ class HessianAlignment(ERM):
 
         return hessian_manual
 
+    def pca(self, x, n_components):
+        # breakpoint()
+        U, S, V = torch.svd(x)
+        return U[:, :n_components]
+
     def exact_hessian_loss(self, logits, x, y, envs_indices, alpha=10e-5, beta=10e-5):
         # for params in model.parameters():
         #     params.requires_grad = True
         x = self.featurizer(x)
+        # if the features dimension is larger than 1000, apply PCA to reduce the dimension to 1000
+        if x.size(1) > 1000:
+            # Ensure x is detached and moved to CPU for sklearn processing
+            x_cpu = x.detach().cpu().numpy()  # Convert to NumPy array
+
+            # Initialize PCA transformer with 1000 components
+            pca = PCA(n_components=1000)
+
+            # Fit PCA on the data and transform it
+            x_reduced = pca.fit_transform(x_cpu)
+
+            # Convert the reduced data back to a PyTorch tensor
+            # Optionally, you can move it back to the original device (e.g., CUDA device)
+            x_pca_sklearn = torch.tensor(x_reduced, dtype=torch.float).to(x.device)
+            x_pca_svd  = self.pca(x, 1000)
+            breakpoint()
+            assert torch.allclose(x_pca_sklearn, x_pca_svd), "PCA computation discrepancy"
+            x = x_pca_sklearn
+
         num_classes = logits.size(1)
         total_loss = torch.tensor(0.0, requires_grad=True)
         env_gradients = []
