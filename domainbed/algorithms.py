@@ -302,7 +302,9 @@ class HessianAlignment(ERM):
 
     def pca(self, x, n_components):
         breakpoint()
-        U, S, V = torch.svd(x)
+        x_mean = torch.mean(x, dim=0)  # Compute the mean of each feature
+        x_centered = x - x_mean
+        U, S, V = torch.svd(x_centered)
         return U[:, :n_components]
 
     def exact_hessian_loss(self, logits, x, y, envs_indices, alpha=10e-5, beta=10e-5):
