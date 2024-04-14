@@ -23,6 +23,7 @@ def find_and_delete_directories(base_path):
 
                         # Check if max_step is less than 5000 and delete the directory
                         if max_step < 5000:
+                            pass
                             # should_delete = True
                             # del_msg = f"Deleted '{dir_path}' because max step is {max_step}"
                 except json.JSONDecodeError:
