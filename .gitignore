@@ -5,3 +5,10 @@ domainbed/data/*
 train_output/*
 
 .idea
+
+*/out.txt
+*/err.txt
+
+*.pkl
+
+*done
