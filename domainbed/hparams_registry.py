@@ -144,16 +144,15 @@ def _hparams(algorithm, dataset, random_seed, model_type='ViT-S'):
 
     elif algorithm == 'HessianAlignment':
         # _hparam('model_type','ViT-S', lambda r: 'ViT-S')
-        _hparam('grad_alpha', 1e-4, lambda r: 10 ** r.uniform(-5, -3))
-        _hparam('hess_beta', 1e-4, lambda r: 10 ** r.uniform(-5, -3))
+        _hparam('grad_alpha', 1e-4, lambda r: 10 ** r.uniform(-7, -1))
+        _hparam('hess_beta', 1e-4, lambda r: 10 ** r.uniform(-7, -1))
 
     if hparams['model_type'][0] == 'ViT-S':
-        _hparam('lr', 0.03, lambda r: 10 ** r.uniform(-2, -1))
-        _hparam('weight_decay', 0.0005, lambda r: 10 ** r.uniform(-6, -2))
-        _hparam('batch_size', 64, lambda r: int(2 ** r.uniform(5, 8)))
+        # _hparam('lr', 0.03, lambda r: 10 ** r.uniform(-2, -1))
+        # _hparam('weight_decay', 0.0005, lambda r: 10 ** r.uniform(-6, -2))
         _hparam('img_size', 224, lambda r: 384)
-        _hparam('warmup_steps', 100, lambda r: 10 ** r.uniform(1, 2.5))
-        _hparam('num_steps', 700, lambda r: 700)
+        # _hparam('warmup_steps', 100, lambda r: 10 ** r.uniform(1, 2.5))
+        # _hparam('num_steps', 700, lambda r: 700)
 
 
     # Dataset-and-algorithm-specific hparam definitions. Each block of code

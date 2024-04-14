@@ -86,7 +86,7 @@ def print_results_tables(records, selection_method, latex):
             print()
             print("\\subsubsection{{{}}}".format(dataset))
         test_envs = range(datasets.num_environments(dataset))
-
+        # breakpoint()
         table = [[None for _ in [*test_envs, "Avg"]] for _ in alg_names]
         for i, algorithm in enumerate(alg_names):
             means = []
@@ -168,7 +168,7 @@ if __name__ == "__main__":
 
     SELECTION_METHODS = [
         model_selection.IIDAccuracySelectionMethod,
-        model_selection.LeaveOneOutSelectionMethod,
+        # model_selection.LeaveOneOutSelectionMethod,
         model_selection.OracleSelectionMethod,
     ]
 
