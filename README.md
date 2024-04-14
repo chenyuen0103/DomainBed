@@ -129,7 +129,7 @@ To view the results of your sweep:
 
 ````sh
 python -m domainbed.scripts.collect_results\
-       --input_dir=./domainbed/results
+       --input_dir=./domainbed/results_vits
 ````
 
 ## Running unit tests
