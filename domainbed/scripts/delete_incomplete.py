@@ -24,23 +24,24 @@ def find_and_delete_directories(base_path):
                         # Check if max_step is less than 5000 and delete the directory
                         if max_step < 5000:
                             # should_delete = True
-                            print(f"Deleted '{dir_path}' because max step is {max_step}")
+                            # del_msg = f"Deleted '{dir_path}' because max step is {max_step}"
                 except json.JSONDecodeError:
-                    print(f"Error decoding JSON from {result_jsonl_path}")
+                    del_msg = f"Error decoding JSON from {result_jsonl_path}"
                     should_delete = True
                 except Exception as e:
-                    print(f"Error processing directory {dir_path}: {str(e)}")
+                    del_msg = f"Error processing directory {dir_path}: {str(e)}"
                     should_delete = True
 
             else:
                 should_delete = True
-                print(f"Deleted '{dir_path}' because results.jsonl does not exist")
+                del_msg = f"Deleted '{dir_path}' because results.jsonl does not exist"
 
 
             if should_delete:
                 try:
                     shutil.rmtree(dir_path)
-                    print(f"Deleted '{dir_path}'")
+                    print(del_msg)
+                    # print(f"Deleted '{dir_path}'")
                 except Exception as e:
                     print(f"Error deleting directory {dir_path}: {str(e)}")
 
