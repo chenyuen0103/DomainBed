@@ -12,3 +12,5 @@ err.txt
 *.pkl
 
 done
+
+domainbed/results/*
