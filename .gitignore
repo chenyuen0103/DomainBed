@@ -6,9 +6,9 @@ train_output/*
 
 .idea
 
-*/out.txt
-*/err.txt
+out.txt
+err.txt
 
 *.pkl
 
-*done
+done
