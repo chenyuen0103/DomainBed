@@ -63,6 +63,8 @@ ALGORITHMS = [
     'CausIRL_CORAL',
     'CausIRL_MMD',
     'EQRM',
+    'HGP',
+    'Hutchinson',
     'HessianAlignment',
 ]
 
@@ -469,8 +471,8 @@ class HessianAlignment(ERM):
         torch.nn.utils.clip_grad_norm_(self.network.parameters(), max_norm=1)
 
         self.optimizer.step()
-        if 'model_type' in self.hparams and self.hparams['model_type'] == 'ViT-S':
-            self.scheduler.step()
+        # if 'model_type' in self.hparams and self.hparams['model_type'] == 'ViT-S':
+        #     self.scheduler.step()
         # self.scheduler.step()
 
         return {'loss': loss.item()}

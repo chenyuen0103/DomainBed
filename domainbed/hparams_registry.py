@@ -147,6 +147,15 @@ def _hparams(algorithm, dataset, random_seed, model_type='ViT-S'):
         _hparam('grad_alpha', 1e-4, lambda r: 10 ** r.uniform(-7, -1))
         _hparam('hess_beta', 1e-4, lambda r: 10 ** r.uniform(-7, -1))
 
+    elif algorithm == "HGP":
+        _hparam('penalty_alpha', 0.0001, lambda r: 10 ** r.uniform(-3, -5))
+        _hparam('penalty_beta', 0.005, lambda r: 10 ** r.uniform(-1, -3))
+
+
+    elif algorithm == "Hutchinson":
+        _hparam('penalty_alpha', 0.001, lambda r: 10 ** r.uniform(4, 1))
+        _hparam('penalty_beta', 0.005, lambda r: 10 ** r.uniform(6, 2))
+
     if hparams['model_type'][0] == 'ViT-S':
         # _hparam('lr', 0.03, lambda r: 10 ** r.uniform(-2, -1))
         # _hparam('weight_decay', 0.0005, lambda r: 10 ** r.uniform(-6, -2))

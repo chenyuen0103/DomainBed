@@ -185,6 +185,7 @@ class RotatedMNIST(MultipleEnvironmentMNIST):
 
 
 class MultipleEnvironmentImageFolder(MultipleDomainDataset):
+    N_STEPS = 2000
     def __init__(self, root, test_envs, augment, hparams):
         super().__init__()
         environments = [f.name for f in os.scandir(root) if f.is_dir()]
