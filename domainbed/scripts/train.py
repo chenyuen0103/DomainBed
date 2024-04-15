@@ -214,7 +214,7 @@ if __name__ == "__main__":
     steps_per_epoch = min([len(env)/hparams['batch_size'] for env,_ in in_splits])
 
     n_steps = args.steps or dataset.N_STEPS
-    breakpoint()
+    # breakpoint()
     checkpoint_freq = args.checkpoint_freq or dataset.CHECKPOINT_FREQ
 
     def save_checkpoint(filename):
