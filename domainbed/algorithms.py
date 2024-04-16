@@ -459,11 +459,12 @@ class HessianAlignment(ERM):
 
             total_loss = total_loss + (loss + hessian_reg + grad_reg) * env_fraction
             # total_loss = total_loss + loss
-            erm_loss += loss * env_fraction
-            grad_loss += alpha * grad_reg * env_fraction
-            hess_loss += beta * hessian_reg * env_fraction
+            # erm_loss += loss * env_fraction
+            # grad_loss += alpha * grad_reg * env_fraction
+            # hess_loss += beta * hessian_reg * env_fraction
 
-        return total_loss, erm_loss, hess_loss, grad_loss
+        # return total_loss, erm_loss, hess_loss, grad_loss
+        return total_loss
     def update(self, minibatches, unlabeled=None):
         all_x = torch.cat([x for x, y, env in minibatches])
         all_y = torch.cat([y for x, y, env in minibatches])
