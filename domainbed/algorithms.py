@@ -470,7 +470,6 @@ class HessianAlignment(ERM):
         all_envs = torch.cat([env for x, y, env in minibatches])
         # loss = F.cross_entropy(self.predict(all_x), all_y)
         logits = self.predict(all_x)
-        breakpoint()
         loss = self.exact_hessian_loss(logits, all_x, all_y, all_envs, alpha=self.grad_alpha, beta=self.hess_beta)[0]
         self.optimizer.zero_grad()
         loss.backward()
