@@ -419,9 +419,9 @@ class HessianAlignment(ERM):
             avg_hessian = torch.mean(torch.stack(env_hessians), dim=0)
             # avg_hessian_pytorch = torch.mean(torch.stack(env_hessians_pytorch), dim=0)
 
-        erm_loss = 0
-        hess_loss = 0
-        grad_loss = 0
+        # erm_loss = 0
+        # hess_loss = 0
+        # grad_loss = 0
         for env_idx, (grads, hessian) in enumerate(zip(env_gradients, env_hessians)):
             # hessian_pytorch = env_hessians_pytorch[env_idx]
             idx = (envs_indices == env_idx).nonzero().squeeze()
@@ -471,7 +471,7 @@ class HessianAlignment(ERM):
         all_envs = torch.cat([env for x, y, env in minibatches])
         # loss = F.cross_entropy(self.predict(all_x), all_y)
         logits = self.predict(all_x)
-        loss = self.exact_hessian_loss(logits, all_x, all_y, all_envs, alpha=self.grad_alpha, beta=self.hess_beta)[0]
+        loss = self.exact_hessian_loss(logits, all_x, all_y, all_envs, alpha=self.grad_alpha, beta=self.hess_beta)
         self.optimizer.zero_grad()
         loss.backward()
         torch.nn.utils.clip_grad_norm_(self.network.parameters(), max_norm=1)
