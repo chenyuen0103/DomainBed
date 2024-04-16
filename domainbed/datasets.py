@@ -185,7 +185,7 @@ class RotatedMNIST(MultipleEnvironmentMNIST):
 
 
 class MultipleEnvironmentImageFolder(MultipleDomainDataset):
-    N_STEPS = 2000
+    # N_STEPS = 2000
     def __init__(self, root, test_envs, augment, hparams):
         super().__init__()
         environments = [f.name for f in os.scandir(root) if f.is_dir()]
@@ -194,7 +194,7 @@ class MultipleEnvironmentImageFolder(MultipleDomainDataset):
 
 
         if 'model_type' in hparams and hparams['model_type'] == 'ViT-S':
-            self.N_STEPS = 2000
+            # self.N_STEPS = 2000
             # img_size = hparams['img_size']
             img_size = 224
             mean = (0.5, 0.5, 0.5)

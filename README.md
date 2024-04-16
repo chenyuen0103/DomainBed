@@ -111,20 +111,49 @@ python -m domainbed.scripts.sweep launch\
        --n_trials 3
 ```
 
+For ResNet 
+```sh
+python -m domainbed.scripts.sweep launch\
+       --data_dir=./domainbed/data/\
+       --output_dir=./domainbed/results_resnet\
+       --command_launcher multi_gpu\
+       --hparams {\"model_type\":\"ResNet\"}\
+       --algorithms HessianAlignment\
+       --datasets PACS VLCS OfficeHome TerraIncognita DomainNet\
+       --single_test_envs\
+       --n_hparams 20\
+       --n_trials 3
+```
+
 After all jobs have either succeeded or failed, you can delete the data from failed jobs with ``python -m domainbed.scripts.sweep delete_incomplete`` and then re-launch them by running ``python -m domainbed.scripts.sweep launch`` again. Specify the same command-line arguments in all calls to `sweep` as you did the first time; this is how the sweep script knows which jobs were launched originally.
 
 ```sh
-python -m domainbed.scripts.sweep delete_incomplete\
-       --data_dir=./domainbed/data/\
+python -m domainbed.scripts.sweep delete_incomplete\      
+       --data_dir=./domainbed/data/\       
        --output_dir=./domainbed/results_vits\
-       --command_launcher multi_gpu\
+       --command_launcher multi_gpu\       
        --algorithms ERM Fishr HessianAlignment IRM\
-       --datasets PACS RotatedMNIST\
+       --datasets PACS RotatedMNIST VLCS OfficeHome TerraIncognita WILDSCamelyon\
        --single_test_envs\
-       --n_hparams 4\
+       --n_hparams 5\
        --n_trials 3
 ```
-'''
+
+For ResNet 
+```sh
+python -m domainbed.scripts.sweep delete_incomplete\
+       --data_dir=./domainbed/data/\
+       --output_dir=./domainbed/results_resnet\
+       --command_launcher multi_gpu\
+       --hparams {\"model_type\":\"ResNet\"}\
+       --algorithms HessianAlignment\
+       --datasets PACS VLCS OfficeHome TerraIncognita DomainNet\
+       --single_test_envs\
+       --n_hparams 20\
+       --n_trials 3
+```
+
+
 To view the results of your sweep:
 
 ````sh
