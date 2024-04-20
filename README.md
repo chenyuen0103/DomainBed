@@ -104,10 +104,10 @@ python -m domainbed.scripts.sweep launch\
        --data_dir=./domainbed/data/\
        --output_dir=./domainbed/results_vits\
        --command_launcher multi_gpu\
-       --algorithms ERM Fishr HessianAlignment IRM\
-       --datasets PACS RotatedMNIST VLCS OfficeHome TerraIncognita WILDSCamelyon\
+       --algorithms ERM Fishr HessianAlignment\
+       --datasets PACS VLCS OfficeHome TerraIncognita DomainNet\
        --single_test_envs\
-       --n_hparams 5\
+       --n_hparams 20\
        --n_trials 3
 ```
 

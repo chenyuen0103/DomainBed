@@ -153,9 +153,6 @@ class HessianAlignment(ERM):
             lr=self.hparams["lr"],
             weight_decay=self.hparams['weight_decay']
         )
-        # if 'model_type' in hparams and hparams['model_type'] == 'ViT-S':
-        #     t_total = 5001
-        #     self.scheduler = WarmupCosineSchedule(self.optimizer, warmup_steps=self.hparams["warmup_steps"], t_total=t_total)
 
 
 
@@ -189,7 +186,7 @@ class HessianAlignment(ERM):
 
         # Normalize Hessian by the batch size
         H /= batch_size
-
+        H /= dC
         return H
         #
         # Compute each block H^{(k, l)}
@@ -268,6 +265,7 @@ class HessianAlignment(ERM):
         # This resembles the gradient calculation for a model's weights in a simplified linear scenario
         grad_loss = p - y_onehot
         grad_w = torch.matmul(grad_loss.T, x_flattened) / x.size(0)
+        grad_w /= grad_w.shape[1] ** 0.5
 
         return grad_w
 
@@ -345,7 +343,7 @@ class HessianAlignment(ERM):
             # Optionally, you can move it back to the original device (e.g., CUDA device)
 
             # x_pca_sklearn = torch.tensor(x_reduced, dtype=torch.float).to(x.device)
-            x_pca_svd  = self.pca(x, n_components)
+            x_pca_svd = self.pca(x, n_components)
             # breakpoint()
             # assert torch.allclose(x_pca_sklearn, x_pca_svd), "PCA computation discrepancy"
             x = x_pca_svd
