@@ -84,6 +84,7 @@ Train a model:
 python3 -m domainbed.scripts.train\
        --data_dir=./domainbed/data/\
        --algorithm HessianAlignment\
+       --hparams {\"model_type\":\"ResNet\"}\
        --dataset PACS\
        --test_env 2
 ```
