@@ -466,13 +466,13 @@ class HessianAlignment(ERM):
 
         # x_traces = torch.einsum('bik,cjk->bcij', X_outer, X_outer).diagonal(dim1=-2, dim2=-1).sum(-1)
 
-        start = time.time()
+        # start = time.time()
         x_traces = torch.zeros(batch_size, batch_size, device=x.device)
         for i in range(batch_size):
             for j in range(i, batch_size):
                 x_traces[i, j] = torch.matmul(X_outer[i], X_outer[j]).trace()
                 x_traces[j, i] = x_traces[i, j]
-        print(f"Time taken to compute x_traces: {time.time() - start}")
+        # print(f"Time taken to compute x_traces: {time.time() - start}")
 
         masks = unique_envs.unsqueeze(1) == envs.unsqueeze(0)  # Shape (num_envs, num_samples)
 
@@ -492,13 +492,13 @@ class HessianAlignment(ERM):
         # Compute all pairwise masks by logical and
         pairwise_masks = mask1_expanded & mask2_expanded  # Shape (num_envs, num_envs, num_samples, num_samples)
 
-        start = time.time()
+        # start = time.time()
         # Apply the pairwise masks to the product_matrix and sum over the last two dimensions
         masked_products = pairwise_masks * product_matrix.unsqueeze(0).unsqueeze(0)  # Broadcast product_matrix
         H_H_f = masked_products.sum(dim=-1).sum(dim=-1) / denoms
-        print(f"Time taken to compute H_H_f: {time.time() - start}")
+        # print(f"Time taken to compute H_H_f: {time.time() - start}")
 
-        start = time.time()
+        # start = time.time()
         f_norm_env = H_H_f.diagonal()
 
         # Compute the shared terms
@@ -519,8 +519,8 @@ class HessianAlignment(ERM):
         num_classes = logits.shape[1]
         avg_h_minus_h_bar_sq /= (x.shape[1] * num_classes) ** 2
 
-        print(f"Time taken to compute avg_h_minus_h_bar_sq: {time.time() - start}")
-        breakpoint()
+        # print(f"Time taken to compute avg_h_minus_h_bar_sq: {time.time() - start}")
+        # breakpoint()
         return f_norm_env, avg_h_minus_h_bar_sq
 
 
@@ -547,10 +547,14 @@ class HessianAlignment(ERM):
 
         grad_pen, hess_pen = 0, 0
         if alpha != 0:
+            start = time.time()
             grad_pen = self.grad_pen(x, logits, y, env_indices)
+            print(f"Time taken to compute grad_pen: {time.time() - start}")
 
         if beta != 0:
+            start = time.time()
             f_norm_env, hess_pen = self.hessian_pen(x, logits, env_indices)
+            print(f"Time taken to compute hess_pen: {time.time() - start}")
 
 
         erm_loss = torch.mean(env_erm)
