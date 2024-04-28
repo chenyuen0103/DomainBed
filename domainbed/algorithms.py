@@ -524,7 +524,7 @@ class HessianAlignment(ERM):
             logits_env = logits[idx]
             env_fraction = len(idx) / len(env_indices)
             # stats.update({f'env_frac:{e}': env_fraction})
-            loss = self.loss_fn(logits_env.squeeze(), y_env.long())
+            loss = F.cross_entropy(logits_env.squeeze(), y_env.long())
             env_erm[e] = loss
             # stats.update({f'erm_loss_env:{e}': loss.item()})
             # Compute the 2-norm of the difference between the gradient for this environment and the average gradient

@@ -144,8 +144,8 @@ def _hparams(algorithm, dataset, random_seed, model_type='ViT-S'):
 
     elif algorithm == 'HessianAlignment':
         # _hparam('model_type','ViT-S', lambda r: 'ViT-S')
-        _hparam('grad_alpha', 1e-6, lambda r: 10 ** r.uniform(-8, -3))
-        _hparam('hess_beta', 1e-6, lambda r: 10 ** r.uniform(-8, -3))
+        _hparam('grad_alpha', 100, lambda r: 10 ** r.uniform(-2, 4))
+        _hparam('hess_beta', 100, lambda r: 10 ** r.uniform(-2, 4))
 
     elif algorithm == "HGP":
         _hparam('penalty_alpha', 0.0001, lambda r: 10 ** r.uniform(-3, -5))
@@ -159,7 +159,7 @@ def _hparams(algorithm, dataset, random_seed, model_type='ViT-S'):
     if hparams['model_type'][0] == 'ViT-S':
         # _hparam('lr', 0.03, lambda r: 10 ** r.uniform(-2, -1))
         # _hparam('weight_decay', 0.0005, lambda r: 10 ** r.uniform(-6, -2))
-        _hparam('img_size', 224, lambda r: 384)
+        _hparam('img_size', 224, lambda r: 224)
         # _hparam('warmup_steps', 100, lambda r: 10 ** r.uniform(1, 2.5))
         # _hparam('num_steps', 700, lambda r: 700)
 
