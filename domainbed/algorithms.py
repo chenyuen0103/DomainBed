@@ -443,6 +443,7 @@ class HessianAlignment(ERM):
 
         # avg_grad_minus_grad_bar_2_sq = torch.mean(torch.stack([(grad - avg_gradient).norm(2) ** 2 for grad in env_gradients]))
         sum_grad_minus_grad_bar_2_sq = 0
+        breakpoint()
         for e in range(num_envs):
             sum_grad_minus_grad_bar_2_sq += (env_gradients[e] - avg_gradient).norm(2) ** 2
         avg_grad_minus_grad_bar_2_sq = sum_grad_minus_grad_bar_2_sq / num_envs
