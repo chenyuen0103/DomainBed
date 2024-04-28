@@ -512,7 +512,8 @@ class HessianAlignment(ERM):
         avg_h_minus_h_bar_sq = sum_h_minus_h_bar_sq / num_envs
 
         # normalize by the dimmension of the hessian
-        avg_h_minus_h_bar_sq /= (x.shape[1] * self.n_classes) ** 2
+        num_classes = logits.shape[1]
+        avg_h_minus_h_bar_sq /= (x.shape[1] * num_classes) ** 2
 
         return f_norm_env, avg_h_minus_h_bar_sq
 
