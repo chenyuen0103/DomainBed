@@ -21,6 +21,7 @@ from domainbed.lib.misc import (
     random_pairs_of_minibatches, split_meta_train_test, ParamDict,
     MovingAverage, l2_between_dicts, proj, Nonparametric
 )
+import time
 
 from sklearn.decomposition import PCA
 from domainbed.utils.scheduler import WarmupCosineSchedule
@@ -463,17 +464,16 @@ class HessianAlignment(ERM):
         prob_trace = torch.einsum('bik,cjk->bcij', diff, diff).diagonal(dim1=-2, dim2=-1).sum(-1)
         X_outer = torch.einsum('bi,bj->bij', x, x)
         breakpoint()
-        x_traces = torch.einsum('bik,cjk->bcij', X_outer, X_outer).diagonal(dim1=-2, dim2=-1).sum(-1)
-        # x_traces = torch.zeros(batch_size, batch_size, device=x.device)
-        # for i in range(batch_size):
-        #     for j in range(i, batch_size):
-        #         x_traces[i, j] = torch.matmul(X_outer[i], X_outer[j]).trace()
-        #         x_traces[j, i] = x_traces[i, j]
+        # x_traces = torch.einsum('bik,cjk->bcij', X_outer, X_outer).diagonal(dim1=-2, dim2=-1).sum(-1)
 
-        # Create a boolean mask for each environment
-        # env_ids = torch.arange(num_envs).unsqueeze(1)  # Shape (num_envs, 1)
-        # breakpoint()
-        # env_ids = torch.arange(unique_envs, device=x.device).unsqueeze(1)  # Shape (num_envs, 1)
+        start = time.time()
+        x_traces = torch.zeros(batch_size, batch_size, device=x.device)
+        for i in range(batch_size):
+            for j in range(i, batch_size):
+                x_traces[i, j] = torch.matmul(X_outer[i], X_outer[j]).trace()
+                x_traces[j, i] = x_traces[i, j]
+        print(f"Time taken to compute x_traces: {time.time() - start}")
+
         masks = unique_envs.unsqueeze(1) == envs.unsqueeze(0)  # Shape (num_envs, num_samples)
 
         # Compare env_indices with envs to create the masks tensor
