@@ -422,7 +422,8 @@ class HessianAlignment(ERM):
 
     def grad_pen(self, x, logits, y, envs):
         env_gradients = []
-        for e in range(self.n_envs):
+        num_envs = len(torch.unique(envs))
+        for e in range(num_envs):
             idx = (envs == e).nonzero().squeeze()
             if idx.numel() == 0:
                 continue
@@ -440,15 +441,16 @@ class HessianAlignment(ERM):
 
         # avg_grad_minus_grad_bar_2_sq = torch.mean(torch.stack([(grad - avg_gradient).norm(2) ** 2 for grad in env_gradients]))
         sum_grad_minus_grad_bar_2_sq = 0
-        for e in range(self.n_envs):
+        for e in range(num_envs):
             sum_grad_minus_grad_bar_2_sq += (env_gradients[e] - avg_gradient).norm(2) ** 2
-        avg_grad_minus_grad_bar_2_sq = sum_grad_minus_grad_bar_2_sq / self.n_envs
+        avg_grad_minus_grad_bar_2_sq = sum_grad_minus_grad_bar_2_sq / num_envs
 
         return avg_grad_minus_grad_bar_2_sq
 
 
 
     def hessian_pen(self, x, logits, envs):
+        num_envs = len(torch.unique(envs))
         p = F.softmax(logits, dim=1)
         diag = torch.diag_embed(p)
         batch_size = x.shape[0]
@@ -464,7 +466,7 @@ class HessianAlignment(ERM):
                 x_traces[j, i] = x_traces[i, j]
 
         # Create a boolean mask for each environment
-        env_ids = torch.arange(self.n_envs).unsqueeze(1)  # Shape (num_envs, 1)
+        env_ids = torch.arange(num_envs).unsqueeze(1)  # Shape (num_envs, 1)
 
         # Compare env_indices with envs to create the masks tensor
         masks = env_ids == envs
@@ -489,18 +491,18 @@ class HessianAlignment(ERM):
         f_norm_env = H_H_f.diagonal()
 
         # Compute the shared terms
-        shared_term = H_H_f.sum() / (self.n_envs ** 2)
+        shared_term = H_H_f.sum() / (num_envs ** 2)
 
         # Compute the sum for each environment, divided by num_envs
-        individual_term = 2 * H_H_f.sum(dim=1) / self.n_envs
+        individual_term = 2 * H_H_f.sum(dim=1) / num_envs
 
         # Calculate the full expression in a vectorized form
         avg_h_minus_h_bar_sq = torch.mean(f_norm_env + shared_term - individual_term)
 
         sum_h_minus_h_bar_sq = 0
-        for e in range(self.n_envs):
+        for e in range(num_envs):
             sum_h_minus_h_bar_sq += f_norm_env[e] + shared_term - individual_term[e]
-        avg_h_minus_h_bar_sq = sum_h_minus_h_bar_sq / self.n_envs
+        avg_h_minus_h_bar_sq = sum_h_minus_h_bar_sq / num_envs
 
         # normalize by the dimmension of the hessian
         avg_h_minus_h_bar_sq /= (x.shape[1] * self.n_classes) ** 2
@@ -510,9 +512,9 @@ class HessianAlignment(ERM):
 
     def exact_hessian_loss(self, logits, x, y, env_indices, alpha=10e-5, beta=10e-5, stats = {}):
         x = self.featurizer(x)
-        self.n_envs = len(torch.unique(env_indices))
-        env_erm = torch.zeros(self.n_envs, device = x.device)
-        for e in range(self.n_envs):
+        num_envs = len(torch.unique(env_indices))
+        env_erm = torch.zeros(num_envs, device = x.device)
+        for e in range(num_envs):
             idx = (env_indices == e).nonzero().squeeze()
             if idx.numel() == 0:
                 continue
