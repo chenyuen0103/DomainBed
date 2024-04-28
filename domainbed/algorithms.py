@@ -425,7 +425,8 @@ class HessianAlignment(ERM):
     def grad_pen(self, x, logits, y, envs):
         env_gradients = []
         num_envs = len(torch.unique(envs))
-        for e in range(num_envs):
+        envs_idx_here = torch.unique(envs)
+        for e in envs_idx_here:
             idx = (envs == e).nonzero().squeeze()
             if idx.numel() == 0:
                 continue
@@ -443,7 +444,6 @@ class HessianAlignment(ERM):
 
         # avg_grad_minus_grad_bar_2_sq = torch.mean(torch.stack([(grad - avg_gradient).norm(2) ** 2 for grad in env_gradients]))
         sum_grad_minus_grad_bar_2_sq = 0
-        breakpoint()
         for e in range(num_envs):
             sum_grad_minus_grad_bar_2_sq += (env_gradients[e] - avg_gradient).norm(2) ** 2
         avg_grad_minus_grad_bar_2_sq = sum_grad_minus_grad_bar_2_sq / num_envs
@@ -454,6 +454,7 @@ class HessianAlignment(ERM):
 
     def hessian_pen(self, x, logits, envs):
         num_envs = len(torch.unique(envs))
+        envs_idx_here = torch.unique(envs)
         p = F.softmax(logits, dim=1)
         diag = torch.diag_embed(p)
         batch_size = x.shape[0]
@@ -469,7 +470,9 @@ class HessianAlignment(ERM):
                 x_traces[j, i] = x_traces[i, j]
 
         # Create a boolean mask for each environment
-        env_ids = torch.arange(num_envs).unsqueeze(1)  # Shape (num_envs, 1)
+        # env_ids = torch.arange(num_envs).unsqueeze(1)  # Shape (num_envs, 1)
+        breakpoint()
+        env_ids = torch.arange(num_envs, device=x.device).unsqueeze(1)  # Shape (num_envs, 1)
 
         # Compare env_indices with envs to create the masks tensor
         masks = env_ids == envs
