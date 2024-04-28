@@ -472,10 +472,11 @@ class HessianAlignment(ERM):
         # Create a boolean mask for each environment
         # env_ids = torch.arange(num_envs).unsqueeze(1)  # Shape (num_envs, 1)
         # breakpoint()
-        env_ids = torch.arange(unique_envs, device=x.device).unsqueeze(1)  # Shape (num_envs, 1)
+        # env_ids = torch.arange(unique_envs, device=x.device).unsqueeze(1)  # Shape (num_envs, 1)
+        masks = unique_envs.unsqueeze(1) == envs.unsqueeze(0)  # Shape (num_envs, num_samples)
 
         # Compare env_indices with envs to create the masks tensor
-        masks = env_ids == envs
+        # masks = env_ids == envs
 
         # Compute product of prob_trace and x_traces
         product_matrix = prob_trace * x_traces
