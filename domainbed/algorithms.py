@@ -453,8 +453,8 @@ class HessianAlignment(ERM):
 
 
     def hessian_pen(self, x, logits, envs):
-        num_envs = len(torch.unique(envs))
-        envs_idx_here = torch.unique(envs)
+        unique_envs = torch.unique(envs)
+        num_envs = len(unique_envs)
         p = F.softmax(logits, dim=1)
         diag = torch.diag_embed(p)
         batch_size = x.shape[0]
@@ -472,7 +472,7 @@ class HessianAlignment(ERM):
         # Create a boolean mask for each environment
         # env_ids = torch.arange(num_envs).unsqueeze(1)  # Shape (num_envs, 1)
         breakpoint()
-        env_ids = torch.arange(num_envs, device=x.device).unsqueeze(1)  # Shape (num_envs, 1)
+        env_ids = torch.arange(unique_envs, device=x.device).unsqueeze(1)  # Shape (num_envs, 1)
 
         # Compare env_indices with envs to create the masks tensor
         masks = env_ids == envs
