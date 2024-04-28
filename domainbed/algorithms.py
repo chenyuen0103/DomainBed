@@ -462,12 +462,12 @@ class HessianAlignment(ERM):
         diff = diag - off_diag
         prob_trace = torch.einsum('bik,cjk->bcij', diff, diff).diagonal(dim1=-2, dim2=-1).sum(-1)
         X_outer = torch.einsum('bi,bj->bij', x, x)
-        # x_traces = torch.einsum('bik,cjk->bcij', X_outer, X_outer).diagonal(dim1=-2, dim2=-1).sum(-1)
-        x_traces = torch.zeros(batch_size, batch_size, device=x.device)
-        for i in range(batch_size):
-            for j in range(i, batch_size):
-                x_traces[i, j] = torch.matmul(X_outer[i], X_outer[j]).trace()
-                x_traces[j, i] = x_traces[i, j]
+        x_traces = torch.einsum('bik,cjk->bcij', X_outer, X_outer).diagonal(dim1=-2, dim2=-1).sum(-1)
+        # x_traces = torch.zeros(batch_size, batch_size, device=x.device)
+        # for i in range(batch_size):
+        #     for j in range(i, batch_size):
+        #         x_traces[i, j] = torch.matmul(X_outer[i], X_outer[j]).trace()
+        #         x_traces[j, i] = x_traces[i, j]
 
         # Create a boolean mask for each environment
         # env_ids = torch.arange(num_envs).unsqueeze(1)  # Shape (num_envs, 1)
