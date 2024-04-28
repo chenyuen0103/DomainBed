@@ -142,6 +142,8 @@ class HessianAlignment(ERM):
                                   hparams)
         self.grad_alpha = hparams['grad_alpha']
         self.hess_beta = hparams['hess_beta']
+        self.penalty_anneal_iters = hparams['penalty_anneal_iters']
+        self.update_count = 0
         # breakpoint()
         self.classifier = networks.Classifier_nobiases(
             self.featurizer.n_outputs, num_classes, self.hparams['nonlinear_classifier']
@@ -556,12 +558,18 @@ class HessianAlignment(ERM):
         all_envs = torch.cat([env for x, y, env in minibatches])
         # loss = F.cross_entropy(self.predict(all_x), all_y)
         logits = self.predict(all_x)
-        loss = self.exact_hessian_loss(logits, all_x, all_y, all_envs, alpha=self.grad_alpha, beta=self.hess_beta)
+        alpha = self.grad_alpha
+        beta = self.hess_beta
+        if self.update_count < self.penalty_anneal_iters:
+            alpha = 0
+            beta = 0
+        loss = self.exact_hessian_loss(logits, all_x, all_y, all_envs, alpha=alpha, beta=beta)
         self.optimizer.zero_grad()
         loss.backward()
         torch.nn.utils.clip_grad_norm_(self.network.parameters(), max_norm=1)
 
         self.optimizer.step()
+        self.update_count += 1
         # if 'model_type' in self.hparams and self.hparams['model_type'] == 'ViT-S':
         #     self.scheduler.step()
         # self.scheduler.step()
