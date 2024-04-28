@@ -82,7 +82,7 @@ def _hparams(algorithm, dataset, random_seed, model_type='ViT-S'):
 
     elif algorithm == "VREx":
         _hparam('vrex_lambda', 1e1, lambda r: 10**r.uniform(-1, 5))
-        _hparam('vrex_penalty_anneal_iters', 500,
+        _hparam('vrex_penalty_anneal_iters', 0,
                 lambda r: int(10**r.uniform(0, 4)))
 
     elif algorithm == "SD":
