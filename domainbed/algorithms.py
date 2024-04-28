@@ -473,7 +473,7 @@ class HessianAlignment(ERM):
                 x_traces[i, j] = torch.matmul(X_outer[i], X_outer[j]).trace()
                 x_traces[j, i] = x_traces[i, j]
         print(f"Time taken to compute x_traces: {time.time() - start}")
-        breakpoint()
+
         masks = unique_envs.unsqueeze(1) == envs.unsqueeze(0)  # Shape (num_envs, num_samples)
 
         # Compare env_indices with envs to create the masks tensor
@@ -492,10 +492,13 @@ class HessianAlignment(ERM):
         # Compute all pairwise masks by logical and
         pairwise_masks = mask1_expanded & mask2_expanded  # Shape (num_envs, num_envs, num_samples, num_samples)
 
+        start = time.time()
         # Apply the pairwise masks to the product_matrix and sum over the last two dimensions
         masked_products = pairwise_masks * product_matrix.unsqueeze(0).unsqueeze(0)  # Broadcast product_matrix
         H_H_f = masked_products.sum(dim=-1).sum(dim=-1) / denoms
+        print(f"Time taken to compute H_H_f: {time.time() - start}")
 
+        start = time.time()
         f_norm_env = H_H_f.diagonal()
 
         # Compute the shared terms
@@ -516,6 +519,8 @@ class HessianAlignment(ERM):
         num_classes = logits.shape[1]
         avg_h_minus_h_bar_sq /= (x.shape[1] * num_classes) ** 2
 
+        print(f"Time taken to compute avg_h_minus_h_bar_sq: {time.time() - start}")
+        breakpoint()
         return f_norm_env, avg_h_minus_h_bar_sq
 
 
