@@ -188,55 +188,8 @@ class HessianAlignment(ERM):
         H /= batch_size
         H /= dC
         return H
-        #
-        # Compute each block H^{(k, l)}
-        # Hessian = torch.zeros(d * num_classes, d * num_classes).to(x.device)
-        # for k in range(num_classes):
-        #     for l in range(num_classes):
-        #         if k == l:
-        #             # Diagonal block
-        #             pk = p[:, k]  # Shape: [batch_size]
-        #             grad_k = pk * (1 - pk)  # Shape: [batch_size]
-        #             X_outer = torch.bmm(x.unsqueeze(2), x.unsqueeze(1))  # Shape: [batch_size, d, d]
-        #             block = torch.sum(X_outer * grad_k.view(-1, 1, 1), dim=0)  # Shape: [d, d]
-        #         else:
-        #             # Off-diagonal block
-        #             pk = p[:, k]  # Shape: [batch_size]
-        #             pl = p[:, l]  # Shape: [batch_size]
-        #             grad_kl = -pk * pl  # Shape: [batch_size]
-        #             X_outer = torch.bmm(x.unsqueeze(2), x.unsqueeze(1))  # Shape: [batch_size, d, d]
-        #             block = torch.sum(X_outer * grad_kl.view(-1, 1, 1), dim=0)  # Shape: [d, d]
-        #
-        #         # Place block into Hessian
-        #         row_start = k * d
-        #         row_end = (k + 1) * d
-        #         col_start = l * d
-        #         col_end = (l + 1) * d
-        #         Hessian[row_start:row_end, col_start:col_end] = block
-        #
-        # # Normalize Hessian by the batch size
-        # Hessian /= batch_size
-        # Hessian /= dC
-        #
-        # return Hessian
 
-    def hessian_original(self, x, logits):
-        # Flatten x if it's not already in the shape [batch_size, num_features]
-        x_flattened = x.view(x.size(0), -1)
 
-        p = F.softmax(logits, dim=1).clone()[:, 1]  # probability for class 1
-        scale_factor = p * (1 - p)  # Shape: [batch_size]
-        scale_factor = scale_factor.view(-1, 1, 1)
-
-        x_reshaped = x_flattened.unsqueeze(2)  # Reshape x for outer product
-
-        outer_product = torch.matmul(x_reshaped, x_reshaped.transpose(1, 2))
-        hessian_w_class0 = torch.mean(scale_factor * outer_product, dim=0)
-
-        hessian_w_class1 = -hessian_w_class0
-        hessian_w2 = torch.stack([hessian_w_class0, hessian_w_class1])
-
-        return hessian_w2
 
     def gradient(self, x, logits, y):
         """
@@ -324,7 +277,7 @@ class HessianAlignment(ERM):
 
         return x_pca
 
-    def exact_hessian_loss(self, logits, x, y, envs_indices, alpha=10e-5, beta=10e-5):
+    def exact_hessian_loss_old(self, logits, x, y, envs_indices, alpha=10e-5, beta=10e-5):
         # for params in model.parameters():
         #     params.requires_grad = True
         x = self.featurizer(x)
@@ -464,6 +417,135 @@ class HessianAlignment(ERM):
 
         # return total_loss, erm_loss, hess_loss, grad_loss
         return total_loss
+
+
+
+    def grad_pen(self, x, logits, y, envs):
+        env_gradients = []
+        for e in range(self.n_envs):
+            idx = (envs == e).nonzero().squeeze()
+            if idx.numel() == 0:
+                continue
+            elif idx.dim() == 0:
+                num_samples = 1
+            else:
+                num_samples = len(idx)
+            y_env = y[idx]
+            logits_env = logits[idx]
+            x_env = x[idx]
+            grad_w = self.gradient(x_env, logits_env, y_env)
+            env_gradients.append(grad_w)
+
+        avg_gradient = torch.mean(torch.stack(env_gradients), dim=0)
+
+        # avg_grad_minus_grad_bar_2_sq = torch.mean(torch.stack([(grad - avg_gradient).norm(2) ** 2 for grad in env_gradients]))
+        sum_grad_minus_grad_bar_2_sq = 0
+        for e in range(self.n_envs):
+            sum_grad_minus_grad_bar_2_sq += (env_gradients[e] - avg_gradient).norm(2) ** 2
+        avg_grad_minus_grad_bar_2_sq = sum_grad_minus_grad_bar_2_sq / self.n_envs
+
+        return avg_grad_minus_grad_bar_2_sq
+
+
+
+    def hessian_pen(self, x, logits, envs):
+        p = F.softmax(logits, dim=1)
+        diag = torch.diag_embed(p)
+        batch_size = x.shape[0]
+        off_diag = torch.einsum('bi,bj->bij', p, p)
+        diff = diag - off_diag
+        prob_trace = torch.einsum('bik,cjk->bcij', diff, diff).diagonal(dim1=-2, dim2=-1).sum(-1)
+        X_outer = torch.einsum('bi,bj->bij', x, x)
+        # x_traces = torch.einsum('bik,cjk->bcij', X_outer, X_outer).diagonal(dim1=-2, dim2=-1).sum(-1)
+        x_traces = torch.zeros(batch_size, batch_size, device=x.device)
+        for i in range(batch_size):
+            for j in range(i, batch_size):
+                x_traces[i, j] = torch.matmul(X_outer[i], X_outer[j]).trace()
+                x_traces[j, i] = x_traces[i, j]
+
+        # Create a boolean mask for each environment
+        env_ids = torch.arange(self.n_envs).unsqueeze(1)  # Shape (num_envs, 1)
+
+        # Compare env_indices with envs to create the masks tensor
+        masks = env_ids == envs
+
+        # Compute product of prob_trace and x_traces
+        product_matrix = prob_trace * x_traces
+
+        # Precompute the denominators using broadcasting
+        denoms = masks.sum(1).unsqueeze(1) * masks.sum(1).unsqueeze(0)
+
+        # Expand masks for all pairwise environment combinations using broadcasting
+        mask1_expanded = masks.unsqueeze(1).unsqueeze(3)  # Shape (num_envs, 1, num_samples, 1)
+        mask2_expanded = masks.unsqueeze(0).unsqueeze(2)  # Shape (1, num_envs, 1, num_samples)
+
+        # Compute all pairwise masks by logical and
+        pairwise_masks = mask1_expanded & mask2_expanded  # Shape (num_envs, num_envs, num_samples, num_samples)
+
+        # Apply the pairwise masks to the product_matrix and sum over the last two dimensions
+        masked_products = pairwise_masks * product_matrix.unsqueeze(0).unsqueeze(0)  # Broadcast product_matrix
+        H_H_f = masked_products.sum(dim=-1).sum(dim=-1) / denoms
+
+        f_norm_env = H_H_f.diagonal()
+
+        # Compute the shared terms
+        shared_term = H_H_f.sum() / (self.n_envs ** 2)
+
+        # Compute the sum for each environment, divided by num_envs
+        individual_term = 2 * H_H_f.sum(dim=1) / self.n_envs
+
+        # Calculate the full expression in a vectorized form
+        avg_h_minus_h_bar_sq = torch.mean(f_norm_env + shared_term - individual_term)
+
+        sum_h_minus_h_bar_sq = 0
+        for e in range(self.n_envs):
+            sum_h_minus_h_bar_sq += f_norm_env[e] + shared_term - individual_term[e]
+        avg_h_minus_h_bar_sq = sum_h_minus_h_bar_sq / self.n_envs
+
+        # normalize by the dimmension of the hessian
+        avg_h_minus_h_bar_sq /= (x.shape[1] * self.n_classes) ** 2
+
+        return f_norm_env, avg_h_minus_h_bar_sq
+
+
+    def exact_hessian_loss(self, logits, x, y, env_indices, alpha=10e-5, beta=10e-5, stats = {}):
+        env_erm = torch.zeros(self.n_envs, device = x.device)
+        for e in range(self.n_envs):
+            idx = (env_indices == e).nonzero().squeeze()
+            if idx.numel() == 0:
+                continue
+            elif idx.dim() == 0:
+                num_samples = 1
+            else:
+                num_samples = len(idx)
+            y_env = y[idx]
+            logits_env = logits[idx]
+            env_fraction = len(idx) / len(env_indices)
+            # stats.update({f'env_frac:{e}': env_fraction})
+            loss = self.loss_fn(logits_env.squeeze(), y_env.long())
+            env_erm[e] = loss
+            # stats.update({f'erm_loss_env:{e}': loss.item()})
+            # Compute the 2-norm of the difference between the gradient for this environment and the average gradient
+
+        grad_pen, hess_pen = 0, 0
+        if alpha != 0:
+            grad_pen = self.grad_pen(x, logits, y, env_indices)
+
+        if beta != 0:
+            f_norm_env, hess_pen = self.hessian_pen(x, logits, env_indices)
+
+
+        erm_loss = torch.mean(env_erm)
+        total_loss = erm_loss + alpha * grad_pen + beta * hess_pen
+        #
+        # stats['total_loss'] = total_loss.item()
+        # stats['erm_loss'] = erm_loss.item()
+        # stats['hessian_loss'] = beta * hess_pen.item() if beta != 0 else 0
+        # stats['grad_loss'] = alpha * grad_pen.item() if alpha != 0 else 0
+
+        # return total_loss, erm_loss, alpha * grad_pen, beta * hess_pen, stats
+        return total_loss
+
     def update(self, minibatches, unlabeled=None):
         all_x = torch.cat([x for x, y, env in minibatches])
         all_y = torch.cat([y for x, y, env in minibatches])
