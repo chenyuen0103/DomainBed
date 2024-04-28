@@ -463,7 +463,7 @@ class HessianAlignment(ERM):
         diff = diag - off_diag
         prob_trace = torch.einsum('bik,cjk->bcij', diff, diff).diagonal(dim1=-2, dim2=-1).sum(-1)
         X_outer = torch.einsum('bi,bj->bij', x, x)
-        breakpoint()
+
         # x_traces = torch.einsum('bik,cjk->bcij', X_outer, X_outer).diagonal(dim1=-2, dim2=-1).sum(-1)
 
         start = time.time()
@@ -473,7 +473,7 @@ class HessianAlignment(ERM):
                 x_traces[i, j] = torch.matmul(X_outer[i], X_outer[j]).trace()
                 x_traces[j, i] = x_traces[i, j]
         print(f"Time taken to compute x_traces: {time.time() - start}")
-
+        breakpoint()
         masks = unique_envs.unsqueeze(1) == envs.unsqueeze(0)  # Shape (num_envs, num_samples)
 
         # Compare env_indices with envs to create the masks tensor
