@@ -146,7 +146,7 @@ def _hparams(algorithm, dataset, random_seed, model_type='ViT-S'):
         # _hparam('model_type','ViT-S', lambda r: 'ViT-S')
         _hparam('grad_alpha', 100, lambda r: 10 ** r.uniform(-2, 4))
         _hparam('hess_beta', 100, lambda r: 10 ** r.uniform(-2, 4))
-        _hparam('penalty_anneal_iters', 500, lambda r: int(10 ** r.uniform(0, 4)))
+        _hparam('penalty_anneal_iters', 0, lambda r: int(10 ** r.uniform(0, 4)))
 
     elif algorithm == "HGP":
         _hparam('penalty_alpha', 0.0001, lambda r: 10 ** r.uniform(-3, -5))
