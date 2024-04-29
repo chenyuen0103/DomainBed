@@ -528,10 +528,10 @@ class HessianAlignment(ERM):
         unique_envs = envs.unique()
         num_envs = len(unique_envs)
         H_H_f = torch.zeros(num_envs, num_envs)
-        for e1 in unique_envs:
-            for e2 in unique_envs:
-                mask1 = envs == e1
-                mask2 = envs == e2
+        for e1 in range(num_envs):
+            for e2 in range(e1, num_envs):
+                mask1 = envs == unique_envs[e1]
+                mask2 = envs == unique_envs[e2]
                 x_env1 = x[mask1]
                 x_env2 = x[mask2]
                 logits_env1 = logits[mask1]
@@ -556,6 +556,7 @@ class HessianAlignment(ERM):
 
                 H_H_f[e1, e2] = torch.sum(prob_trace_1_2 * x_traces_1_2).sum(dim=-1).sum(dim=-1) / (
                             mask1.sum() * mask2.sum())
+                H_H_f[e2, e1] = H_H_f[e1, e2]
 
         f_norm_env = H_H_f.diagonal()
         shared_term = H_H_f.sum() / (num_envs ** 2)
