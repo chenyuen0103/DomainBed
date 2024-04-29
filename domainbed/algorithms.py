@@ -527,7 +527,7 @@ class HessianAlignment(ERM):
     def hessian_pen(self, x, logits, envs):
         unique_envs = envs.unique()
         num_envs = len(unique_envs)
-        H_H_f = torch.zeros(num_envs, num_envs)
+        H_H_f = torch.zeros(num_envs, num_envs, device=x.device)
         for e1 in range(num_envs):
             for e2 in range(e1, num_envs):
                 mask1 = envs == unique_envs[e1]
@@ -565,7 +565,7 @@ class HessianAlignment(ERM):
 
         dC = x.shape[1] * logits.shape[1]
 
-        sum_h_minus_h_bar_sq /= (dC)
+        sum_h_minus_h_bar_sq /= (dC) ** 2
         return f_norm_env, sum_h_minus_h_bar_sq
 
 
