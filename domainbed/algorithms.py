@@ -528,34 +528,57 @@ class HessianAlignment(ERM):
         unique_envs = envs.unique()
         num_envs = len(unique_envs)
         H_H_f = torch.zeros(num_envs, num_envs, device=x.device)
+
+        diff_envs = {}
+        x_outer_envs = {}
+        for e in range(num_envs):
+            mask = envs == unique_envs[e]
+            x_env = x[mask]
+            x_outer_envs[e] = torch.einsum('bi,bj->bij', x_env, x_env)
+            logits_env = logits[mask]
+            p = F.softmax(logits_env, dim=1)
+
+            diag = torch.diag_embed(p)
+            off_diag = torch.einsum('bi,bj->bij', p, p)
+            diff_envs[e] = diag - off_diag
+
+
         for e1 in range(num_envs):
             for e2 in range(e1, num_envs):
                 mask1 = envs == unique_envs[e1]
                 mask2 = envs == unique_envs[e2]
-                x_env1 = x[mask1]
-                x_env2 = x[mask2]
-                logits_env1 = logits[mask1]
-                logits_env2 = logits[mask2]
-                p1 = F.softmax(logits_env1, dim=1)
-                p2 = F.softmax(logits_env2, dim=1)
-                diag1 = torch.diag_embed(p1)
-                diag2 = torch.diag_embed(p2)
-                off_diag1 = torch.einsum('bi,bj->bij', p1, p1)
-                off_diag2 = torch.einsum('bi,bj->bij', p2, p2)
-                diff1 = diag1 - off_diag1
-                diff2 = diag2 - off_diag2
+                # x_env1 = x[mask1]
+                # x_env2 = x[mask2]
+                # logits_env1 = logits[mask1]
+                # logits_env2 = logits[mask2]
+                # p1 = F.softmax(logits_env1, dim=1)
+                # p2 = F.softmax(logits_env2, dim=1)
+                # diag1 = torch.diag_embed(p1)
+                # diag2 = torch.diag_embed(p2)
+                # off_diag1 = torch.einsum('bi,bj->bij', p1, p1)
+                # off_diag2 = torch.einsum('bi,bj->bij', p2, p2)
+                # diff1 = diag1 - off_diag1
+                # diff2 = diag2 - off_diag2
+                diff1 = diff_envs[e1]
+                diff2 = diff_envs[e2]
+
+
                 prob_trace_1_2 = torch.einsum('bik,cjk->bcij', diff1, diff2).diagonal(dim1=-2, dim2=-1).sum(-1)
-                X_outer1 = torch.einsum('bi,bj->bij', x_env1, x_env1)
-                X_outer2 = torch.einsum('bi,bj->bij', x_env2, x_env2)
+                # X_outer1 = torch.einsum('bi,bj->bij', x_env1, x_env1)
+                # X_outer2 = torch.einsum('bi,bj->bij', x_env2, x_env2)
+                X_outer1 = x_outer_envs[e1]
+                X_outer2 = x_outer_envs[e2]
                 # x_traces_1_2 = torch.einsum('bik,cjk->bcij', X_outer1, X_outer2).diagonal(dim1=-2, dim2=-1).sum(-1)
-                x_traces_1_2 = torch.zeros(x_env1.shape[0], x_env2.shape[0], device=x.device)
-                for i in range(x_env1.shape[0]):
-                    for j in range(i, x_env2.shape[0]):
+                x_traces_1_2 = torch.zeros(X_outer1.shape[0], X_outer2.shape[0], device=x.device)
+                for i in range(X_outer1.shape[0]):
+                    for j in range(i, X_outer2.shape[0]):
                         x_traces_1_2[i, j] = torch.matmul(X_outer1[i], X_outer2[j]).trace()
                         x_traces_1_2[j, i] = x_traces_1_2[i, j]
 
-                H_H_f[e1, e2] = torch.sum(prob_trace_1_2 * x_traces_1_2).sum(dim=-1).sum(dim=-1) / (
-                            mask1.sum() * mask2.sum())
+                # H_H_f[e1, e2] = torch.sum(prob_trace_1_2 * x_traces_1_2).sum(dim=-1).sum(dim=-1) / (
+                #             mask1.sum() * mask2.sum())
+
+                H_H_f[e1, e2] = torch.einsum('bc,bc->', prob_trace_1_2, x_traces_1_2) / (X_outer1.shape[0] * X_outer2.shape[0])
                 H_H_f[e2, e1] = H_H_f[e1, e2]
 
         f_norm_env = H_H_f.diagonal()
