@@ -599,6 +599,9 @@ class HessianAlignment(ERM):
         if beta != 0:
             start = time.time()
             f_norm_env, hess_pen = self.hessian_pen(x, logits, env_indices)
+            f_norm_env2, hess_pen2 = self.hessian_pen_old(x, logits, env_indices)
+            breakpoint()
+            assert torch.allclose(f_norm_env, f_norm_env2), "Hessian computation discrepancy"
             print(f"Time taken to compute hess_pen: {time.time() - start}")
 
 
