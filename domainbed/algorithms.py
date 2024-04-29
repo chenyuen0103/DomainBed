@@ -577,9 +577,8 @@ class HessianAlignment(ERM):
                     # for j in range(i, X_outer2.shape[0]):
                     # x_traces_1_2[i, j] = torch.matmul(X_outer1[i], X_outer2[j]).trace()
                     # x_traces_1_2[j, i] = x_traces_1_2[i, j]
-                x_traces_1_2 = torch.stack(x_traces_list)
-                print(x_traces_1_2)
-                breakpoint()
+                x_traces_1_2 = torch.concat(x_traces_list, dim=0)
+                # breakpoint()
                 # H_H_f[e1, e2] = torch.sum(prob_trace_1_2 * x_traces_1_2).sum(dim=-1).sum(dim=-1) / (
                 #             mask1.sum() * mask2.sum())
 
