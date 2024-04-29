@@ -573,7 +573,7 @@ class HessianAlignment(ERM):
                 # x_traces_1_2 = torch.zeros(X_outer1.shape[0], X_outer2.shape[0], device=x.device)
                 for i in range(0, X_outer1.shape[0],2):
                     try:
-                        x_traces_1 = torch.einsum('bik,cjk->bcij', X_outer1[i, i + 1], X_outer2).diagonal(dim1=-2, dim2=-1).sum(-1)
+                        x_traces_1 = torch.einsum('bik,cjk->bcij', X_outer1[i: i + 1], X_outer2).diagonal(dim1=-2, dim2=-1).sum(-1)
                     except:
                         x_traces_1 = torch.einsum('bik,cjk->bcij', X_outer1[i], X_outer2).diagonal(dim1=-2, dim2=-1).sum(-1)
                     x_traces_list.append(x_traces_1)
