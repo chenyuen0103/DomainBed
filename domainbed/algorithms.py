@@ -599,9 +599,6 @@ class HessianAlignment(ERM):
         if beta != 0:
             start = time.time()
             f_norm_env, hess_pen, HHf = self.hessian_pen(x, logits, env_indices)
-            f_norm_env2, hess_pen2, HHf2 = self.hessian_pen_old(x, logits, env_indices)
-            breakpoint()
-            assert torch.allclose(f_norm_env, f_norm_env2), "Hessian computation discrepancy"
             print(f"Time taken to compute hess_pen: {time.time() - start}")
 
 
@@ -631,7 +628,7 @@ class HessianAlignment(ERM):
         self.optimizer.zero_grad()
         start = time.time()
         loss.backward()
-        print(f"Time taken to update: {time.time() - start}")
+        print(f"Time taken to backward: {time.time() - start}")
         # torch.nn.utils.clip_grad_norm_(self.network.parameters(), max_norm=1)
 
         self.optimizer.step()
