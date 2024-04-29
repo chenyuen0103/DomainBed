@@ -569,13 +569,17 @@ class HessianAlignment(ERM):
                 X_outer1 = x_outer_envs[e1]
                 X_outer2 = x_outer_envs[e2]
                 # x_traces_1_2 = torch.einsum('bik,cjk->bcij', X_outer1, X_outer2).diagonal(dim1=-2, dim2=-1).sum(-1)
-                x_traces_1_2 = torch.zeros(X_outer1.shape[0], X_outer2.shape[0], device=x.device)
+                x_traces_list = []
+                # x_traces_1_2 = torch.zeros(X_outer1.shape[0], X_outer2.shape[0], device=x.device)
                 for i in range(X_outer1.shape[0]):
-                    x_traces_1_2 = torch.einsum('bik,cjk->bcij', X_outer1[i].unsqueeze(0), X_outer2).diagonal(dim1=-2, dim2=-1).sum(-1)
+                    x_traces_1 = torch.einsum('bik,cjk->bcij', X_outer1[i].unsqueeze(0), X_outer2).diagonal(dim1=-2, dim2=-1).sum(-1)
+                    x_traces_list.append(x_traces_1)
                     # for j in range(i, X_outer2.shape[0]):
                     # x_traces_1_2[i, j] = torch.matmul(X_outer1[i], X_outer2[j]).trace()
                     # x_traces_1_2[j, i] = x_traces_1_2[i, j]
-
+                x_traces_1_2 = torch.stack(x_traces_list)
+                print(x_traces_1_2)
+                breakpoint()
                 # H_H_f[e1, e2] = torch.sum(prob_trace_1_2 * x_traces_1_2).sum(dim=-1).sum(dim=-1) / (
                 #             mask1.sum() * mask2.sum())
 
