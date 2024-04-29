@@ -607,7 +607,7 @@ class HessianAlignment(ERM):
 
     def exact_hessian_loss(self, logits, x, y, env_indices, alpha=10e-5, beta=10e-5, stats = {}):
         x = self.featurizer(x)
-        num_envs = len(torch.unique(env_indices))
+        # num_envs = len(torch.unique(env_indices))
         # env_erm = torch.zeros(num_envs, device = x.device)
         # for e in range(num_envs):
         #     idx = (env_indices == e).nonzero().squeeze()
