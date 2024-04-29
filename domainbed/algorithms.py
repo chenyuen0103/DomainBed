@@ -222,7 +222,7 @@ class HessianAlignment(ERM):
         # This resembles the gradient calculation for a model's weights in a simplified linear scenario
         grad_loss = p - y_onehot
         grad_w = torch.matmul(grad_loss.T, x_flattened) / x.size(0)
-        grad_w /= (grad_w.shape[0] * grad_w.shape[1]) ** 0.5
+        grad_w /= (grad_w.shape[0] * grad_w.shape[1]) ** 0.25
 
         return grad_w
 
@@ -565,7 +565,7 @@ class HessianAlignment(ERM):
 
         dC = x.shape[1] * logits.shape[1]
 
-        sum_h_minus_h_bar_sq /= (dC) ** 2
+        sum_h_minus_h_bar_sq /= (dC)
         return f_norm_env, sum_h_minus_h_bar_sq, H_H_f
 
 
