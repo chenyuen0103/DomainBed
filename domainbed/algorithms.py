@@ -521,7 +521,7 @@ class HessianAlignment(ERM):
 
         # print(f"Time taken to compute avg_h_minus_h_bar_sq: {time.time() - start}")
         # breakpoint()
-        return f_norm_env, avg_h_minus_h_bar_sq
+        return f_norm_env, avg_h_minus_h_bar_sq , H_H_f
 
 
     def hessian_pen(self, x, logits, envs):
@@ -566,7 +566,7 @@ class HessianAlignment(ERM):
         dC = x.shape[1] * logits.shape[1]
 
         sum_h_minus_h_bar_sq /= (dC) ** 2
-        return f_norm_env, sum_h_minus_h_bar_sq
+        return f_norm_env, sum_h_minus_h_bar_sq, H_H_f
 
 
     def exact_hessian_loss(self, logits, x, y, env_indices, alpha=10e-5, beta=10e-5, stats = {}):
@@ -598,8 +598,8 @@ class HessianAlignment(ERM):
 
         if beta != 0:
             start = time.time()
-            f_norm_env, hess_pen = self.hessian_pen(x, logits, env_indices)
-            f_norm_env2, hess_pen2 = self.hessian_pen_old(x, logits, env_indices)
+            f_norm_env, hess_pen, HHf = self.hessian_pen(x, logits, env_indices)
+            f_norm_env2, hess_pen2, HHf2 = self.hessian_pen_old(x, logits, env_indices)
             breakpoint()
             assert torch.allclose(f_norm_env, f_norm_env2), "Hessian computation discrepancy"
             print(f"Time taken to compute hess_pen: {time.time() - start}")
