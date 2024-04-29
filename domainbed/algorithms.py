@@ -608,21 +608,21 @@ class HessianAlignment(ERM):
     def exact_hessian_loss(self, logits, x, y, env_indices, alpha=10e-5, beta=10e-5, stats = {}):
         x = self.featurizer(x)
         num_envs = len(torch.unique(env_indices))
-        env_erm = torch.zeros(num_envs, device = x.device)
-        for e in range(num_envs):
-            idx = (env_indices == e).nonzero().squeeze()
-            if idx.numel() == 0:
-                continue
-            elif idx.dim() == 0:
-                num_samples = 1
-            else:
-                num_samples = len(idx)
-            y_env = y[idx]
-            logits_env = logits[idx]
-            env_fraction = len(idx) / len(env_indices)
-            # stats.update({f'env_frac:{e}': env_fraction})
-            loss = F.cross_entropy(logits_env.squeeze(), y_env.long())
-            env_erm[e] = loss
+        # env_erm = torch.zeros(num_envs, device = x.device)
+        # for e in range(num_envs):
+        #     idx = (env_indices == e).nonzero().squeeze()
+        #     if idx.numel() == 0:
+        #         continue
+        #     elif idx.dim() == 0:
+        #         num_samples = 1
+        #     else:
+        #         num_samples = len(idx)
+        #     y_env = y[idx]
+        #     logits_env = logits[idx]
+        #     env_fraction = len(idx) / len(env_indices)
+        #     # stats.update({f'env_frac:{e}': env_fraction})
+        #     loss = F.cross_entropy(logits_env.squeeze(), y_env.long())
+        #     env_erm[e] = loss
             # stats.update({f'erm_loss_env:{e}': loss.item()})
             # Compute the 2-norm of the difference between the gradient for this environment and the average gradient
 
@@ -638,7 +638,8 @@ class HessianAlignment(ERM):
             # print(f"Time taken to compute hess_pen: {time.time() - start}")
 
 
-        erm_loss = torch.mean(env_erm)
+        # erm_loss = torch.mean(env_erm)
+        erm_loss = F.cross_entropy(logits, y)
         total_loss = erm_loss + alpha * grad_pen + beta * hess_pen
 
         #
