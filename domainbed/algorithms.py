@@ -558,7 +558,8 @@ class HessianAlignment(ERM):
 
 
         erm_loss = torch.mean(env_erm)
-        total_loss = erm_loss + alpha * grad_pen + beta * hess_pen
+        # total_loss = erm_loss + alpha * grad_pen + beta * hess_pen
+        total_loss = erm_loss
         #
         # stats['total_loss'] = total_loss.item()
         # stats['erm_loss'] = erm_loss.item()
