@@ -640,6 +640,7 @@ class HessianAlignment(ERM):
 
         erm_loss = torch.mean(env_erm)
         total_loss = erm_loss + alpha * grad_pen + beta * hess_pen
+
         #
         # stats['total_loss'] = total_loss.item()
         # stats['erm_loss'] = erm_loss.item()
@@ -647,7 +648,7 @@ class HessianAlignment(ERM):
         # stats['grad_loss'] = alpha * grad_pen.item() if alpha != 0 else 0
 
         # return total_loss, erm_loss, alpha * grad_pen, beta * hess_pen, stats
-        return total_loss
+        return total_loss, erm_loss, grad_pen, hess_pen
 
     def update(self, minibatches, unlabeled=None):
         all_x = torch.cat([x for x, y, env in minibatches])
@@ -660,7 +661,11 @@ class HessianAlignment(ERM):
         if self.update_count < self.penalty_anneal_iters:
             alpha = 0
             beta = 0
-        loss = self.exact_hessian_loss(logits, all_x, all_y, all_envs, alpha=alpha, beta=beta)
+        loss, erm_loss, grad_pen, hess_pen = self.exact_hessian_loss(logits, all_x, all_y, all_envs, alpha=alpha, beta=beta)
+        if isinstance(hess_pen, torch.Tensor):
+            hess_pen = hess_pen.item()
+        if isinstance(grad_pen, torch.Tensor):
+            grad_pen = grad_pen.item()
         self.optimizer.zero_grad()
         start = time.time()
         loss.backward()
@@ -673,7 +678,7 @@ class HessianAlignment(ERM):
         #     self.scheduler.step()
         # self.scheduler.step()
 
-        return {'loss': loss.item()}
+        return {'loss': loss.item(), 'erm_loss': erm_loss.item(), 'grad_pen': alpha * grad_pen, 'hess_pen':beta * hess_pen}
 
     def predict(self, x):
         # breakpoint()
