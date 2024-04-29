@@ -453,7 +453,7 @@ class HessianAlignment(ERM):
 
 
 
-    def hessian_pen(self, x, logits, envs):
+    def hessian_pen_old(self, x, logits, envs):
         unique_envs = torch.unique(envs)
         num_envs = len(unique_envs)
         p = F.softmax(logits, dim=1)
@@ -524,6 +524,44 @@ class HessianAlignment(ERM):
         return f_norm_env, avg_h_minus_h_bar_sq
 
 
+    def hessian_pen(self, x, logits, envs):
+        unique_envs = envs.unique()
+        num_envs = len(unique_envs)
+        H_H_f = torch.zeros(num_envs, num_envs)
+        for e1 in unique_envs:
+            for e2 in unique_envs:
+                mask1 = envs == e1
+                mask2 = envs == e2
+                x_env1 = x[mask1]
+                x_env2 = x[mask2]
+                logits_env1 = logits[mask1]
+                logits_env2 = logits[mask2]
+                p1 = F.softmax(logits_env1, dim=1)
+                p2 = F.softmax(logits_env2, dim=1)
+                diag1 = torch.diag_embed(p1)
+                diag2 = torch.diag_embed(p2)
+                off_diag1 = torch.einsum('bi,bj->bij', p1, p1)
+                off_diag2 = torch.einsum('bi,bj->bij', p2, p2)
+                diff1 = diag1 - off_diag1
+                diff2 = diag2 - off_diag2
+                prob_trace_1_2 = torch.einsum('bik,cjk->bcij', diff1, diff2).diagonal(dim1=-2, dim2=-1).sum(-1)
+                X_outer1 = torch.einsum('bi,bj->bij', x_env1, x_env1)
+                X_outer2 = torch.einsum('bi,bj->bij', x_env2, x_env2)
+                x_traces_1_2 = torch.einsum('bik,cjk->bcij', X_outer1, X_outer2).diagonal(dim1=-2, dim2=-1).sum(-1)
+                H_H_f[e1, e2] = torch.sum(prob_trace_1_2 * x_traces_1_2).sum(dim=-1).sum(dim=-1) / (
+                            mask1.sum() * mask2.sum())
+
+        f_norm_env = H_H_f.diagonal()
+        shared_term = H_H_f.sum() / (num_envs ** 2)
+        individual_term = 2 * H_H_f.sum(dim=1) / num_envs
+        sum_h_minus_h_bar_sq = torch.sum(f_norm_env + shared_term - individual_term) / num_envs
+
+        dC = x.shape[1] * logits.shape[1]
+
+        sum_h_minus_h_bar_sq /= (dC)
+        return f_norm_env, sum_h_minus_h_bar_sq
+
+
     def exact_hessian_loss(self, logits, x, y, env_indices, alpha=10e-5, beta=10e-5, stats = {}):
         x = self.featurizer(x)
         num_envs = len(torch.unique(env_indices))
@@ -558,8 +596,7 @@ class HessianAlignment(ERM):
 
 
         erm_loss = torch.mean(env_erm)
-        # total_loss = erm_loss + alpha * grad_pen + beta * hess_pen
-        total_loss = erm_loss + alpha * grad_pen
+        total_loss = erm_loss + alpha * grad_pen + beta * hess_pen
         #
         # stats['total_loss'] = total_loss.item()
         # stats['erm_loss'] = erm_loss.item()
