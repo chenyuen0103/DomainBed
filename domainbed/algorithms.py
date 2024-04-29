@@ -630,12 +630,12 @@ class HessianAlignment(ERM):
         if alpha != 0:
             start = time.time()
             grad_pen = self.grad_pen(x, logits, y, env_indices)
-            print(f"Time taken to compute grad_pen: {time.time() - start}")
+            # print(f"Time taken to compute grad_pen: {time.time() - start}")
 
         if beta != 0:
             start = time.time()
             f_norm_env, hess_pen, HHf = self.hessian_pen(x, logits, env_indices)
-            print(f"Time taken to compute hess_pen: {time.time() - start}")
+            # print(f"Time taken to compute hess_pen: {time.time() - start}")
 
 
         erm_loss = torch.mean(env_erm)
@@ -664,7 +664,7 @@ class HessianAlignment(ERM):
         self.optimizer.zero_grad()
         start = time.time()
         loss.backward()
-        print(f"Time taken to backward: {time.time() - start}")
+        # print(f"Time taken to backward: {time.time() - start}")
         # torch.nn.utils.clip_grad_norm_(self.network.parameters(), max_norm=1)
 
         self.optimizer.step()
