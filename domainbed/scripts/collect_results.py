@@ -141,6 +141,7 @@ def print_results_tables(records, selection_method, latex):
     print_table(table, header_text, alg_names, col_labels, colwidth=25,
         latex=latex)
 
+
 if __name__ == "__main__":
     np.set_printoptions(suppress=True)
 

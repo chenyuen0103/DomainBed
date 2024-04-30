@@ -56,24 +56,30 @@ class Logger(object):
 
 
 
-class CSVBatchLogger:
-    def __init__(self, csv_path, n_groups, mode='w'):
-        columns = ['global_step','step']
+class CSVBatchLogger_ISR:
+    def __init__(self, csv_path, n_groups, n_envs, mode='w'):
+        columns = ['epoch','step']
         for idx in range(n_groups):
-            columns.append(f'avg_loss_group:{idx}')
-            columns.append(f'exp_avg_loss_group:{idx}')
-            columns.append(f'avg_acc_group:{idx}')
-            columns.append(f'avg_grad_norm_group:{idx}')
-            columns.append(f'avg_hessian_norm_group:{idx}')
-            columns.append(f'processed_data_count_group:{idx}')
-            columns.append(f'update_data_count_group:{idx}')
-            columns.append(f'update_batch_count_group:{idx}')
-        columns.append('avg_actual_loss')
-        columns.append('avg_per_sample_loss')
+            columns.append(f'group_count:{idx}')
+            columns.append(f'group_frac:{idx}')
+            columns.append(f'acc-{idx}')
+        for idx in range(n_envs):
+            columns.append(f'env_count:{idx}')
+            columns.append(f'env_frac:{idx}')
+            columns.append(f'erm_loss_env:{idx}')
+            columns.append(f'grad_penalty_env:{idx}')
+            columns.append(f'hessian_penalty_env:{idx}')
+        columns.append('grad_alpha')
+        columns.append('hess_beta')
+        columns.append('anneal_iters')
+        columns.append('total_loss')
+        columns.append('erm_loss')
+        columns.append('grad_loss')
+        columns.append('hessian_loss')
         columns.append('avg_acc')
-        columns.append('model_norm_sq')
-        columns.append('reg_loss')
-        columns.append('hessian_aligned_loss')
+        columns.append('worst_group')
+        columns.append('worst_acc')
+
 
         self.path = csv_path
         self.file = open(csv_path, mode)
@@ -82,9 +88,9 @@ class CSVBatchLogger:
         if mode == 'w':
             self.writer.writeheader()
 
-    def log(self, global_step, step, stats_dict):
-        stats_dict['global_step'] = global_step
-        stats_dict['step'] = step
+    def log(self, epoch, batch, stats_dict):
+        stats_dict['epoch'] = epoch
+        stats_dict['batch'] = batch
         self.writer.writerow(stats_dict)
 
     def flush(self):
@@ -92,7 +98,6 @@ class CSVBatchLogger:
 
     def close(self):
         self.file.close()
-
 
 class AverageMeter(object):
     """Computes and stores the average and current value"""

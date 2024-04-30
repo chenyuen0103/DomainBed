@@ -189,11 +189,14 @@ class HessianAlignment(ERM):
         X_outer = torch.einsum('bi,bj->bij', x, x)  # Shape: [batch_size, d, d]
         # breakpoint()
         # Combine the probabilities with the outer product of x
-        H = torch.einsum('bkl,bij->bklij', p_off_diag, X_outer)  # Shape: [batch_size, num_classes, num_classes, d, d]
+        # H = torch.einsum('bkl,bij->bklij', p_off_diag, X_outer)  # Shape: [batch_size, num_classes, num_classes, d, d]
 
         # Sum over the batch and reshape to get final Hessian
-        H = H.sum(0).reshape(dC, dC)  # Shape: [dC, dC]
+        # H = H.sum(0).reshape(dC, dC)  # Shape: [dC, dC]
 
+        H = torch.zeros(dC, dC)
+        for i in range(batch_size):
+            H += torch.kron(p_off_diag[i], X_outer[i])
         # Normalize Hessian by the batch size
         H /= batch_size
         H /= dC
@@ -419,14 +422,15 @@ class HessianAlignment(ERM):
 
                 hessian_reg = beta * hessian_diff_norm ** 2
 
-            total_loss = total_loss + (loss + hessian_reg + grad_reg) * env_fraction
+            num_envs = len(envs_indices_unique)
+            total_loss = total_loss + (loss + hessian_reg + grad_reg) / num_envs
             # total_loss = total_loss + loss
-            # erm_loss += loss * env_fraction
-            # grad_loss += alpha * grad_reg * env_fraction
-            # hess_loss += beta * hessian_reg * env_fraction
+            erm_loss += loss / num_envs
+            grad_loss += alpha * grad_reg / num_envs
+            hess_loss += beta * hessian_reg / num_envs
 
-        # return total_loss, erm_loss, hess_loss, grad_loss
-        return total_loss
+        return total_loss, erm_loss, hess_loss, grad_loss
+        # return total_loss
 
 
 
@@ -662,7 +666,7 @@ class HessianAlignment(ERM):
         if self.update_count < self.penalty_anneal_iters:
             alpha = 0
             beta = 0
-        loss, erm_loss, grad_pen, hess_pen = self.exact_hessian_loss(logits, all_x, all_y, all_envs, alpha=alpha, beta=beta)
+        loss, erm_loss, grad_pen, hess_pen = self.exact_hessian_loss_old(logits, all_x, all_y, all_envs, alpha=alpha, beta=beta)
         if isinstance(hess_pen, torch.Tensor):
             hess_pen = hess_pen.item()
         if isinstance(grad_pen, torch.Tensor):

@@ -97,6 +97,17 @@ class IIDAccuracySelectionMethod(SelectionMethod):
         test_records = get_test_records(run_records)
         if not len(test_records):
             return None
+
+        # Get the index of the record with the highest validation accuracy
+        best_index = test_records.map(self._step_acc).argmax('val_acc')
+
+        # Access the best record using the index
+        best_record = test_records[best_index]
+
+        # Assuming the best_record has an attribute 'args' that stores the arguments
+        # if hasattr(best_record, 'args'):
+        print("Args of the best record:", best_record.args)
+
         return test_records.map(self._step_acc).argmax('val_acc')
 
 class LeaveOneOutSelectionMethod(SelectionMethod):
