@@ -317,7 +317,7 @@ class HessianAlignment(ERM):
 
         num_classes = logits.size(1)
         total_loss = torch.tensor(0.0, requires_grad=True)
-        env_gradients = []
+        # env_gradients = []
         env_hessians = []
         env_hessians_pytorch = []
         envs_indices_unique = envs_indices.unique()
@@ -325,7 +325,7 @@ class HessianAlignment(ERM):
             # breakpoint()
             idx = (envs_indices == env_idx).nonzero().squeeze()
             if idx.numel() == 0:
-                env_gradients.append(torch.zeros(1))
+                # env_gradients.append(torch.zeros(1))
                 env_hessians.append(torch.zeros(1))
                 continue
             elif x[idx].dim() == 1:
@@ -338,12 +338,12 @@ class HessianAlignment(ERM):
             # loss.backward(retain_graph=True)
             # grads = torch.autograd.grad(loss, model.parameters(), create_graph=True)
             grads, hessian = 0, 0
-            if alpha != 0:
-                x_env = x[idx]
-                y_env = y[idx]
-                yhat_env = yhat_env[0] if isinstance(yhat_env, tuple) else yhat_env
-
-                grads = self.gradient(x_env, yhat_env, y_env)
+            # if alpha != 0:
+            #     x_env = x[idx]
+            #     y_env = y[idx]
+            #     yhat_env = yhat_env[0] if isinstance(yhat_env, tuple) else yhat_env
+            #
+            #     grads = self.gradient(x_env, yhat_env, y_env)
             # Assuming loss computation for a specific environment
             # loss_fn = torch.nn.CrossEntropyLoss()
             # loss = loss_fn(yhat_env, y_env)
@@ -367,7 +367,7 @@ class HessianAlignment(ERM):
             # hessian_original = self.hessian_original(x_env, yhat_env)
             # assert torch.allclose(grads, grads_original), "Gradient computation is incorrect"
             # assert torch.allclose(hessian, hessian_original, atol=1e-6), "Hessian computation is incorrect"
-            env_gradients.append(grads)
+            # env_gradients.append(grads)
             env_hessians.append(hessian)
             # env_hessians_pytorch.append(hessian_pytorch)
 
@@ -376,8 +376,8 @@ class HessianAlignment(ERM):
         #                 range(len(env_gradients[0]))]
         avg_gradient, avg_hessian = 0, 0
         if alpha != 0:
-            weight_gradients = [g[0] for g in env_gradients]
-            avg_gradient = torch.mean(torch.stack(weight_gradients), dim=0)
+            # weight_gradients = [g[0] for g in env_gradients]
+            # avg_gradient = torch.mean(torch.stack(weight_gradients), dim=0)
 
         if beta != 0:
             # avg_gradient = torch.mean(torch.stack(env_gradients), dim=0)
@@ -386,7 +386,7 @@ class HessianAlignment(ERM):
 
         erm_loss = 0
         hess_pen = 0
-        grad_pen = 0
+        # grad_pen = 0
         for env_idx, (grads, hessian) in enumerate(zip(env_gradients, env_hessians)):
             # hessian_pytorch = env_hessians_pytorch[env_idx]
             idx = (envs_indices == env_idx).nonzero().squeeze()
@@ -398,16 +398,16 @@ class HessianAlignment(ERM):
                 num_samples = len(idx)
             y_env = y[idx]
             logits_env = logits[idx]
-            env_fraction = len(idx) / len(envs_indices)
+            # env_fraction = len(idx) / len(envs_indices)
 
             # loss = self.loss_fn(logits_env.squeeze(), y_env.long())
             loss = F.cross_entropy(logits_env, y_env.long())
-            grad_diff_norm, grad_reg = 0, 0
+            # grad_diff_norm, grad_reg = 0, 0
             hessian_diff_norm, hessian_reg = 0, 0
-            if alpha != 0:
+            # if alpha != 0:
                 # Compute the 2-norm of the difference between the gradient for this environment and the average gradient
-                grad_diff_norm = torch.norm(grads[0] - avg_gradient, p=2)
-                grad_reg = grad_diff_norm ** 2
+                # grad_diff_norm = torch.norm(grads[0] - avg_gradient, p=2)
+                # grad_reg = grad_diff_norm ** 2
 
             if beta != 0:
             # Compute the Frobenius norm of the difference between the Hessian for this environment and the average Hessian
@@ -423,11 +423,16 @@ class HessianAlignment(ERM):
                 hessian_reg = hessian_diff_norm ** 2
 
             num_envs = len(envs_indices_unique)
-            total_loss = total_loss + (loss + beta * hessian_reg + alpha * grad_reg) / num_envs
+            total_loss = total_loss + (loss + beta * hessian_reg) / num_envs
             # total_loss = total_loss + loss
             erm_loss += loss / num_envs
-            grad_pen += grad_reg / num_envs
+            # grad_pen += grad_reg / num_envs
             hess_pen += hessian_reg / num_envs
+
+        grad_pen = 0
+        if alpha != 0:
+            grad_pen = self.grad_pen(x, logits, y, envs_indices)
+            total_loss = total_loss + alpha * grad_pen
 
         return total_loss, erm_loss, hess_pen, grad_pen
         # return total_loss
