@@ -194,7 +194,7 @@ class HessianAlignment(ERM):
         # Sum over the batch and reshape to get final Hessian
         # H = H.sum(0).reshape(dC, dC)  # Shape: [dC, dC]
 
-        H = torch.zeros(dC, dC)
+        H = torch.zeros(dC, dC, device=x.device)
         for i in range(batch_size):
             H += torch.kron(p_off_diag[i], X_outer[i])
         # Normalize Hessian by the batch size
