@@ -191,7 +191,7 @@ class HessianAlignment(ERM):
         # Combine the probabilities with the outer product of x
         H = torch.zeros(dC, dC, device=x.device)
         for i in range(0, batch_size, 2):
-            H += torch.einsum('bkl, bij -> bklij', p_off_diag[i: i + 2], X_outer[i: i + 2]).sum(0)
+            H += torch.einsum('bkl, bij -> bklij', p_off_diag[i: i + 2], X_outer[i: i + 2]).sum(0).reshape(dC, dC)
             # H += torch.kron(p_off_diag[i], X_outer[i])
         # Normalize Hessian by the batch size
 
