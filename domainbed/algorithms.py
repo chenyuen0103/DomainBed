@@ -158,13 +158,14 @@ class HessianAlignment(ERM):
         # self.proj = nn.Linear(self.featurizer.n_outputs, 768, bias=False)
         # self.featurizer = nn.Sequential(self.featurizer, self.proj)
         self.network = nn.Sequential(self.featurizer, self.classifier)
+        self._init_optimizer()
+
+    def _init_optimizer(self):
         self.optimizer = torch.optim.Adam(
             self.network.parameters(),
             lr=self.hparams["lr"],
             weight_decay=self.hparams['weight_decay']
         )
-
-
 
 
 
@@ -207,8 +208,6 @@ class HessianAlignment(ERM):
         # Normalize Hessian by the batch size
 
 
-
-
         H2 /= batch_size
         H2 /= dC
         return H2
@@ -230,6 +229,7 @@ class HessianAlignment(ERM):
                           model's weight gradient shape.
         """
         # Ensure logits are in the proper shape and compute softmax probabilities
+        dC = logits.shape[1] * x.shape[1]
         p = F.softmax(logits, dim=-1)
 
         # Generate one-hot encoding for y
@@ -243,7 +243,8 @@ class HessianAlignment(ERM):
         # This resembles the gradient calculation for a model's weights in a simplified linear scenario
         grad_loss = p - y_onehot
         grad_w = torch.matmul(grad_loss.T, x_flattened) / x.size(0)
-        grad_w /= (grad_w.shape[0] * grad_w.shape[1]) ** 0.25
+        # grad_w /= (grad_w.shape[0] * grad_w.shape[1]) ** 0.25
+        grad_w /= dC ** 0.25
 
         return grad_w
 
@@ -587,11 +588,15 @@ class HessianAlignment(ERM):
         all_envs = torch.cat([env for x, y, env in minibatches])
         # loss = F.cross_entropy(self.predict(all_x), all_y)
         logits = self.predict(all_x)
-        alpha = self.grad_alpha
-        beta = self.hess_beta
-        if self.update_count < self.penalty_anneal_iters:
-            alpha = 0
-            beta = 0
+        alpha = 0
+        beta = 0
+        if self.update_count >= self.penalty_anneal_iters:
+            alpha = self.grad_alpha
+            beta = self.hess_beta
+            if self.update_count == self.penalty_anneal_iters:
+                self._init_optimizer()
+
+
         loss, erm_loss, grad_pen, hess_pen = self.exact_hessian_loss_old(logits, all_x, all_y, all_envs, alpha=alpha, beta=beta)
         if isinstance(hess_pen, torch.Tensor):
             hess_pen = hess_pen.item()
@@ -600,7 +605,7 @@ class HessianAlignment(ERM):
         self.optimizer.zero_grad()
         start = time.time()
         loss.backward()
-        print(f"Time taken to compute backward: {time.time() - start}")
+        # print(f"Time taken to compute backward: {time.time() - start}")
 
         self.optimizer.step()
         self.update_count += 1
@@ -608,7 +613,8 @@ class HessianAlignment(ERM):
         #     self.scheduler.step()
         # self.scheduler.step()
 
-        return {'loss': loss.item(), 'erm_loss': erm_loss.item(), 'grad_loss': alpha * grad_pen, 'hess_loss': beta * hess_pen}
+        # return {'loss': loss.item(), 'erm_loss': erm_loss.item(), 'grad_loss': alpha * grad_pen, 'hess_loss': beta * hess_pen}
+        return {'loss': loss.item(), 'erm_loss': erm_loss.item(), 'grad_pen': grad_pen, 'hess_pen': hess_pen}
 
     def predict(self, x):
         # breakpoint()
