@@ -146,17 +146,17 @@ class HessianAlignment(ERM):
         self.penalty_anneal_iters = hparams['penalty_anneal_iters']
         self.update_count = 0
         # breakpoint()
-        # self.classifier = networks.Classifier_nobiases(
-        #     self.featurizer.n_outputs, num_classes, self.hparams['nonlinear_classifier']
-        # )
-
         self.classifier = networks.Classifier_nobiases(
-            768, num_classes, self.hparams['nonlinear_classifier']
+            self.featurizer.n_outputs, num_classes, self.hparams['nonlinear_classifier']
         )
 
+        # self.classifier = networks.Classifier_nobiases(
+        #     768, num_classes, self.hparams['nonlinear_classifier']
+        # )
 
-        self.proj = nn.Linear(self.featurizer.n_outputs, 768, bias=False)
-        self.featurizer = nn.Sequential(self.featurizer, self.proj)
+
+        # self.proj = nn.Linear(self.featurizer.n_outputs, 768, bias=False)
+        # self.featurizer = nn.Sequential(self.featurizer, self.proj)
         self.network = nn.Sequential(self.featurizer, self.classifier)
         self.optimizer = torch.optim.Adam(
             self.network.parameters(),
