@@ -244,7 +244,7 @@ class HessianAlignment(ERM):
         grad_loss = p - y_onehot
         grad_w = torch.matmul(grad_loss.T, x_flattened) / x.size(0)
         # grad_w /= (grad_w.shape[0] * grad_w.shape[1]) ** 0.25
-        grad_w /= dC ** 0.25
+        grad_w /= dC ** 0.5
 
         return grad_w
 
