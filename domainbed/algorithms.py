@@ -321,19 +321,18 @@ class HessianAlignment(ERM):
 
         grad_pen, hess_pen = 0, 0
         if alpha != 0:
-            start = time.time()
+            # start = time.time()
             grad_pen = self.grad_pen(x, logits, y, envs_indices)
-            print(f"Time taken to compute grad_pen: {time.time() - start}")
+            # print(f"Time taken to compute grad_pen: {time.time() - start}")
 
         if beta != 0:
-            start = time.time()
+            # start = time.time()
             hess_pen = self.hessian_pen(x, logits, envs_indices)
-            print(f"Time taken to compute hess_pen: {time.time() - start}")
+            # print(f"Time taken to compute hess_pen: {time.time() - start}")
 
         total_loss = erm_loss + alpha * grad_pen + beta * hess_pen
 
         return total_loss, erm_loss, hess_pen, grad_pen
-        # return total_loss
 
 
 
@@ -559,7 +558,7 @@ class HessianAlignment(ERM):
 
         if beta != 0:
             start = time.time()
-            f_norm_env, hess_pen, HHf = self.hessian_pen(x, logits, env_indices)
+            f_norm_env, hess_pen= self.hessian_pen(x, logits, env_indices)
             # print(f"Time taken to compute hess_pen: {time.time() - start}")
 
 
@@ -591,19 +590,19 @@ class HessianAlignment(ERM):
                 self._init_optimizer()
 
 
-        loss, erm_loss, grad_pen, hess_pen = self.exact_hessian_loss_old(logits, all_x, all_y, all_envs, alpha=alpha, beta=beta)
+        loss, erm_loss, grad_pen, hess_pen = self.exact_hessian_loss(logits, all_x, all_y, all_envs, alpha=alpha, beta=beta)
         if isinstance(hess_pen, torch.Tensor):
             hess_pen = hess_pen.item()
         if isinstance(grad_pen, torch.Tensor):
             grad_pen = grad_pen.item()
         self.optimizer.zero_grad()
-        start = time.time()
+        # start = time.time()
         loss.backward()
-        print(f"Time taken to compute backward: {time.time() - start}")
+        # print(f"Time taken to compute backward: {time.time() - start}")
 
-        start = time.time()
+        # start = time.time()
         self.optimizer.step()
-        print(f"Time taken to compute step: {time.time() - start}")
+        # print(f"Time taken to compute step: {time.time() - start}")
         self.update_count += 1
         # if 'model_type' in self.hparams and self.hparams['model_type'] == 'ViT-S':
         #     self.scheduler.step()
