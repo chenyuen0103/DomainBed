@@ -366,7 +366,6 @@ class HessianAlignment(ERM):
 
 
     def hessian_pen(self, x, logits, envs):
-        unique_envs = torch.unique(envs)
         env_hessians = []
         envs_indices_unique = envs.unique()
         for e in envs_indices_unique:
@@ -584,7 +583,7 @@ class HessianAlignment(ERM):
         if self.update_count >= self.penalty_anneal_iters:
             alpha = self.grad_alpha
             beta = self.hess_beta
-            if self.update_count == self.penalty_anneal_iters:
+            if self.update_count == self.penalty_anneal_iters != 0:
                 self._init_optimizer()
 
 
