@@ -670,8 +670,6 @@ class HessianAlignment(ERM):
         self.optimizer.zero_grad()
         start = time.time()
         loss.backward()
-        # print(f"Time taken to backward: {time.time() - start}")
-        # torch.nn.utils.clip_grad_norm_(self.network.parameters(), max_norm=1)
 
         self.optimizer.step()
         self.update_count += 1
