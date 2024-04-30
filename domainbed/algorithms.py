@@ -371,7 +371,7 @@ class HessianAlignment(ERM):
             # grad_pen += grad_reg / num_envs
             hess_pen += hessian_reg / num_envs
 
-        grad_pen, hess_pen = 0, 0
+        # grad_pen, hess_pen = 0, 0
         if alpha != 0:
             grad_pen = self.grad_pen(x, logits, y, envs_indices)
             total_loss = total_loss + alpha * grad_pen
