@@ -384,9 +384,9 @@ class HessianAlignment(ERM):
             avg_hessian = torch.mean(torch.stack(env_hessians), dim=0)
             # avg_hessian_pytorch = torch.mean(torch.stack(env_hessians_pytorch), dim=0)
 
-        # erm_loss = 0
-        # hess_loss = 0
-        # grad_loss = 0
+        erm_loss = 0
+        hess_loss = 0
+        grad_loss = 0
         for env_idx, (grads, hessian) in enumerate(zip(env_gradients, env_hessians)):
             # hessian_pytorch = env_hessians_pytorch[env_idx]
             idx = (envs_indices == env_idx).nonzero().squeeze()
