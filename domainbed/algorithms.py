@@ -385,8 +385,8 @@ class HessianAlignment(ERM):
             # avg_hessian_pytorch = torch.mean(torch.stack(env_hessians_pytorch), dim=0)
 
         erm_loss = 0
-        hess_loss = 0
-        grad_loss = 0
+        hess_pen = 0
+        grad_pen = 0
         for env_idx, (grads, hessian) in enumerate(zip(env_gradients, env_hessians)):
             # hessian_pytorch = env_hessians_pytorch[env_idx]
             idx = (envs_indices == env_idx).nonzero().squeeze()
@@ -407,7 +407,7 @@ class HessianAlignment(ERM):
             if alpha != 0:
                 # Compute the 2-norm of the difference between the gradient for this environment and the average gradient
                 grad_diff_norm = torch.norm(grads[0] - avg_gradient, p=2)
-                grad_reg = alpha * grad_diff_norm ** 2
+                grad_reg = grad_diff_norm ** 2
 
             if beta != 0:
             # Compute the Frobenius norm of the difference between the Hessian for this environment and the average Hessian
@@ -420,16 +420,16 @@ class HessianAlignment(ERM):
                 # grad_reg = sum((grad - avg_grad).norm(2) ** 2 for grad, avg_grad in zip(grads, avg_gradient))
                 # hessian_reg = torch.trace((hessian - avg_hessian).t().matmul(hessian - avg_hessian))
 
-                hessian_reg = beta * hessian_diff_norm ** 2
+                hessian_reg = hessian_diff_norm ** 2
 
             num_envs = len(envs_indices_unique)
-            total_loss = total_loss + (loss + hessian_reg + grad_reg) / num_envs
+            total_loss = total_loss + (loss + beta * hessian_reg + alpha * grad_reg) / num_envs
             # total_loss = total_loss + loss
             erm_loss += loss / num_envs
-            grad_loss += grad_reg / num_envs
-            hess_loss += hessian_reg / num_envs
+            grad_pen += grad_reg / num_envs
+            hess_pen += hessian_reg / num_envs
 
-        return total_loss, erm_loss, hess_loss, grad_loss
+        return total_loss, erm_loss, hess_pen, grad_pen
         # return total_loss
 
 
@@ -681,7 +681,7 @@ class HessianAlignment(ERM):
         #     self.scheduler.step()
         # self.scheduler.step()
 
-        return {'loss': loss.item(), 'erm_loss': erm_loss.item(), 'grad_pen': alpha * grad_pen, 'hess_pen':beta * hess_pen}
+        return {'loss': loss.item(), 'erm_loss': erm_loss.item(), 'grad_loss': alpha * grad_pen, 'hess_loss': beta * hess_pen}
 
     def predict(self, x):
         # breakpoint()
