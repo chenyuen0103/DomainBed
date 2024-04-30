@@ -214,6 +214,7 @@ class HessianAlignment(ERM):
 
 
 
+
     def gradient(self, x, logits, y):
         """
         Compute gradients of the cross-entropy loss with respect to model parameters (weights),
@@ -370,10 +371,14 @@ class HessianAlignment(ERM):
             # grad_pen += grad_reg / num_envs
             hess_pen += hessian_reg / num_envs
 
-        grad_pen = 0
+        grad_pen, hess_pen = 0, 0
         if alpha != 0:
             grad_pen = self.grad_pen(x, logits, y, envs_indices)
             total_loss = total_loss + alpha * grad_pen
+
+        if beta != 0:
+            hess_pen2 = self.hessian_pen(x, logits, envs_indices)
+        breakpoint()
 
         return total_loss, erm_loss, hess_pen, grad_pen
         # return total_loss
@@ -407,6 +412,43 @@ class HessianAlignment(ERM):
         avg_grad_minus_grad_bar_2_sq = sum_grad_minus_grad_bar_2_sq / num_envs
 
         return avg_grad_minus_grad_bar_2_sq
+
+
+    def hessian_pen(self, x, logits, envs):
+        unique_envs = torch.unique(envs)
+        num_envs = len(unique_envs)
+        env_hessians = []
+        envs_indices_unique = envs.unique()
+        for e in envs_indices_unique:
+            idx = (envs == e).nonzero().squeeze()
+            if idx.numel() == 0:
+                continue
+            elif idx.dim() == 0:
+                num_samples = 1
+            else:
+                num_samples = len(idx)
+            logits_env = logits[idx]
+            x_env = x[idx]
+            hessian = self.hessian(x_env, logits_env)
+            env_hessians.append(hessian)
+
+        avg_hessian = torch.mean(torch.stack(env_hessians), dim=0)
+        hess_pen = 0
+        for env_idx, hessian in enumerate(env_hessians):
+            # hessian_pytorch = env_hessians_pytorch[env_idx]
+            idx = (envs == env_idx).nonzero().squeeze()
+            if idx.numel() == 0:
+                breakpoint()
+                continue
+
+            # Compute the Frobenius norm of the difference between the Hessian for this environment and the average Hessian
+            hessian_diff = hessian - avg_hessian
+            hessian_reg = torch.norm(hessian_diff, p='fro') ** 2
+            num_envs = len(envs_indices_unique)
+            hess_pen += hessian_reg / num_envs
+        return hess_pen
+
+
 
 
 
@@ -481,7 +523,7 @@ class HessianAlignment(ERM):
         return f_norm_env, avg_h_minus_h_bar_sq , H_H_f
 
 
-    def hessian_pen(self, x, logits, envs):
+    def hessian_pen2(self, x, logits, envs):
         unique_envs = envs.unique()
         num_envs = len(unique_envs)
         H_H_f = torch.zeros(num_envs, num_envs, device=x.device)
