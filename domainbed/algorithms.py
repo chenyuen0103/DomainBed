@@ -674,6 +674,7 @@ class HessianAlignment(ERM):
         self.optimizer.zero_grad()
         start = time.time()
         loss.backward()
+        print(f"Time taken to compute backward: {time.time() - start}")
 
         self.optimizer.step()
         self.update_count += 1
