@@ -307,78 +307,26 @@ class HessianAlignment(ERM):
         x = self.featurizer(x)
         # if the features dimension is larger than 1000, apply PCA to reduce the dimension to 1000
         num_classes = logits.size(1)
-        total_loss = torch.tensor(0.0, requires_grad=True)
-        env_hessians = []
         envs_indices_unique = envs_indices.unique()
-        for env_idx in envs_indices_unique:
-            idx = (envs_indices == env_idx).nonzero().squeeze()
-            if idx.numel() == 0:
-                env_hessians.append(torch.zeros(1))
-                continue
-            elif x[idx].dim() == 1:
-                yhat_env = logits[idx].view(1, -1)
-            else:
-                yhat_env = logits[idx]
-            # # Gradient and Hessian Computation assumes negative log loss
-            # # grads = self.gradient(model, x[idx], y[idx])
-            # get grads, hessian of loss with respect to parameters, and those to be backwarded later
-            # loss.backward(retain_graph=True)
-            # grads = torch.autograd.grad(loss, model.parameters(), create_graph=True)
-            grads, hessian = 0, 0
 
-            # grads_pytorch = torch.autograd.grad(outputs=loss, inputs=list(self.classifier.parameters()), create_graph=True)[0]
-
-            if beta != 0:
-                x_env = x[idx]
-                yhat_env = yhat_env[0] if isinstance(yhat_env, tuple) else yhat_env
-                hessian = self.hessian(x_env, yhat_env)
-
-            env_hessians.append(hessian)
-            # env_hessians_pytorch.append(hessian_pytorch)
-
-
-        avg_gradient, avg_hessian = 0, 0
-        if beta != 0:
-            avg_hessian = torch.mean(torch.stack(env_hessians), dim=0)
 
         erm_loss = 0
-        hess_pen = 0
-        for env_idx, hessian in zip(envs_indices_unique, env_hessians):
-            # hessian_pytorch = env_hessians_pytorch[env_idx]
-            idx = (envs_indices == env_idx).nonzero().squeeze()
-            if idx.numel() == 0:
-                continue
-
-            y_env = y[idx]
-            logits_env = logits[idx]
+        for env_idx in envs_indices_unique:
+            y_env = y[env_idx]
+            logits_env = logits[env_idx]
             # env_fraction = len(idx) / len(envs_indices)
             loss = F.cross_entropy(logits_env, y_env.long())
-            # grad_diff_norm, grad_reg = 0, 0
-            hessian_diff_norm, hessian_reg = 0, 0
-            # if alpha != 0:
-                # Compute the 2-norm of the difference between the gradient for this environment and the average gradient
-                # grad_diff_norm = torch.norm(grads[0] - avg_gradient, p=2)
-                # grad_reg = grad_diff_norm ** 2
-
-            if beta != 0:
-                # Compute the Frobenius norm of the difference between the Hessian for this environment and the average Hessian
-                hessian_diff = hessian - avg_hessian
-                hessian_reg = torch.norm(hessian_diff, p='fro') ** 2
-
             num_envs = len(envs_indices_unique)
-            total_loss = total_loss + (loss + beta * hessian_reg) / num_envs
             erm_loss += loss / num_envs
-            # grad_pen += grad_reg / num_envs
-            hess_pen += hessian_reg / num_envs
 
-        # grad_pen, hess_pen = 0, 0
+        grad_pen, hess_pen = 0, 0
         if alpha != 0:
             grad_pen = self.grad_pen(x, logits, y, envs_indices)
-            total_loss = total_loss + alpha * grad_pen
 
         if beta != 0:
-            hess_pen2 = self.hessian_pen(x, logits, envs_indices)
-        breakpoint()
+            hess_pen = self.hessian_pen(x, logits, envs_indices)
+
+        total_loss = erm_loss + alpha * grad_pen + beta * hess_pen
 
         return total_loss, erm_loss, hess_pen, grad_pen
         # return total_loss
