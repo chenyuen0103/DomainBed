@@ -367,17 +367,14 @@ class HessianAlignment(ERM):
 
     def hessian_pen(self, x, logits, envs):
         unique_envs = torch.unique(envs)
-        num_envs = len(unique_envs)
         env_hessians = []
         envs_indices_unique = envs.unique()
         for e in envs_indices_unique:
             idx = (envs == e).nonzero().squeeze()
             if idx.numel() == 0:
+                breakpoint()
                 continue
-            elif idx.dim() == 0:
-                num_samples = 1
-            else:
-                num_samples = len(idx)
+
             logits_env = logits[idx]
             x_env = x[idx]
             hessian = self.hessian(x_env, logits_env)
@@ -397,6 +394,7 @@ class HessianAlignment(ERM):
             hessian_reg = torch.norm(hessian_diff, p='fro') ** 2
             num_envs = len(envs_indices_unique)
             hess_pen += hessian_reg / num_envs
+
         return hess_pen
 
 
@@ -558,7 +556,7 @@ class HessianAlignment(ERM):
 
         if beta != 0:
             start = time.time()
-            f_norm_env, hess_pen= self.hessian_pen(x, logits, env_indices)
+            hess_pen= self.hessian_pen(x, logits, env_indices)
             # print(f"Time taken to compute hess_pen: {time.time() - start}")
 
 
