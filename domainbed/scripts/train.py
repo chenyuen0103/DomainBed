@@ -279,7 +279,7 @@ if __name__ == "__main__":
                 'args': vars(args)
             })
 
-            epochs_path = os.path.join(args.output_dir, args.dataset, f"test_env_{''.join(str(env) for env in args.test_envs)}",'epochs.json')
+            epochs_path = os.path.join(args.output_dir, args.dataset, f"{args.algorithm}_test_env_{''.join(str(env) for env in args.test_envs)}",'epochs.json')
 
             if not os.path.exists(epochs_path):
                 os.makedirs(os.path.dirname(epochs_path), exist_ok=True)
