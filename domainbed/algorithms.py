@@ -189,18 +189,25 @@ class HessianAlignment(ERM):
         # H2 = torch.einsum('bkl,bij->bklij', p_off_diag, X_outer)
         # H2 = H2.sum(0).reshape(dC, dC) / batch_size  # Shape: [dC, dC]
         # Combine the probabilities with the outer product of x
-        H = torch.zeros(dC, dC, device=x.device)
+        H2 = torch.zeros(dC, dC, device=x.device)
         for i in range(0, batch_size, 2):
-            H += torch.einsum('bkl, bij -> bklij', p_off_diag[i: i + 2], X_outer[i: i + 2]).sum(0).reshape(dC, dC)
+            H2 += torch.einsum('bkl, bij -> bklij', p_off_diag[i: i + 2], X_outer[i: i + 2]).sum(0).reshape(dC, dC)
             # H += torch.kron(p_off_diag[i], X_outer[i])
+
+        H1 = torch.zeros(dC, dC, device=x.device)
+        for i in range(batch_size):
+            H1 += torch.kron(p_off_diag[i], X_outer[i])
+
+        breakpoint()
+        assert torch.allclose(H1, H2), "Hessian computation is incorrect"
         # Normalize Hessian by the batch size
 
 
 
 
-        H /= batch_size
-        H /= dC
-        return H
+        H2 /= batch_size
+        H2 /= dC
+        return H2
 
 
 
