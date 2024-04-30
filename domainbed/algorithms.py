@@ -375,7 +375,7 @@ class HessianAlignment(ERM):
         # avg_gradient = [torch.mean(torch.stack([grads[i] for grads in env_gradients]), dim=0) for i in
         #                 range(len(env_gradients[0]))]
         avg_gradient, avg_hessian = 0, 0
-        if alpha != 0:
+        # if alpha != 0:
             # weight_gradients = [g[0] for g in env_gradients]
             # avg_gradient = torch.mean(torch.stack(weight_gradients), dim=0)
 
@@ -387,7 +387,8 @@ class HessianAlignment(ERM):
         erm_loss = 0
         hess_pen = 0
         # grad_pen = 0
-        for env_idx, (grads, hessian) in enumerate(zip(env_gradients, env_hessians)):
+        # for env_idx, (grads, hessian) in enumerate(zip(env_gradients, env_hessians)):
+        for env_idx, hessian in enumerate(env_hessians):
             # hessian_pytorch = env_hessians_pytorch[env_idx]
             idx = (envs_indices == env_idx).nonzero().squeeze()
             if idx.numel() == 0:
