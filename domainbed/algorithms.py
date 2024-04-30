@@ -172,8 +172,6 @@ class HessianAlignment(ERM):
         batch_size, d = x.shape  # Shape: [batch_size, d]
         num_classes = logits.shape[1]  # Number of classes
         dC = num_classes * d  # Total number of parameters in the flattened gradient
-
-        # Compute probabilities
         p = F.softmax(logits, dim=1)  # Shape: [batch_size, num_classes]
 
         # Compute p_k(1-p_k) for diagonal blocks and -p_k*p_l for off-diagonal blocks
@@ -181,19 +179,13 @@ class HessianAlignment(ERM):
         p_diag = p * (1 - p)  # Shape: [batch_size, num_classes]
         # Off-diagonal part
         p_off_diag = -p.unsqueeze(2) * p.unsqueeze(1)  # Shape: [batch_size, num_classes, num_classes]
+
         # Fill the diagonal part in off-diagonal tensor
         indices = torch.arange(num_classes)
         p_off_diag[:, indices, indices] = p_diag
-
         # Outer product of x
         X_outer = torch.einsum('bi,bj->bij', x, x)  # Shape: [batch_size, d, d]
-        # breakpoint()
         # Combine the probabilities with the outer product of x
-        # H = torch.einsum('bkl,bij->bklij', p_off_diag, X_outer)  # Shape: [batch_size, num_classes, num_classes, d, d]
-
-        # Sum over the batch and reshape to get final Hessian
-        # H = H.sum(0).reshape(dC, dC)  # Shape: [dC, dC]
-
         H = torch.zeros(dC, dC, device=x.device)
         for i in range(batch_size):
             H += torch.kron(p_off_diag[i], X_outer[i])
@@ -291,41 +283,15 @@ class HessianAlignment(ERM):
         return x_pca
 
     def exact_hessian_loss_old(self, logits, x, y, envs_indices, alpha=10e-5, beta=10e-5):
-        # for params in model.parameters():
-        #     params.requires_grad = True
         x = self.featurizer(x)
         # if the features dimension is larger than 1000, apply PCA to reduce the dimension to 1000
-        # if x.size(1) > 1000:
-            # Ensure x is detached and moved to CPU for sklearn processing
-            # x_cpu = x.detach().cpu().numpy()  # Convert to NumPy array
-
-            # Initialize PCA transformer with 1000 components
-            # n_components = min(1000, x.shape[0])
-            # pca = PCA(n_components=n_components)
-
-            # Fit PCA on the data and transform it
-            # x_reduced = pca.fit_transform(x_cpu)
-
-            # Convert the reduced data back to a PyTorch tensor
-            # Optionally, you can move it back to the original device (e.g., CUDA device)
-
-            # x_pca_sklearn = torch.tensor(x_reduced, dtype=torch.float).to(x.device)
-            # x_pca_svd = self.pca(x, n_components)
-            # breakpoint()
-            # assert torch.allclose(x_pca_sklearn, x_pca_svd), "PCA computation discrepancy"
-            # x = x_pca_svd
-
         num_classes = logits.size(1)
         total_loss = torch.tensor(0.0, requires_grad=True)
-        # env_gradients = []
         env_hessians = []
-        env_hessians_pytorch = []
         envs_indices_unique = envs_indices.unique()
         for env_idx in envs_indices_unique:
-            # breakpoint()
             idx = (envs_indices == env_idx).nonzero().squeeze()
             if idx.numel() == 0:
-                # env_gradients.append(torch.zeros(1))
                 env_hessians.append(torch.zeros(1))
                 continue
             elif x[idx].dim() == 1:
@@ -338,70 +304,33 @@ class HessianAlignment(ERM):
             # loss.backward(retain_graph=True)
             # grads = torch.autograd.grad(loss, model.parameters(), create_graph=True)
             grads, hessian = 0, 0
-            # if alpha != 0:
-            #     x_env = x[idx]
-            #     y_env = y[idx]
-            #     yhat_env = yhat_env[0] if isinstance(yhat_env, tuple) else yhat_env
-            #
-            #     grads = self.gradient(x_env, yhat_env, y_env)
-            # Assuming loss computation for a specific environment
-            # loss_fn = torch.nn.CrossEntropyLoss()
-            # loss = loss_fn(yhat_env, y_env)
 
-            # Compute gradients w.r.t. x using PyTorch
             # grads_pytorch = torch.autograd.grad(outputs=loss, inputs=list(self.classifier.parameters()), create_graph=True)[0]
-            # Check if the manually computed gradients and PyTorch gradients are close
-            # try:
-            #     assert torch.allclose(grads, grads_pytorch, atol=1e-6), "Gradient computation discrepancy"
-            # except:
-            #     breakpoint()
 
-            # grads_original = self.gradient_original(x_env, yhat_env, y_env)
-            # hessian_pytorch = self.compute_pytorch_hessian( x_env, y_env)
             if beta != 0:
                 x_env = x[idx]
                 yhat_env = yhat_env[0] if isinstance(yhat_env, tuple) else yhat_env
                 hessian = self.hessian(x_env, yhat_env)
-            # assert torch.allclose(hessian, hessian_pytorch), "Hessian computation discrepancy"
 
-            # hessian_original = self.hessian_original(x_env, yhat_env)
-            # assert torch.allclose(grads, grads_original), "Gradient computation is incorrect"
-            # assert torch.allclose(hessian, hessian_original, atol=1e-6), "Hessian computation is incorrect"
-            # env_gradients.append(grads)
             env_hessians.append(hessian)
             # env_hessians_pytorch.append(hessian_pytorch)
 
-        # Compute average gradient and hessian
-        # avg_gradient = [torch.mean(torch.stack([grads[i] for grads in env_gradients]), dim=0) for i in
-        #                 range(len(env_gradients[0]))]
-        avg_gradient, avg_hessian = 0, 0
-        # if alpha != 0:
-            # weight_gradients = [g[0] for g in env_gradients]
-            # avg_gradient = torch.mean(torch.stack(weight_gradients), dim=0)
 
+        avg_gradient, avg_hessian = 0, 0
         if beta != 0:
-            # avg_gradient = torch.mean(torch.stack(env_gradients), dim=0)
             avg_hessian = torch.mean(torch.stack(env_hessians), dim=0)
-            # avg_hessian_pytorch = torch.mean(torch.stack(env_hessians_pytorch), dim=0)
 
         erm_loss = 0
         hess_pen = 0
-        # grad_pen = 0
-        # for env_idx, (grads, hessian) in enumerate(zip(env_gradients, env_hessians)):
         for env_idx, hessian in enumerate(env_hessians):
             # hessian_pytorch = env_hessians_pytorch[env_idx]
             idx = (envs_indices == env_idx).nonzero().squeeze()
             if idx.numel() == 0:
                 continue
-            elif idx.dim() == 0:
-                num_samples = 1
-            else:
-                num_samples = len(idx)
+
             y_env = y[idx]
             logits_env = logits[idx]
             # env_fraction = len(idx) / len(envs_indices)
-
-            # loss = self.loss_fn(logits_env.squeeze(), y_env.long())
             loss = F.cross_entropy(logits_env, y_env.long())
             # grad_diff_norm, grad_reg = 0, 0
             hessian_diff_norm, hessian_reg = 0, 0
@@ -411,21 +340,12 @@ class HessianAlignment(ERM):
                 # grad_reg = grad_diff_norm ** 2
 
             if beta != 0:
-            # Compute the Frobenius norm of the difference between the Hessian for this environment and the average Hessian
+                # Compute the Frobenius norm of the difference between the Hessian for this environment and the average Hessian
                 hessian_diff = hessian - avg_hessian
-                # hessian_diff_pytorch = hessian_pytorch - avg_hessian_pytorch
-                hessian_diff_norm = torch.norm(hessian_diff, p='fro')
-                # hessian_diff_norm_pytorch = torch.norm(hessian_diff_pytorch, p='fro')
-                # assert torch.allclose(hessian_diff_norm, hessian_diff_norm_pytorch), "Hessian computation is incorrect"
-
-                # grad_reg = sum((grad - avg_grad).norm(2) ** 2 for grad, avg_grad in zip(grads, avg_gradient))
-                # hessian_reg = torch.trace((hessian - avg_hessian).t().matmul(hessian - avg_hessian))
-
-                hessian_reg = hessian_diff_norm ** 2
+                hessian_reg = torch.norm(hessian_diff, p='fro') ** 2
 
             num_envs = len(envs_indices_unique)
             total_loss = total_loss + (loss + beta * hessian_reg) / num_envs
-            # total_loss = total_loss + loss
             erm_loss += loss / num_envs
             # grad_pen += grad_reg / num_envs
             hess_pen += hessian_reg / num_envs
@@ -617,25 +537,6 @@ class HessianAlignment(ERM):
 
     def exact_hessian_loss(self, logits, x, y, env_indices, alpha=10e-5, beta=10e-5, stats = {}):
         x = self.featurizer(x)
-        # num_envs = len(torch.unique(env_indices))
-        # env_erm = torch.zeros(num_envs, device = x.device)
-        # for e in range(num_envs):
-        #     idx = (env_indices == e).nonzero().squeeze()
-        #     if idx.numel() == 0:
-        #         continue
-        #     elif idx.dim() == 0:
-        #         num_samples = 1
-        #     else:
-        #         num_samples = len(idx)
-        #     y_env = y[idx]
-        #     logits_env = logits[idx]
-        #     env_fraction = len(idx) / len(env_indices)
-        #     # stats.update({f'env_frac:{e}': env_fraction})
-        #     loss = F.cross_entropy(logits_env.squeeze(), y_env.long())
-        #     env_erm[e] = loss
-            # stats.update({f'erm_loss_env:{e}': loss.item()})
-            # Compute the 2-norm of the difference between the gradient for this environment and the average gradient
-
         grad_pen, hess_pen = 0, 0
         if alpha != 0:
             start = time.time()
