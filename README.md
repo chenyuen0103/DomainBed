@@ -163,6 +163,17 @@ python -m domainbed.scripts.sweep delete_incomplete\
        --n_trials 3
 ```
 
+python -m domainbed.scripts.sweep delete_incomplete\
+       --data_dir=./domainbed/data/\
+       --output_dir=./domainbed/results_resnet_new\
+       --command_launcher multi_gpu\
+       --hparams {\"model_type\":\"ResNet\"}\
+       --algorithms HessianAlignment\
+       --datasets RotatedMNIST VLCS\
+       --single_test_envs\
+       --n_hparams 5\
+       --n_trials 1
+
 
 To view the results of your sweep:
 
