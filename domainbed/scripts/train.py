@@ -278,15 +278,17 @@ if __name__ == "__main__":
                 'hparams': hparams,
                 'args': vars(args)
             })
-
-            epochs_path = os.path.join(args.output_dir, args.dataset, f"{args.algorithm}_test_env_{''.join(str(env) for env in args.test_envs)}",'epochs.json')
-
-            if not os.path.exists(epochs_path):
-                os.makedirs(os.path.dirname(epochs_path), exist_ok=True)
-                with open(epochs_path, 'w') as f:
-                    f.write(json.dumps(results, sort_keys=True) + "\n")
+            epochs_path = os.path.join(args.output_dir, 'results.jsonl')
             with open(epochs_path, 'a') as f:
                 f.write(json.dumps(results, sort_keys=True) + "\n")
+
+            # epochs_path = os.path.join(args.output_dir, args.dataset, f"{args.algorithm}_test_env_{''.join(str(env) for env in args.test_envs)}",'epochs.json')
+            # if not os.path.exists(epochs_path):
+            #     os.makedirs(os.path.dirname(epochs_path), exist_ok=True)
+            #     with open(epochs_path, 'w') as f:
+            #         f.write(json.dumps(results, sort_keys=True) + "\n")
+            # with open(epochs_path, 'a') as f:
+            #     f.write(json.dumps(results, sort_keys=True) + "\n")
 
             algorithm_dict = algorithm.state_dict()
             start_step = step + 1

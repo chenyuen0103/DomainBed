@@ -83,9 +83,9 @@ Train a model:
 ```sh
 python3 -m domainbed.scripts.train\
        --data_dir=./domainbed/data/\
-       --algorithm Fishr\
+       --algorithm HessianAlignment\
        --hparams {\"model_type\":\"ResNet\"}\
-       --dataset DomainNet\
+       --dataset VLCS\
        --test_env 2
 ```
 
@@ -125,14 +125,14 @@ For ResNet
 ```sh
 python -m domainbed.scripts.sweep launch\
        --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results_resnet\
+       --output_dir=./domainbed/results_resnet_new\
        --command_launcher multi_gpu\
        --hparams {\"model_type\":\"ResNet\"}\
        --algorithms HessianAlignment\
-       --datasets PACS VLCS OfficeHome TerraIncognita DomainNet\
+       --datasets RotatedMNIST VLCS\
        --single_test_envs\
-       --n_hparams 20\
-       --n_trials 3
+       --n_hparams 5\
+       --n_trials 1
 ```
 
 After all jobs have either succeeded or failed, you can delete the data from failed jobs with ``python -m domainbed.scripts.sweep delete_incomplete`` and then re-launch them by running ``python -m domainbed.scripts.sweep launch`` again. Specify the same command-line arguments in all calls to `sweep` as you did the first time; this is how the sweep script knows which jobs were launched originally.
