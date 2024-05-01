@@ -85,7 +85,16 @@ python3 -m domainbed.scripts.train\
        --data_dir=./domainbed/data/\
        --algorithm Fishr\
        --hparams {\"model_type\":\"ResNet\"}\
-       --dataset PACS\
+       --dataset DomainNet\
+       --test_env 2
+```
+
+```sh
+python3 -m domainbed.scripts.train\
+       --data_dir=./domainbed/data/\
+       --algorithm HessianAlignment\
+       --hparams {\"model_type\":\"ResNet\"}\
+       --dataset TerraIncognita\
        --test_env 2
 ```
 
