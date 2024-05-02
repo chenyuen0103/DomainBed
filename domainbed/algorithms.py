@@ -559,7 +559,7 @@ class HessianAlignment(ERM):
     def exact_hessian_loss(self, logits, x, y, env_indices, alpha=10e-5, beta=10e-5, stats = {}):
         x = self.featurizer(x)
         grad_pen, hess_pen = 0, 0
-        breakpoint()
+        # breakpoint()
         if alpha != 0:
             start = time.time()
             grad_pen = self.grad_pen(x, logits, y, env_indices)
