@@ -94,7 +94,7 @@ python3 -m domainbed.scripts.train\
        --data_dir=./domainbed/data/\
        --algorithm HessianAlignment\
        --hparams {\"model_type\":\"ResNet\"}\
-       --dataset TerraIncognita\
+       --dataset RotatedMNIST\
        --test_env 2
 ```
 

@@ -144,8 +144,8 @@ def _hparams(algorithm, dataset, random_seed, model_type='ViT-S'):
 
     elif algorithm == 'HessianAlignment':
         # _hparam('model_type','ViT-S', lambda r: 'ViT-S')
-        _hparam('grad_alpha', 100, lambda r: 10 ** r.uniform(1, 4))
-        _hparam('hess_beta', 100, lambda r: 10 ** r.uniform(1, 4))
+        _hparam('grad_alpha', 1000, lambda r: 10 ** r.uniform(1, 4))
+        _hparam('hess_beta', 1000, lambda r: 10 ** r.uniform(1, 4))
         # _hparam('penalty_anneal_iters', 500, lambda r: int(10 ** r.uniform(0, 4)))
         _hparam('penalty_anneal_iters', 0, lambda r: int(r.uniform(0., 5000.)))
 
