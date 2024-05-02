@@ -93,7 +93,7 @@ python3 -m domainbed.scripts.train\
 python3 -m domainbed.scripts.train\
        --data_dir=./domainbed/data/\
        --algorithm HessianAlignment\
-       --dataset PACS\
+       --dataset \
        --test_env 2
 ```
 #       --hparams {\"model_type\":\"ResNet\"}\
