@@ -29,6 +29,7 @@ class SelectionMethod:
         Given all records from a single (dataset, algorithm, test env) pair,
         return a sorted list of (run_acc, records) tuples.
         """
+
         return (records.group('args.hparams_seed')
             .map(lambda _, run_records:
                 (
@@ -47,6 +48,7 @@ class SelectionMethod:
         """
         _hparams_accs = self.hparams_accs(records)
         if len(_hparams_accs):
+            # breakpoint()
             return _hparams_accs[0][0]['test_acc']
         else:
             return None
@@ -98,16 +100,10 @@ class IIDAccuracySelectionMethod(SelectionMethod):
         if not len(test_records):
             return None
 
-        # Get the index of the record with the highest validation accuracy
-        best_index = test_records.map(self._step_acc).argmax('val_acc')
-
-        # Access the best record using the index
-        best_record = test_records[best_index]
-
-        # Assuming the best_record has an attribute 'args' that stores the arguments
-        # if hasattr(best_record, 'args'):
-        print("Args of the best record:", best_record.args)
-
+        index_of_max = test_records.map(self._step_acc).map(lambda x: x['val_acc'])._list.index(
+            max(test_records.map(self._step_acc).map(lambda x: x['val_acc'])))
+        full_record_with_hyperparams = test_records[index_of_max]
+        print(f"Hyperparameters for {full_record_with_hyperparams['args']['dataset']}, env {full_record_with_hyperparams['args']['test_envs']}:", full_record_with_hyperparams['hparams'])
         return test_records.map(self._step_acc).argmax('val_acc')
 
 class LeaveOneOutSelectionMethod(SelectionMethod):

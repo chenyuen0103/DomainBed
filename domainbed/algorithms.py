@@ -193,18 +193,21 @@ class HessianAlignment(ERM):
         H2 = torch.zeros(dC, dC, device=x.device)
 
         mini_batch_size = 1
-        if num_classes <= 10:
-            mini_batch_size = 4
-        if num_classes <= 7:
-            mini_batch_size = 8
-        if num_classes <= 5:
+        if num_classes <= 2:
+            mini_batch_size = batch_size
+        elif num_classes <= 5:
             mini_batch_size = 16
+        elif num_classes <= 7:
+            mini_batch_size = 8
+        elif num_classes <= 10:
+            mini_batch_size = 4
 
         for i in range(0, batch_size, mini_batch_size):
-            try:
-                H2 += torch.einsum('bkl, bij -> bklij', p_off_diag[i: i + mini_batch_size], X_outer[i: i + mini_batch_size]).sum(0).reshape(dC, dC)
-            except:
-                H2 += torch.einsum('bkl, bij -> bklij', p_off_diag[i:], X_outer[i:]).sum(0).reshape(dC, dC)
+            end_idx = i + mini_batch_size
+            if end_idx > batch_size:
+                end_idx = batch_size
+            H2 += torch.einsum('bkl, bij -> bklij', p_off_diag[i:end_idx], X_outer[i:end_idx]).sum(0).reshape(dC, dC)
+
             # H += torch.kron(p_off_diag[i], X_outer[i])
 
         # H1 = torch.zeros(dC, dC, device=x.device)
