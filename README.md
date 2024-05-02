@@ -125,13 +125,13 @@ For ResNet
 ```sh
 python -m domainbed.scripts.sweep launch\
        --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results_resnet_new\
+       --output_dir=./domainbed/results_resnet_new2\
        --command_launcher multi_gpu\
        --hparams {\"model_type\":\"ResNet\"}\
        --algorithms HessianAlignment\
        --datasets RotatedMNIST VLCS\
        --single_test_envs\
-       --n_hparams 5\
+       --n_hparams 1\
        --n_trials 1
 ```
 
