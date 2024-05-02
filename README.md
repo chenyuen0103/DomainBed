@@ -93,11 +93,10 @@ python3 -m domainbed.scripts.train\
 python3 -m domainbed.scripts.train\
        --data_dir=./domainbed/data/\
        --algorithm HessianAlignment\
-       --hparams {\"model_type\":\"ResNet\"}\
-       --dataset RotatedMNIST\
+       --dataset PACS\
        --test_env 2
 ```
-
+#       --hparams {\"model_type\":\"ResNet\"}\
 Launch a sweep:
 
 ```sh
@@ -125,11 +124,11 @@ For ResNet
 ```sh
 python -m domainbed.scripts.sweep launch\
        --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results_resnet_new2\
+       --output_dir=./domainbed/results_vits_new\
        --command_launcher multi_gpu\
        --hparams {\"model_type\":\"ResNet\"}\
-       --algorithms HessianAlignment\
-       --datasets RotatedMNIST VLCS\
+       --algorithms ERM HessianAlignment\
+       --datasets VLCS\
        --single_test_envs\
        --n_hparams 1\
        --n_trials 1

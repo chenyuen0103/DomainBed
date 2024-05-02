@@ -149,7 +149,8 @@ def _hparams(algorithm, dataset, random_seed, model_type='ViT-S'):
         _hparam('grad_alpha', 1000, lambda r: 1000)
         _hparam('hess_beta', 1000, lambda r: 1000)
         # _hparam('penalty_anneal_iters', 500, lambda r: int(10 ** r.uniform(0, 4)))
-        _hparam('penalty_anneal_iters', 0, lambda r: int(r.uniform(0., 5000.)))
+        # _hparam('penalty_anneal_iters', 0, lambda r: int(r.uniform(0., 5000.)))
+        _hparam('penalty_anneal_iters', 3600, lambda r: np.randome.choice(3600, 4000))
 
     elif algorithm == "HGP":
         _hparam('penalty_alpha', 0.0001, lambda r: 10 ** r.uniform(-3, -5))
@@ -159,6 +160,8 @@ def _hparams(algorithm, dataset, random_seed, model_type='ViT-S'):
     elif algorithm == "Hutchinson":
         _hparam('penalty_alpha', 0.001, lambda r: 10 ** r.uniform(4, 1))
         _hparam('penalty_beta', 0.005, lambda r: 10 ** r.uniform(6, 2))
+
+
 
     if hparams['model_type'][0] == 'ViT-S':
         # _hparam('lr', 0.03, lambda r: 10 ** r.uniform(-2, -1))
@@ -187,6 +190,8 @@ def _hparams(algorithm, dataset, random_seed, model_type='ViT-S'):
         _hparam('batch_size', 8, lambda r: 8)
     elif dataset == 'DomainNet':
         _hparam('batch_size', 32, lambda r: int(2**r.uniform(3, 5)))
+    elif algorithm == 'HessianAlignment':
+        _hparam('batch_size', 32, lambda r: 32)
     else:
         _hparam('batch_size', 32, lambda r: int(2**r.uniform(3, 5.5)))
 

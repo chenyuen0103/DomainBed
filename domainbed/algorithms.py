@@ -332,14 +332,14 @@ class HessianAlignment(ERM):
 
         grad_pen, hess_pen = 0, 0
         if alpha != 0:
-            # start = time.time()
+            start = time.time()
             grad_pen = self.grad_pen(x, logits, y, envs_indices)
-            # print(f"Time taken to compute grad_pen: {time.time() - start}")
+            print(f"Time taken to compute grad_pen: {time.time() - start}")
 
         if beta != 0:
-            # start = time.time()
+            start = time.time()
             hess_pen = self.hessian_pen(x, logits, envs_indices)
-            # print(f"Time taken to compute hess_pen: {time.time() - start}")
+            print(f"Time taken to compute hess_pen: {time.time() - start}")
 
         total_loss = erm_loss + alpha * grad_pen + beta * hess_pen
 
