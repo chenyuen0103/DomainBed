@@ -604,9 +604,9 @@ class HessianAlignment(ERM):
         if isinstance(grad_pen, torch.Tensor):
             grad_pen = grad_pen.item()
         self.optimizer.zero_grad()
-        # start = time.time()
+        start = time.time()
         loss.backward()
-        # print(f"Time taken to compute backward: {time.time() - start}")
+        print(f"Time taken to compute backward: {time.time() - start}")
 
         # start = time.time()
         self.optimizer.step()
