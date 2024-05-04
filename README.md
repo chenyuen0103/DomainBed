@@ -93,7 +93,7 @@ python3 -m domainbed.scripts.train\
 python3 -m domainbed.scripts.train\
        --data_dir=./domainbed/data/\
        --algorithm HessianAlignment\
-       --dataset \
+       --dataset VLCS\
        --test_env 2
 ```
 #       --hparams {\"model_type\":\"ResNet\"}\
@@ -111,13 +111,13 @@ Here, `MyLauncher` is your cluster's command launcher, as implemented in `comman
 ```sh
 python -m domainbed.scripts.sweep launch\
        --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results_vits\
+       --output_dir=./domainbed/results_vits_3600\
        --command_launcher multi_gpu\
        --algorithms ERM Fishr HessianAlignment\
-       --datasets PACS VLCS OfficeHome TerraIncognita DomainNet\
+       --datasets PACS VLCS \
        --single_test_envs\
-       --n_hparams 20\
-       --n_trials 3
+       --n_hparams 5\
+       --n_trials 1
 ```
 
 For ResNet 
