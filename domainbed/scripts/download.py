@@ -115,6 +115,8 @@ def download_mnist(data_dir):
 
 
 def download_and_extract(url, destination):
+    print("URL:", url)  # Debug print to check the URL
+    print("Destination:", destination)  # Debug print to check the destination path
     if not os.path.exists(destination):
         os.makedirs(os.path.dirname(destination), exist_ok=True)
     gdown.download(url, destination, quiet=False)
@@ -133,7 +135,7 @@ def stage_path(base_dir, subfolder):
 
 def download_pacs(data_dir):
     # Original URL context
-    print("Original URL: http://www.eecs.qmul.ac.uk/~dl307/project_iccv2017")
+    # print("Original URL: http://www.eecs.qmul.ac.uk/~dl307/project_iccv2017")
 
     # Prepare the final directory path
     full_path = stage_path(data_dir, "PACS")
