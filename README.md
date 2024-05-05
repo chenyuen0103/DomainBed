@@ -114,9 +114,9 @@ python -m domainbed.scripts.sweep launch\
        --output_dir=./domainbed/results_vits_3600\
        --command_launcher multi_gpu\
        --algorithms ERM Fishr HessianAlignment\
-       --datasets PACS VLCS \
+       --datasets ColoredMNIST RotatedMNIST PACS VLCS TerraIncognita\
        --single_test_envs\
-       --n_hparams 5\
+       --n_hparams 10\
        --n_trials 1
 ```
 
