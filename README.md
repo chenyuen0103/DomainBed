@@ -116,8 +116,8 @@ python -m domainbed.scripts.sweep launch\
        --algorithms ERM Fishr HessianAlignment\
        --datasets ColoredMNIST RotatedMNIST PACS VLCS TerraIncognita\
        --single_test_envs\
-       --n_hparams 10\
-       --n_trials 1
+       --n_hparams 5\
+       --n_trials 3
 ```
 
 For ResNet 
