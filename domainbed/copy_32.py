@@ -11,8 +11,9 @@ for direct in os.listdir(input_dir):
         first_line = json.loads(first_line)
     if (first_line['hparams']['batch_size'] == 32 and 'MNIST' not in first_line['args']['dataset']):
     # copy the direct to the new directory
-        os.system(f"cp -r {os.path.join(input_dir, direct)} ./results_vits_3600_32")
+    #     os.system(f"cp -r {os.path.join(input_dir, direct)} ./results_vits_3600_32")
         count += 1
     elif 'MNIST' in first_line['args']['dataset'] and first_line['hparams']['batch_size'] == 64:
+        os.system(f"cp -r {os.path.join(input_dir, direct)} ./results_vits_3600_32")
         count += 1
 
