@@ -113,11 +113,7 @@ def download_mnist(data_dir):
 
 # PACS ########################################################################
 
-
-
 def download_pacs(data_dir):
-
-
     # Original URL: http://www.eecs.qmul.ac.uk/~dl307/project_iccv2017
     full_path = stage_path(data_dir, "PACS")
 
@@ -280,13 +276,13 @@ if __name__ == "__main__":
     parser.add_argument('--data_dir', type=str, required=True)
     args = parser.parse_args()
 
-    download_mnist(args.data_dir)
+    # download_mnist(args.data_dir)
     # download_pacs(args.data_dir)
-    download_office_home(args.data_dir)
-    download_domain_net(args.data_dir)
-    download_vlcs(args.data_dir)
+    # download_office_home(args.data_dir)
+    # download_domain_net(args.data_dir)
+    # download_vlcs(args.data_dir)
     download_terra_incognita(args.data_dir)
-    download_spawrious(args.data_dir)
-    download_sviro(args.data_dir)
-    Camelyon17Dataset(root_dir=args.data_dir, download=True)
-    FMoWDataset(root_dir=args.data_dir, download=True)
+    # download_spawrious(args.data_dir)
+    # download_sviro(args.data_dir)
+    # Camelyon17Dataset(root_dir=args.data_dir, download=True)
+    # FMoWDataset(root_dir=args.data_dir, download=True)
