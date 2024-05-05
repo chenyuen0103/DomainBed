@@ -114,56 +114,18 @@ def download_mnist(data_dir):
 # PACS ########################################################################
 
 
-def download_and_extract(url, destination):
-    print("URL:", url)  # Debug print to check the URL
-    print("Destination:", destination)  # Debug print to check the destination path
-    if not os.path.exists(destination):
-        os.makedirs(os.path.dirname(destination), exist_ok=True)
-    gdown.download(url, destination, quiet=False)
-
-def rename_directory(old_path, new_path):
-    if os.path.exists(old_path):
-        os.rename(old_path, new_path)
-    else:
-        raise FileNotFoundError(f"The directory {old_path} does not exist and cannot be renamed.")
-
-def stage_path(base_dir, subfolder):
-    """Ensure the subfolder directory exists within the base directory and return full path."""
-    full_path = os.path.join(base_dir, subfolder)
-    os.makedirs(full_path, exist_ok=True)
-    return full_path
 
 def download_pacs(data_dir):
-    # Original URL context
-    # print("Original URL: http://www.eecs.qmul.ac.uk/~dl307/project_iccv2017")
 
-    # Prepare the final directory path
+
+    # Original URL: http://www.eecs.qmul.ac.uk/~dl307/project_iccv2017
     full_path = stage_path(data_dir, "PACS")
 
-    # Define the destination for the downloaded file
-    zip_file_path = os.path.join(data_dir, "PACS.zip")
+    download_and_extract("https://drive.google.com/uc?id=1JFr8f805nMUelQWWmfnJR3y4_SYoN5Pd",
+                         os.path.join(data_dir, "PACS.zip"))
 
-    # Download and extract the dataset
-    download_and_extract("https://drive.google.com/uc?id=1JFr8f805nMUelQWWmfnJR3y4_SYoN5Pd", zip_file_path)
-
-    # Path where the extracted files are expected to be (often this needs to be adjusted based on actual contents)
-    expected_extract_path = os.path.join(data_dir, "kfold")
-
-    # Rename the directory to the structured path
-    rename_directory(expected_extract_path, full_path)
-    print(f"Dataset is ready at {full_path}")
-
-# def download_pacs(data_dir):
-
-
-    # # Original URL: http://www.eecs.qmul.ac.uk/~dl307/project_iccv2017
-    # full_path = stage_path(data_dir, "PACS")
-    #
-    # download_and_extract("https://drive.google.com/uc?id=1JFr8f805nMUelQWWmfnJR3y4_SYoN5Pd",
-    #                      os.path.join(data_dir, "PACS.zip"))
-    #
-    # os.rename(os.path.join(data_dir, "kfold"),
-    #           full_path)
+    os.rename(os.path.join(data_dir, "kfold"),
+              full_path)
 
 
 # Office-Home #################################################################
@@ -319,7 +281,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     download_mnist(args.data_dir)
-    download_pacs(args.data_dir)
+    # download_pacs(args.data_dir)
     download_office_home(args.data_dir)
     download_domain_net(args.data_dir)
     download_vlcs(args.data_dir)
