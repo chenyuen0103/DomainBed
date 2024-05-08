@@ -133,6 +133,18 @@ python -m domainbed.scripts.sweep delete_incomplete\
        --n_trials 3
 ```
 
+```sh
+python -m domainbed.scripts.sweep delete_incomplete\
+       --data_dir=./domainbed/data/\
+       --output_dir=./domainbed/results_vits_terra_pacs\
+       --command_launcher multi_gpu\
+       --algorithms ERM Fishr HessianAlignment\
+       --datasets PACS TerraIncognita\
+       --single_test_envs\
+       --n_hparams 5\
+       --n_trials 3
+```
+
 For ResNet 
 ```sh
 python -m domainbed.scripts.sweep launch\

@@ -29,7 +29,6 @@ def multi_gpu_launcher(commands):
     Launch commands on the local machine, using all GPUs in parallel.
     """
     print('WARNING: using experimental multi_gpu_launcher.')
-    breakpoint()
     try:
         # Get list of GPUs from env, split by ',' and remove empty string ''
         # To handle the case when there is one extra comma: `CUDA_VISIBLE_DEVICES=0,1,2,3, python3 ...`
