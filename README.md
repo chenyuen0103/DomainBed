@@ -90,10 +90,10 @@ python3 -m domainbed.scripts.train\
 ```
 
 ```sh
-python3 -m domainbed.scripts.train\
+CUDA_VISIBLE_DEVICES=4 python -m domainbed.scripts.train\
        --data_dir=./domainbed/data/\
        --algorithm HessianAlignment\
-       --dataset ColoredMNIST\
+       --dataset TerraIncognita\
        --test_env 2
 ```
 #       --hparams {\"model_type\":\"ResNet\"}\
@@ -109,11 +109,11 @@ python -m domainbed.scripts.sweep launch\
 Here, `MyLauncher` is your cluster's command launcher, as implemented in `command_launchers.py`. At the time of writing, the entire sweep trains tens of thousands of models (all algorithms x all datasets x 3 independent trials x 20 random hyper-parameter choices). You can pass arguments to make the sweep smaller:
 
 ```sh
-CUDA_VISIBLE_DEVICES=3,4,5 python -m domainbed.scripts.sweep launch\
+CUDA_VISIBLE_DEVICES=0,1,5 python -m domainbed.scripts.sweep launch\
        --data_dir=./domainbed/data/\
        --output_dir=./domainbed/results_vits_terra_pacs\
        --command_launcher multi_gpu\
-       --algorithms ERM Fishr HessianAlignment\
+       --algorithms HessianAlignment\
        --datasets PACS TerraIncognita\
        --single_test_envs\
        --n_hparams 5\
