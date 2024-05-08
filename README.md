@@ -108,13 +108,49 @@ python -m domainbed.scripts.sweep launch\
 
 Here, `MyLauncher` is your cluster's command launcher, as implemented in `command_launchers.py`. At the time of writing, the entire sweep trains tens of thousands of models (all algorithms x all datasets x 3 independent trials x 20 random hyper-parameter choices). You can pass arguments to make the sweep smaller:
 
+
+Euler: All ERM and Fishr + HessianAlignment on ColoredMNIST and RotatedMNIST
+```sh
+python -m domainbed.scripts.sweep launch\
+       --data_dir=./domainbed/data/\
+       --output_dir=./domainbed/results_vits_3600_32\
+       --command_launcher multi_gpu\
+       --algorithms ERM Fishr\
+       --datasets ColoredMNIST RotatedMNIST PACS TerraIncognita\
+       --single_test_envs\
+       --n_hparams 5\
+       --n_trials 3
+       
+python -m domainbed.scripts.sweep launch\
+       --data_dir=./domainbed/data/\
+       --output_dir=./domainbed/results_vits_3600_32\
+       --command_launcher multi_gpu\
+       --algorithms ERM Fishr\
+       --datasets VLCS\
+       --single_test_envs\
+       --n_hparams 5\
+       --n_trials 3
+       
+       
+ python -m domainbed.scripts.sweep launch\
+       --data_dir=./domainbed/data/\
+       --output_dir=./domainbed/results_vits_3600_32\
+       --command_launcher multi_gpu\
+       --algorithms HessianAlignment\
+       --datasets ColoredMNIST RotatedMNIST\
+       --single_test_envs\
+       --n_hparams 5\
+       --n_trials 3
+```
+
+Newton: HessainAlignment on VLCS, PACS, and TerraIncognita
 ```sh
 CUDA_VISIBLE_DEVICES=0,1,5 python -m domainbed.scripts.sweep launch\
        --data_dir=./domainbed/data/\
        --output_dir=./domainbed/results_vits_terra_pacs\
        --command_launcher multi_gpu\
        --algorithms HessianAlignment\
-       --datasets PACS TerraIncognita\
+       --datasets VLCS PACS TerraIncognita\
        --single_test_envs\
        --n_hparams 5\
        --n_trials 3
