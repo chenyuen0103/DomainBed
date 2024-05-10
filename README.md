@@ -239,6 +239,16 @@ python -m domainbed.scripts.sweep launch\
        --single_test_envs\
        --n_hparams 5\
        --n_trials 1
+       
+    CUDA_VISIBLE_DEVICES=2,3,4,5,6 python -m domainbed.scripts.sweep launch\
+       --data_dir=./domainbed/data/\
+       --output_dir=./domainbed/results_vits_hessian_VLCS\
+       --command_launcher multi_gpu\
+       --algorithms HessianAlignment\
+       --datasets VLCS\
+       --single_test_envs\
+       --n_hparams 5\
+       --n_trials 1
 ```
 
 
