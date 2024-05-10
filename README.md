@@ -230,7 +230,7 @@ python -m domainbed.scripts.sweep launch\
        --n_trials 3
        
        
-  CUDA_VISIBLE_DEVICES=0,1,4,5 python -m domainbed.scripts.sweep launch\
+  CUDA_VISIBLE_DEVICES=2,3,4,5,6 python -m domainbed.scripts.sweep launch\
        --data_dir=./domainbed/data/\
        --output_dir=./domainbed/results_vits_hessian_MNIST\
        --command_launcher multi_gpu\
@@ -337,6 +337,9 @@ To view the results of your sweep:
 ````sh
 python -m domainbed.scripts.collect_results\
        --input_dir=./domainbed/results_vits_3600_32
+       
+python -m domainbed.scripts.collect_results\
+       --input_dir=./domainbed/results_vits_hessian_MNIST
 ````
 
 ## Running unit tests
