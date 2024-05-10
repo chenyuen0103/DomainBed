@@ -237,15 +237,15 @@ python -m domainbed.scripts.sweep launch\
        --algorithms HessianAlignment\
        --datasets ColoredMNIST\
        --single_test_envs\
-       --n_hparams 5\
+       --n_hparams 10\
        --n_trials 1
        
-    CUDA_VISIBLE_DEVICES=2,3,4,5,6 python -m domainbed.scripts.sweep launch\
+    CUDA_VISIBLE_DEVICES=0,1,2,3,4,5 python -m domainbed.scripts.sweep launch\
        --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results_vits_hessian_VLCS\
+       --output_dir=./domainbed/results_vits_hessian_real_anneal_0\
        --command_launcher multi_gpu\
        --algorithms HessianAlignment\
-       --datasets VLCS\
+       --datasets VLCS PACS TerraIncognita\
        --single_test_envs\
        --n_hparams 5\
        --n_trials 1
