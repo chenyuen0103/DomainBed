@@ -279,7 +279,22 @@ if __name__ == "__main__":
                 'args': vars(args)
             })
             epochs_path = os.path.join(args.output_dir, 'results.jsonl')
+
+
+            def inspect_data_types(data, parent_key=''):
+                for key, value in data.items():
+                    full_key = f"{parent_key}.{key}" if parent_key else key
+                    if isinstance(value, dict):
+                        inspect_data_types(value, full_key)
+                    else:
+                        if isinstance(value, (np.integer, np.floating, np.ndarray)):
+                            print(f"Key: {full_key} | Type: {type(value)} | Value: {value}")
+                        else:
+                            print(f"Key: {full_key} | Type: {type(value)}")
+
+
             with open(epochs_path, 'a') as f:
+                inspect_data_types(results)
                 breakpoint()
                 f.write(json.dumps(results, sort_keys=True) + "\n")
 

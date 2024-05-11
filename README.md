@@ -226,6 +226,7 @@ CUDA_VISIBLE_DEVICES=2,3,4,5,6,7 python -m domainbed.scripts.sweep launch\
        --output_dir=./domainbed/results_vits_hessian_vlcs_random\
        --command_launcher multi_gpu\
        --algorithms HessianAlignment\
+        --hparams {\"penalty_anneal_iters\":3600}\
        --datasets VLCS\
        --single_test_envs\
        --n_hparams 5\
