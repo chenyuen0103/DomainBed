@@ -211,9 +211,19 @@ CUDA_VISIBLE_DEVICES=2,3,4,5,6,7 python -m domainbed.scripts.sweep launch\
        --n_trials 3
        
        
-  CUDA_VISIBLE_DEVICES=4,5 python -m domainbed.scripts.sweep launch\
+  CUDA_VISIBLE_DEVICES=4,5,6,7 python -m domainbed.scripts.sweep launch\
        --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results_vits_hessi[]an_vlcs_random\
+       --output_dir=./domainbed/results_vits_hessian_vlcs_random\
+       --command_launcher multi_gpu\
+       --algorithms HessianAlignment\
+       --datasets VLCS\
+       --single_test_envs\
+       --n_hparams 5\
+       --n_trials 1
+       
+    CUDA_VISIBLE_DEVICES=4,5,6,7 python -m domainbed.scripts.sweep delete_incomplete\
+       --data_dir=./domainbed/data/\
+       --output_dir=./domainbed/results_vits_hessian_vlcs_random\
        --command_launcher multi_gpu\
        --algorithms HessianAlignment\
        --datasets VLCS\

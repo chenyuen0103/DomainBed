@@ -280,6 +280,7 @@ if __name__ == "__main__":
             })
             epochs_path = os.path.join(args.output_dir, 'results.jsonl')
             with open(epochs_path, 'a') as f:
+                breakpoint()
                 f.write(json.dumps(results, sort_keys=True) + "\n")
 
             # epochs_path = os.path.join(args.output_dir, args.dataset, f"{args.algorithm}_test_env_{''.join(str(env) for env in args.test_envs)}",'epochs.json')
