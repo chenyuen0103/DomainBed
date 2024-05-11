@@ -187,26 +187,27 @@ class HessianAlignment(ERM):
         # Outer product of x
         X_outer = torch.einsum('bi,bj->bij', x, x)  # Shape: [batch_size, d, d]
 
-        # H2 = torch.einsum('bkl,bij->bklij', p_off_diag, X_outer)
-        # H2 = H2.sum(0).reshape(dC, dC) / batch_size  # Shape: [dC, dC]
+        H2 = torch.einsum('bkl,bij->bklij', p_off_diag, X_outer)
+        H2 = H2.sum(0).reshape(dC, dC) / batch_size  # Shape: [dC, dC]
+
         # Combine the probabilities with the outer product of x
-        H2 = torch.zeros(dC, dC, device=x.device)
-
-        mini_batch_size = 1
-        if num_classes <= 2:
-            mini_batch_size = batch_size
-        elif num_classes <= 5:
-            mini_batch_size = 16
-        elif num_classes <= 7:
-            mini_batch_size = 8
-        elif num_classes <= 10:
-            mini_batch_size = 4
-
-        for i in range(0, batch_size, mini_batch_size):
-            end_idx = i + mini_batch_size
-            if end_idx > batch_size:
-                end_idx = batch_size
-            H2 += torch.einsum('bkl, bij -> bklij', p_off_diag[i:end_idx], X_outer[i:end_idx]).sum(0).reshape(dC, dC)
+        # H2 = torch.zeros(dC, dC, device=x.device)
+        #
+        # mini_batch_size = 1
+        # if num_classes <= 2:
+        #     mini_batch_size = batch_size
+        # elif num_classes <= 5:
+        #     mini_batch_size = 16
+        # elif num_classes <= 7:
+        #     mini_batch_size = 8
+        # elif num_classes <= 10:
+        #     mini_batch_size = 4
+        #
+        # for i in range(0, batch_size, mini_batch_size):
+        #     end_idx = i + mini_batch_size
+        #     if end_idx > batch_size:
+        #         end_idx = batch_size
+        #     H2 += torch.einsum('bkl, bij -> bklij', p_off_diag[i:end_idx], X_outer[i:end_idx]).sum(0).reshape(dC, dC)
 
             # H += torch.kron(p_off_diag[i], X_outer[i])
 
