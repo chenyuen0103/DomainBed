@@ -142,16 +142,6 @@ Euler: HessianAlignment on ColoredMNIST and RotatedMNIST
        --n_hparams 5\
        --n_trials 3
 ```sh
-moved to newton
-#python -m domainbed.scripts.sweep launch\
-#       --data_dir=./domainbed/data/\
-#       --output_dir=./domainbed/results_vits_3600_32\
-#       --command_launcher multi_gpu\
-#       --algorithms ERM Fishr\
-#       --datasets ColoredMNIST RotatedMNIST PACS TerraIncognita\
-#       --single_test_envs\
-#       --n_hparams 5\
-#       --n_trials 3
        
 
        
@@ -199,15 +189,6 @@ CUDA_VISIBLE_DEVICES=2,3,4,5,6,7 python -m domainbed.scripts.sweep launch\
        --n_trials 3
 
 
-python -m domainbed.scripts.sweep launch\
-       --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results_vits_terra_pacs\
-       --command_launcher multi_gpu\
-       --algorithms HessianAlignment\
-       --datasets PACS TerraIncognita\
-       --single_test_envs\
-       --n_hparams 5\
-       --n_trials 3
        
  CUDA_VISIBLE_DEVICES=0,1,4 python -m domainbed.scripts.sweep launch\
        --data_dir=./domainbed/data/\
@@ -230,25 +211,36 @@ python -m domainbed.scripts.sweep launch\
        --n_trials 3
        
        
-  CUDA_VISIBLE_DEVICES=2,3,6,7 python -m domainbed.scripts.sweep launch\
+  CUDA_VISIBLE_DEVICES=4,5 python -m domainbed.scripts.sweep launch\
        --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results_vits_hessian_MNIST\
+       --output_dir=./domainbed/results_vits_hessian_vlcs_terra_anneal_2500\
        --command_launcher multi_gpu\
+       --hparams {\"penalty_anneal_iters\":2500}\
        --algorithms HessianAlignment\
-       --datasets ColoredMNIST\
+       --datasets VLCS\
        --single_test_envs\
-       --n_hparams 10\
-       --n_trials 1
+       --n_hparams 5\
+       --n_trials 3
        
-    CUDA_VISIBLE_DEVICES=0,1,4,5 python -m domainbed.scripts.sweep launch\
+    CUDA_VISIBLE_DEVICES=0,3,6 python -m domainbed.scripts.sweep launch\
        --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results_vits_hessian_pacs_anneal_0\
+       --output_dir=./domainbed/results_vits_hessian_pacs_anneal_3600\
        --command_launcher multi_gpu\
        --algorithms HessianAlignment\
        --datasets PACS\
        --single_test_envs\
        --n_hparams 5\
-       --n_trials 1
+       --n_trials 
+       
+    CUDA_VISIBLE_DEVICES=4,5 python -m domainbed.scripts.sweep launch\
+   --data_dir=./domainbed/data/\
+   --output_dir=./domainbed/results_vits_hessian_pacs_anneal_3600\
+   --command_launcher multi_gpu\
+   --algorithms HessianAlignment\
+   --datasets PACS\
+   --single_test_envs\
+   --n_hparams 5\
+   --n_trials 1
 ```
 
 
@@ -294,7 +286,7 @@ python -m domainbed.scripts.sweep launch\
        --data_dir=./domainbed/data/\
        --output_dir=./domainbed/results_vits_new\
        --command_launcher multi_gpu\
-       --hparams {\"model_type\":\"ResNet\"}\
+#       --hparams {\"model_type\":\"ResNet\"}\
        --algorithms ERM HessianAlignment\
        --datasets VLCS\
        --single_test_envs\
