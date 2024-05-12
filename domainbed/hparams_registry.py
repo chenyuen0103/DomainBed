@@ -154,7 +154,7 @@ def _hparams(algorithm, dataset, random_seed, model_type='ViT-S'):
         # _hparam('penalty_anneal_iters', 3600, lambda r: np.random.randint(0, 3600))
         # _hparam('penalty_anneal_iters', 2500, lambda r: 2500)
 
-        _hparam('penalty_anneal_iters', 3600, lambda r: int(np.random.choice([2400, 3000, 3600, 4200])))
+        _hparam('penalty_anneal_iters', 2400, lambda r: int(np.random.choice([2400, 3000, 3600, 4200])))
 
     elif algorithm == "HGP":
         _hparam('penalty_alpha', 0.0001, lambda r: 10 ** r.uniform(-3, -5))
