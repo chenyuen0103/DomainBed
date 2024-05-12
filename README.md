@@ -219,7 +219,7 @@ CUDA_VISIBLE_DEVICES=2,3,4,5,6,7 python -m domainbed.scripts.sweep launch\
        --datasets PACS\
        --single_test_envs\
        --n_hparams 5\
-       --n_trials 1
+       --n_trials 3
        
     CUDA_VISIBLE_DEVICES=4,5,6,7 python -m domainbed.scripts.sweep delete_incomplete\
        --data_dir=./domainbed/data/\
@@ -243,13 +243,13 @@ CUDA_VISIBLE_DEVICES=2,3,4,5,6,7 python -m domainbed.scripts.sweep launch\
        
     CUDA_VISIBLE_DEVICES=0,3,6 python -m domainbed.scripts.sweep launch\
        --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results_vits_hessian_
+       --output_dir=./domainbed/results_vits_hessian_VLCS\
        --command_launcher multi_gpu\
        --algorithms HessianAlignment\
-       --datasets PACS\
+       --datasets VLCS\
        --single_test_envs\
        --n_hparams 5\
-       --n_trials 
+       --n_trials 3
        
     CUDA_VISIBLE_DEVICES=4,5,6,7 python -m domainbed.scripts.sweep launch\
    --data_dir=./domainbed/data/\
@@ -257,12 +257,12 @@ CUDA_VISIBLE_DEVICES=2,3,4,5,6,7 python -m domainbed.scripts.sweep launch\
    --hparams {\"penalty_anneal_iters\":2500}\
    --command_launcher multi_gpu\
    --algorithms HessianAlignment\
-   --datasets PACS\
+   --datasets VLCS\
    --single_test_envs\
    --n_hparams 5\
    --n_trials 3
 ```
-
+   --hparams {\"penalty_anneal_iters\":2500}\
 
 ```sh
  CUDA_VISIBLE_DEVICES=0,1,4,5 python -m domainbed.scripts.sweep delete_incomplete\
