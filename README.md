@@ -166,12 +166,12 @@ ERM and Fishr on PACS, TerraIncognita
 
 ```sh
 (tmux a -t db_vlcs_erm_fishr)
-CUDA_VISIBLE_DEVICES=2,3,6,7 python -m domainbed.scripts.sweep launch\
+CUDA_VISIBLE_DEVICES=7 python -m domainbed.scripts.sweep launch\
        --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results_vits_ERM_Fishr\
+       --output_dir=./domainbed/results_vits_hessian_mnist_random\
        --command_launcher multi_gpu\
-       --algorithms ERM Fishr\
-       --datasets ColoredMNIST RotatedMNIST \
+       --algorithms HessianAlignment\
+       --datasets ColoredMNIST\
        --single_test_envs\
        --n_hparams 5\
        --n_trials 3
@@ -231,12 +231,12 @@ CUDA_VISIBLE_DEVICES=2,3,4,5,6,7 python -m domainbed.scripts.sweep launch\
        --n_hparams 5\
        --n_trials 1
        
-    CUDA_VISIBLE_DEVICES=1,4,6,7 python -m domainbed.scripts.sweep launch\
+    CUDA_VISIBLE_DEVICES=4,5 python -m domainbed.scripts.sweep launch\
        --data_dir=./domainbed/data/\
        --output_dir=./domainbed/results_vits_hessian_vlcs_random\
        --command_launcher multi_gpu\
        --algorithms HessianAlignment\
-       --datasets VLCS PACS TerraIncognita\
+       --datasets TerraIncognita\
        --single_test_envs\
        --n_hparams 5\
        --n_trials 3
