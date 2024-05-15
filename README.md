@@ -84,7 +84,6 @@ Train a model:
 CUDA_VISIBLE_DEVICES=2 python3 -m domainbed.scripts.train\
        --data_dir=./domainbed/data/\
        --algorithm HessianAlignment\
-       --hparams {\"grad_alpha\":1000\,\"hess_beta\":500000}\
        --dataset ColoredMNIST\
        --test_env 2
        
@@ -96,7 +95,7 @@ CUDA_VISIBLE_DEVICES=2 python3 -m domainbed.scripts.train\
        --dataset ColoredMNIST\
        --test_env 2
 ```
-
+#       --hparams {\"grad_alpha\":1000\,\"hess_beta\":500000}\
 ```sh
 CUDA_VISIBLE_DEVICES=4 python -m domainbed.scripts.train\
        --data_dir=./domainbed/data/\
