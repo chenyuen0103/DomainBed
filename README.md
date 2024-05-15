@@ -117,12 +117,12 @@ Here, `MyLauncher` is your cluster's command launcher, as implemented in `comman
 
 Local 
 ```sh
-python -m domainbed.scripts.sweep launch\
+CUDA_VISIBLE_DEVICES=2 python -m domainbed.scripts.sweep launch\
        --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results_vits_3600_32\
+       --output_dir=./domainbed/results_vits_hessian_MNIST\
        --command_launcher multi_gpu\
-       --algorithms ERM Fishr HessianAlignment\
-       --datasets ColoredMNIST RotatedMNIST VLCS PACS TerraIncognita\
+       --algorithms HessianAlignment\
+       --datasets RotatedMNIST\
        --single_test_envs\
        --n_hparams 5\
        --n_trials 3
@@ -369,6 +369,10 @@ python -m domainbed.scripts.collect_results\
        
 python -m domainbed.scripts.collect_results\
        --input_dir=./domainbed/results_vits_hessian_vlcs_random2
+       
+       
+python -m domainbed.scripts.collect_results\
+       --input_dir=./domainbed/results_vits_hessian_MNIST
 ````
 
 ## Running unit tests
