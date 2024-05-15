@@ -220,7 +220,8 @@ class HessianAlignment(ERM):
 
         H2 /= batch_size
         # breakpoint()
-        H2 /= dC ** 0.5
+        # H2 /= dC ** 0.5
+        H2 /= num_classes
         return H2
 
 
@@ -241,6 +242,8 @@ class HessianAlignment(ERM):
                           model's weight gradient shape.
         """
         # Ensure logits are in the proper shape and compute softmax probabilities
+        d = x.shape[1]
+        C = logits.shape[1]
         dC = logits.shape[1] * x.shape[1]
         p = F.softmax(logits, dim=-1)
 
@@ -257,7 +260,8 @@ class HessianAlignment(ERM):
         grad_w = torch.matmul(grad_loss.T, x_flattened) / x.size(0)
         # grad_w /= (grad_w.shape[0] * grad_w.shape[1]) ** 0.25
         # breakpoint()
-        grad_w /= dC ** 0.25
+        # grad_w /= dC ** 0.25
+        grad_w /= C ** 0.5
 
         return grad_w
 
