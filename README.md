@@ -81,11 +81,19 @@ python3 -m domainbed.scripts.download \
 Train a model:
 
 ```sh
-python3 -m domainbed.scripts.train\
+CUDA_VISIBLE_DEVICES=2 python3 -m domainbed.scripts.train\
        --data_dir=./domainbed/data/\
        --algorithm HessianAlignment\
-       --hparams {\"model_type\":\"ResNet\"}\
-       --dataset VLCS\
+       --hparams {\"grad_alpha\":1000\,\"hess_beta\":500000}\
+       --dataset ColoredMNIST\
+       --test_env 2
+       
+       
+       
+CUDA_VISIBLE_DEVICES=2 python3 -m domainbed.scripts.train\
+       --data_dir=./domainbed/data/\
+       --algorithm Fishr\
+       --dataset ColoredMNIST\
        --test_env 2
 ```
 
@@ -231,25 +239,25 @@ CUDA_VISIBLE_DEVICES=2,3,4,5,6,7 python -m domainbed.scripts.sweep launch\
        --n_hparams 5\
        --n_trials 1
        
-    CUDA_VISIBLE_DEVICES=3,4,5,7 python -m domainbed.scripts.sweep launch\
+    CUDA_VISIBLE_DEVICES=2 python -m domainbed.scripts.sweep launch\
        --data_dir=./domainbed/data/\
        --output_dir=./domainbed/results_vits_hessian_vlcs_random2\
        --command_launcher multi_gpu\
        --algorithms HessianAlignment\
-       --datasets VLCS\
+       --datasets PACS\
        --single_test_envs\
        --n_hparams 5\
        --n_trials 3
        
-    CUDA_VISIBLE_DEVICES=0,3,6 python -m domainbed.scripts.sweep launch\
+    CUDA_VISIBLE_DEVICES=2 python -m domainbed.scripts.sweep launch\
        --data_dir=./domainbed/data/\
        --output_dir=./domainbed/results_vits_hessian_VLCS\
        --command_launcher multi_gpu\
        --algorithms HessianAlignment\
-       --datasets VLCS\
+       --datasets ColoredMNIST\
        --single_test_envs\
        --n_hparams 5\
-       --n_trials 3
+       --n_trials 1
        
     CUDA_VISIBLE_DEVICES=4,5,6,7 python -m domainbed.scripts.sweep launch\
    --data_dir=./domainbed/data/\
@@ -361,7 +369,7 @@ python -m domainbed.scripts.collect_results\
        --input_dir=./domainbed/results_vits_3600_32
        
 python -m domainbed.scripts.collect_results\
-       --input_dir=./domainbed/results_vits_hessian_MNIST
+       --input_dir=./domainbed/results_vits_hessian_vlcs_random2
 ````
 
 ## Running unit tests

@@ -219,7 +219,7 @@ class HessianAlignment(ERM):
 
 
         H2 /= batch_size
-        H2 /= dC
+        # H2 /= dC
         return H2
 
 
