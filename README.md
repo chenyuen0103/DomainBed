@@ -117,12 +117,23 @@ Here, `MyLauncher` is your cluster's command launcher, as implemented in `comman
 
 Local 
 ```sh
-CUDA_VISIBLE_DEVICES=2 python -m domainbed.scripts.sweep launch\
+CUDA_VISIBLE_DEVICES=1,2 python -m domainbed.scripts.sweep launch\
        --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results_vits_hessian_MNIST\
+       --output_dir=./domainbed/results_vits_hessian_MNIST_rescale\
        --command_launcher multi_gpu\
        --algorithms HessianAlignment\
-       --datasets RotatedMNIST\
+       --datasets ColoredMNIST\
+       --single_test_envs\
+       --n_hparams 5\
+       --n_trials 3
+       
+       
+   CUDA_VISIBLE_DEVICES=1,2 python -m domainbed.scripts.sweep delete_incomplete\
+       --data_dir=./domainbed/data/\
+       --output_dir=./domainbed/results_vits_hessian_rescale\
+       --command_launcher multi_gpu\
+       --algorithms HessianAlignment\
+       --datasets PACS TerraIncognita VLCS\
        --single_test_envs\
        --n_hparams 5\
        --n_trials 3
@@ -272,12 +283,12 @@ CUDA_VISIBLE_DEVICES=2,3,4,5,6,7 python -m domainbed.scripts.sweep launch\
    --hparams {\"penalty_anneal_iters\":2500}\
 
 ```sh
- CUDA_VISIBLE_DEVICES=0,1,4,5 python -m domainbed.scripts.sweep delete_incomplete\
+ CUDA_VISIBLE_DEVICES=4,5,6,7 python -m domainbed.scripts.sweep launch\
        --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results_vits_VLCS_ERM_Fishr\
+       --output_dir=./domainbed/results_vits_hessian_rescale\
        --command_launcher multi_gpu\
-       --algorithms ERM Fishr\
-       --datasets VLCS\
+       --algorithms HessianAlignment\
+       --datasets TerraIncognita\
        --single_test_envs\
        --n_hparams 5\
        --n_trials 3
