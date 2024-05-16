@@ -473,10 +473,10 @@ class HessianAlignment(ERM):
         # Calculate the full expression in a vectorized form
         avg_h_minus_h_bar_sq = torch.mean(f_norm_env + shared_term - individual_term)
 
-        sum_h_minus_h_bar_sq = 0
-        for e in range(num_envs):
-            sum_h_minus_h_bar_sq += f_norm_env[e] + shared_term - individual_term[e]
-        avg_h_minus_h_bar_sq = sum_h_minus_h_bar_sq / num_envs
+        # sum_h_minus_h_bar_sq = 0
+        # for e in range(num_envs):
+        #     sum_h_minus_h_bar_sq += f_norm_env[e] + shared_term - individual_term[e]
+        # avg_h_minus_h_bar_sq = sum_h_minus_h_bar_sq / num_envs
 
         # normalize by the dimmension of the hessian
         num_classes = logits.shape[1]
@@ -573,7 +573,7 @@ class HessianAlignment(ERM):
 
         if beta != 0:
             start = time.time()
-            hess_pen= self.hessian_pen_old(x, logits, env_indices)
+            hess_pen= self.hessian_pen(x, logits, env_indices)
             print(f"Time taken to compute hess_pen: {time.time() - start}")
 
 
