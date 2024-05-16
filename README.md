@@ -303,12 +303,12 @@ CUDA_VISIBLE_DEVICES=2,3,4,5,6,7 python -m domainbed.scripts.sweep launch\
    --hparams {\"penalty_anneal_iters\":2500}\
 
 ```sh
- CUDA_VISIBLE_DEVICES=4,5,6,7 python -m domainbed.scripts.sweep delete_incomplete\
+ CUDA_VISIBLE_DEVICES=0,1 python -m domainbed.scripts.sweep launch\
        --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results_vits_hessian_rescale_sqrt\
+       --output_dir=./domainbed/results_vits_coral\
        --command_launcher multi_gpu\
-       --algorithms HessianAlignment\
-       --datasets PACS VLCS TerraIncognita\
+       --algorithms CORAL\
+       --datasets TerraIncognita\
        --single_test_envs\
        --n_hparams 5\
        --n_trials 3

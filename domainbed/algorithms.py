@@ -567,14 +567,14 @@ class HessianAlignment(ERM):
         grad_pen, hess_pen = 0, 0
         # breakpoint()
         if alpha != 0:
-            start = time.time()
+            # start = time.time()
             grad_pen = self.grad_pen(x, logits, y, env_indices)
-            print(f"Time taken to compute grad_pen: {time.time() - start}")
+            # print(f"Time taken to compute grad_pen: {time.time() - start}")
 
         if beta != 0:
-            start = time.time()
+            # start = time.time()
             hess_pen= self.hessian_pen(x, logits, env_indices)
-            print(f"Time taken to compute hess_pen: {time.time() - start}")
+            # print(f"Time taken to compute hess_pen: {time.time() - start}")
 
 
         # erm_loss = torch.mean(env_erm)
@@ -611,9 +611,9 @@ class HessianAlignment(ERM):
         if isinstance(grad_pen, torch.Tensor):
             grad_pen = grad_pen.item()
         self.optimizer.zero_grad()
-        start = time.time()
+        # start = time.time()
         loss.backward()
-        print(f"Time taken to compute backward: {time.time() - start}")
+        # print(f"Time taken to compute backward: {time.time() - start}")
 
         # start = time.time()
         self.optimizer.step()
@@ -2600,14 +2600,14 @@ class HGP(Algorithm):
             logits = self.classifier(features)
             env = {}
             env['nll'] = F.cross_entropy(logits, y)
-            start = time.time()
+            # start = time.time()
             env['sadg'], env['grad'] = self.compute_sadg_penalty(logits, y)
             end = time.time()
-            sdag_times += end-start
+            # sdag_times += end-start
             envs.append(env)
 
         train_nll = torch.stack([env['nll'] for env in envs]).mean()
-        start  = time.time()
+        # start  = time.time()
         mean_grad = autograd.grad(train_nll, self.classifier.parameters(), create_graph=True, retain_graph=True)
         flatten_mean_grad = self._flatten_grad(mean_grad)
         norm_of_mean_grad = flatten_mean_grad.pow(2).sum().sqrt()
@@ -2630,8 +2630,8 @@ class HGP(Algorithm):
 
         hessian_grad = [torch.mul(envs[k]['sadg'], f_grad) for k, f_grad in
                         enumerate(all_flatten_grads_of_norm_of_grad)]
-        end = time.time()
-        print("Time for Hessian for HGP: ", end-start)
+        # end = time.time()
+        # print("Time for Hessian for HGP: ", end-start)
 
         if len(envs) > 0:
             for i in range(len(all_flatten_grads)):
@@ -2648,10 +2648,10 @@ class HGP(Algorithm):
 
         print("Time for SDAG: ", sdag_times)
         self.optimizer.zero_grad()
-        start = time.time()
+        # start = time.time()
         loss.backward()
-        end = time.time()
-        print("Time for backward pass in HGP: ", end-start)
+        # end = time.time()
+        # print("Time for backward pass in HGP: ", end-start)
         self.optimizer.step()
         self.update_count += 1
         return {'loss': loss.item(), 'nll': train_nll.item(), 'penalty': sadg_penalty.item()}
@@ -2712,20 +2712,20 @@ class Hutchinson(Algorithm):
             logits = self.classifier(features)
             env = {}
             env['nll'] = F.cross_entropy(logits, y)
-            start = time.time()
+            # start = time.time()
             env['sadg'], env['grad'] = self.compute_sadg_penalty(logits, y)
             end = time.time()
-            grad_pen_times += end-start
+            # grad_pen_times += end-start
             envs.append(env)
 
         train_nll = torch.stack([env['nll'] for env in envs]).mean()
 
         mean_grad = autograd.grad(train_nll, self.classifier.parameters(), create_graph=True, retain_graph=True)
-        print("Time for SDAG for Hutchinson: ", grad_pen_times)
-        start = time.time()
+        # print("Time for SDAG for Hutchinson: ", grad_pen_times)
+        # start = time.time()
         mean_hessian = self.calc_hessian_diag(mean_grad, repeat=300)
-        end = time.time()
-        print("Time for Hessian for Hutchinson: ", end-start)
+        # end = time.time()
+        # print("Time for Hessian for Hutchinson: ", end-start)
         flatten_mean_grad = self._flatten_grad(mean_grad)
 
         loss = train_nll.clone()
@@ -2749,10 +2749,10 @@ class Hutchinson(Algorithm):
         loss += sadg_penalty
 
         self.optimizer.zero_grad()
-        start = time.time()
+        # start = time.time()
         loss.backward()
-        end = time.time()
-        print("Time for backward pass in Hutchinson: ", end-start)
+        # end = time.time()
+        # print("Time for backward pass in Hutchinson: ", end-start)
         self.optimizer.step()
         self.update_count += 1
         return {'loss': loss.item(), 'nll': train_nll.item(), 'penalty': sadg_penalty.item()}
