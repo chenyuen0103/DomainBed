@@ -484,7 +484,8 @@ class HessianAlignment(ERM):
 
         # print(f"Time taken to compute avg_h_minus_h_bar_sq: {time.time() - start}")
         # breakpoint()
-        return f_norm_env, avg_h_minus_h_bar_sq , H_H_f
+        # return f_norm_env, avg_h_minus_h_bar_sq , H_H_f
+        return avg_h_minus_h_bar_sq
 
 
     def hessian_pen2(self, x, logits, envs):
