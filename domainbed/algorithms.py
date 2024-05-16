@@ -481,6 +481,7 @@ class HessianAlignment(ERM):
         # normalize by the dimmension of the hessian
         num_classes = logits.shape[1]
         # avg_h_minus_h_bar_sq /= (x.shape[1] * num_classes) ** 2
+        avg_h_minus_h_bar_sq /= num_classes ** 2
 
         # print(f"Time taken to compute avg_h_minus_h_bar_sq: {time.time() - start}")
         # breakpoint()

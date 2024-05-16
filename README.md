@@ -311,7 +311,7 @@ CUDA_VISIBLE_DEVICES=2,3,4,5,6,7 python -m domainbed.scripts.sweep launch\
        --datasets TerraIncognita\
        --single_test_envs\
        --n_hparams 5\
-       --n_trials 3
+       --n_trials 1
 
 
 
