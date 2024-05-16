@@ -81,9 +81,9 @@ python3 -m domainbed.scripts.download \
 Train a model:
 
 ```sh
-CUDA_VISIBLE_DEVICES=2 python3 -m domainbed.scripts.train\
+CUDA_VISIBLE_DEVICES=3 python3 -m domainbed.scripts.train\
        --data_dir=./domainbed/data/\
-       --algorithm HessianAlignment\
+       --algorithm Hutchinson\
        --dataset ColoredMNIST\
        --test_env 2
        
@@ -249,16 +249,36 @@ CUDA_VISIBLE_DEVICES=2,3,4,5,6,7 python -m domainbed.scripts.sweep launch\
        --n_hparams 5\
        --n_trials 1
        
-    CUDA_VISIBLE_DEVICES=2 python -m domainbed.scripts.sweep launch\
+    CUDA_VISIBLE_DEVICES=4,5,7 python -m domainbed.scripts.sweep launch\
        --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results_vits_hessian_vlcs_random2\
+       --output_dir=./domainbed/results_vits_hessian_class\
        --command_launcher multi_gpu\
        --algorithms HessianAlignment\
        --datasets PACS\
        --single_test_envs\
        --n_hparams 5\
-       --n_trials 3
+       --n_trials 1
        
+    CUDA_VISIBLE_DEVICES=0,1,2 python -m domainbed.scripts.sweep launch\
+       --data_dir=./domainbed/data/\
+       --output_dir=./domainbed/results_vits_hessian_class\
+       --command_launcher multi_gpu\
+       --algorithms HessianAlignment\
+       --datasets PACS\
+       --single_test_envs\
+       --n_hparams 5\
+       --n_trials 1
+    
+    CUDA_VISIBLE_DEVICES=0,1,2 python -m domainbed.scripts.sweep launch\
+       --data_dir=./domainbed/data/\
+       --output_dir=./domainbed/results_vits_hessian_class\
+       --command_launcher multi_gpu\
+       --algorithms HessianAlignment\
+       --datasets TerraIncognita\
+       --single_test_envs\
+       --n_hparams 5\
+       --n_trials 1
+     
     CUDA_VISIBLE_DEVICES=2 python -m domainbed.scripts.sweep launch\
        --data_dir=./domainbed/data/\
        --output_dir=./domainbed/results_vits_hessian_VLCS\
@@ -283,12 +303,12 @@ CUDA_VISIBLE_DEVICES=2,3,4,5,6,7 python -m domainbed.scripts.sweep launch\
    --hparams {\"penalty_anneal_iters\":2500}\
 
 ```sh
- CUDA_VISIBLE_DEVICES=4,5,6,7 python -m domainbed.scripts.sweep launch\
+ CUDA_VISIBLE_DEVICES=4,5,6,7 python -m domainbed.scripts.sweep delete_incomplete\
        --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results_vits_hessian_rescale\
+       --output_dir=./domainbed/results_vits_hessian_rescale_sqrt\
        --command_launcher multi_gpu\
        --algorithms HessianAlignment\
-       --datasets TerraIncognita\
+       --datasets PACS VLCS TerraIncognita\
        --single_test_envs\
        --n_hparams 5\
        --n_trials 3
@@ -383,7 +403,7 @@ python -m domainbed.scripts.collect_results\
        
        
 python -m domainbed.scripts.collect_results\
-       --input_dir=./domainbed/results_vits_hessian_MNIST
+       --input_dir=./domainbed/results_vits_hessian_MNIST_rescale_sqrt
 ````
 
 ## Running unit tests

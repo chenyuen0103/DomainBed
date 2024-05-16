@@ -2593,12 +2593,16 @@ class HGP(Algorithm):
     def update(self, minibatches, unlabeled=False):
 
         envs = []
+        sdag_times = 0
         for edx, (x, y) in enumerate(minibatches):
             features = self.featurizer(x)
             logits = self.classifier(features)
             env = {}
             env['nll'] = F.cross_entropy(logits, y)
+            start = time.time()
             env['sadg'], env['grad'] = self.compute_sadg_penalty(logits, y)
+            end = time.time()
+            sdag_times += end-start
             envs.append(env)
 
         train_nll = torch.stack([env['nll'] for env in envs]).mean()
@@ -2639,8 +2643,12 @@ class HGP(Algorithm):
 
         loss += sadg_penalty
 
+        print("Time for SDAG: ", sdag_times)
         self.optimizer.zero_grad()
+        start = time.time()
         loss.backward()
+        end = time.time()
+        print("Time for backward pass in HGP: ", end-start)
         self.optimizer.step()
         self.update_count += 1
         return {'loss': loss.item(), 'nll': train_nll.item(), 'penalty': sadg_penalty.item()}
@@ -2695,18 +2703,26 @@ class Hutchinson(Algorithm):
     def update(self, minibatches, unlabeled=False):
 
         envs = []
+        grad_pen_times = 0
         for edx, (x, y) in enumerate(minibatches):
             features = self.featurizer(x)
             logits = self.classifier(features)
             env = {}
             env['nll'] = F.cross_entropy(logits, y)
+            start = time.time()
             env['sadg'], env['grad'] = self.compute_sadg_penalty(logits, y)
+            end = time.time()
+            grad_pen_times += end-start
             envs.append(env)
 
         train_nll = torch.stack([env['nll'] for env in envs]).mean()
 
         mean_grad = autograd.grad(train_nll, self.classifier.parameters(), create_graph=True, retain_graph=True)
+        print("Time for SDAG for Hutchinson: ", grad_pen_times)
+        start = time.time()
         mean_hessian = self.calc_hessian_diag(mean_grad, repeat=300)
+        end = time.time()
+        print("Time for Hessian for Hutchinson: ", end-start)
         flatten_mean_grad = self._flatten_grad(mean_grad)
 
         loss = train_nll.clone()
@@ -2730,7 +2746,10 @@ class Hutchinson(Algorithm):
         loss += sadg_penalty
 
         self.optimizer.zero_grad()
+        start = time.time()
         loss.backward()
+        end = time.time()
+        print("Time for backward pass in Hutchinson: ", end-start)
         self.optimizer.step()
         self.update_count += 1
         return {'loss': loss.item(), 'nll': train_nll.item(), 'penalty': sadg_penalty.item()}
