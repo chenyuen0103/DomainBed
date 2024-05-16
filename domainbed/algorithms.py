@@ -2606,7 +2606,7 @@ class HGP(Algorithm):
             envs.append(env)
 
         train_nll = torch.stack([env['nll'] for env in envs]).mean()
-
+        start  = time.time()
         mean_grad = autograd.grad(train_nll, self.classifier.parameters(), create_graph=True, retain_graph=True)
         flatten_mean_grad = self._flatten_grad(mean_grad)
         norm_of_mean_grad = flatten_mean_grad.pow(2).sum().sqrt()
@@ -2629,6 +2629,8 @@ class HGP(Algorithm):
 
         hessian_grad = [torch.mul(envs[k]['sadg'], f_grad) for k, f_grad in
                         enumerate(all_flatten_grads_of_norm_of_grad)]
+        end = time.time()
+        print("Time for Hessian for HGP: ", end-start)
 
         if len(envs) > 0:
             for i in range(len(all_flatten_grads)):
