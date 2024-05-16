@@ -573,7 +573,7 @@ class HessianAlignment(ERM):
 
         if beta != 0:
             start = time.time()
-            hess_pen= self.hessian_pen_old(x, logits, env_indices)
+            hess_pen= self.hessian_pen(x, logits, env_indices)
             print(f"Time taken to compute hess_pen: {time.time() - start}")
 
 
