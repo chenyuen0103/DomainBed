@@ -382,11 +382,10 @@ python -m domainbed.scripts.sweep delete_incomplete\
 
 python -m domainbed.scripts.sweep delete_incomplete\
        --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results_resnet_new\
+       --output_dir=./domainbed/results_vits_hessian_bias\
        --command_launcher multi_gpu\
-       --hparams {\"model_type\":\"ResNet\"}\
        --algorithms HessianAlignment\
-       --datasets RotatedMNIST VLCS\
+       --datasets ColoredMNIST\
        --single_test_envs\
        --n_hparams 5\
        --n_trials 1
