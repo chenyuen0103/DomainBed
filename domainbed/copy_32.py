@@ -103,6 +103,59 @@ for exp in os.listdir(erm_fishr_dir):
 print(f"Moved {copy_count} ERM Fishr experiments to {result_dir}")
 
 
+combined_dir = './results_vits_combined'
+new_hessian_dir = './results_vits_hessian_class'
+new_hessian_MNIST_dir = './results_vits_hessian_MNIST_rescale_sqrt'
+erm_fishr_dir = 'results_vits_3600_32'
+terr_dir = './results_vits_hessian_class_terra'
+
+if not os.path.exists(combined_dir):
+    os.makedirs(combined_dir)
+
+for exp in os.listdir(erm_fishr_dir):
+    if not os.path.isdir(os.path.join(erm_fishr_dir, exp)) or len(os.listdir(os.path.join(erm_fishr_dir, exp))) == 0:
+        continue
+    with open(os.path.join(erm_fishr_dir, exp, "results.jsonl")) as f:
+        first_line = f.readline()
+        first_line = json.loads(first_line)
+    if (first_line['args']['algorithm'] in ['ERM','Fishr']):
+        os.system(f"cp -r {os.path.join(erm_fishr_dir, exp)} {combined_dir}")
+
+
+for exp in os.listdir(new_hessian_dir):
+    if not os.path.isdir(os.path.join(new_hessian_dir, exp)) or len(os.listdir(os.path.join(new_hessian_dir, exp))) == 0:
+        continue
+    with open(os.path.join(new_hessian_dir, exp, "results.jsonl")) as f:
+        first_line = f.readline()
+        first_line = json.loads(first_line)
+    if (first_line['args']['algorithm'] == 'HessianAlignment'):
+        os.system(f"cp -r {os.path.join(new_hessian_dir, exp)} {combined_dir}")
+
+for exp in os.listdir(new_hessian_MNIST_dir):
+    if not os.path.isdir(os.path.join(new_hessian_MNIST_dir, exp)) or len(os.listdir(os.path.join(new_hessian_MNIST_dir, exp))) == 0:
+        continue
+    with open(os.path.join(new_hessian_MNIST_dir, exp, "results.jsonl")) as f:
+        first_line = f.readline()
+        first_line = json.loads(first_line)
+    if (first_line['args']['algorithm'] == 'HessianAlignment'):
+        os.system(f"cp -r {os.path.join(new_hessian_MNIST_dir, exp)} {combined_dir}")
+
+
+for exp in os.listdir(terr_dir):
+    if not os.path.isdir(os.path.join(terr_dir, exp)) or len(os.listdir(os.path.join(terr_dir, exp))) == 0:
+        continue
+    with open(os.path.join(terr_dir, exp, "results.jsonl")) as f:
+        first_line = f.readline()
+        first_line = json.loads(first_line)
+    if (first_line['args']['algorithm'] == 'HessianAlignment'):
+        os.system(f"cp -r {os.path.join(terr_dir, exp)} {combined_dir}")
+
+
+
+
+
+
+
 
 
 
@@ -138,3 +191,6 @@ for exp in os.listdir(erm_fishr_dir):
         os.system(f"cp -r {os.path.join(erm_fishr_dir, exp)} {erm_fishr_pacs_dir}")
         copy_count += 1
 print(f"Moved {copy_count} MNIST ERM Fishr experiments to {erm_fishr_pacs_dir}")
+
+
+

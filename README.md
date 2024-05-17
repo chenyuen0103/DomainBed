@@ -303,15 +303,15 @@ CUDA_VISIBLE_DEVICES=2,3,4,5,6,7 python -m domainbed.scripts.sweep launch\
    --hparams {\"penalty_anneal_iters\":2500}\
 
 ```sh
- CUDA_VISIBLE_DEVICES=0,1 python -m domainbed.scripts.sweep launch\
+python -m domainbed.scripts.sweep launch\
        --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results_vits_coral\
+       --output_dir=./domainbed/results_vits_coral_MNIST\
        --command_launcher multi_gpu\
        --algorithms CORAL\
-       --datasets TerraIncognita\
+       --datasets ColoredMNIST RotatedMNIST\
        --single_test_envs\
        --n_hparams 5\
-       --n_trials 1
+       --n_trials 3
 
 
 
@@ -403,7 +403,7 @@ python -m domainbed.scripts.collect_results\
        
        
 python -m domainbed.scripts.collect_results\
-       --input_dir=./domainbed/results_vits_hessian_MNIST_rescale_sqrt
+       --input_dir=./domainbed/results_vits_hessian_class
 ````
 
 ## Running unit tests

@@ -220,7 +220,7 @@ class HessianAlignment(ERM):
 
         H2 /= batch_size
         # breakpoint()
-        # H2 /= dC ** 0.5
+        # H2 /= dC
         H2 /= num_classes
         return H2
 
@@ -260,7 +260,7 @@ class HessianAlignment(ERM):
         grad_w = torch.matmul(grad_loss.T, x_flattened) / x.size(0)
         # grad_w /= (grad_w.shape[0] * grad_w.shape[1]) ** 0.25
         # breakpoint()
-        # grad_w /= dC ** 0.25
+        # grad_w /= dC ** 0.5
         grad_w /= C ** 0.5
 
         return grad_w
@@ -565,6 +565,11 @@ class HessianAlignment(ERM):
 
     def exact_hessian_loss(self, logits, x, y, env_indices, alpha=10e-5, beta=10e-5, stats = {}):
         x = self.featurizer(x)
+
+        # add a bias term to the features
+        x = torch.cat([x, torch.ones(x.shape[0], 1, device=x.device)], dim=1)
+
+
         grad_pen, hess_pen = 0, 0
         # breakpoint()
         if alpha != 0:
@@ -597,6 +602,8 @@ class HessianAlignment(ERM):
         all_envs = torch.cat([env for x, y, env in minibatches])
         # loss = F.cross_entropy(self.predict(all_x), all_y)
         logits = self.predict(all_x)
+
+
         alpha = 0
         beta = 0
         if self.update_count >= self.penalty_anneal_iters:
@@ -629,7 +636,11 @@ class HessianAlignment(ERM):
 
     def predict(self, x):
         # breakpoint()
-        return self.network(x)
+        x = self.featurizer(x)
+        # add a bias term to the features
+        x = torch.cat([x, torch.ones(x.shape[0], 1, device=x.device)], dim=1)
+        return self.classifier(x)
+        # return self.network(x)
 
 
 

@@ -15,6 +15,7 @@ import numpy as np
 import torch
 from collections import Counter
 from itertools import cycle
+import torch.nn.functional as F
 
 
 def distance(h1, h2):
@@ -191,7 +192,7 @@ def accuracy(network, loader, weights, device):
 
     network.eval()
     with torch.no_grad():
-        for x, y, _ in loader:
+        for x, y in loader:
             x = x.to(device)
             y = y.to(device)
             p = network.predict(x)
@@ -499,3 +500,24 @@ class Nonparametric(Distribution1D):
             log_y = q
             v = torch.mean(self.data + self.bw * math.sqrt(-2 * log_y))
             return v
+
+
+
+def loss(network, loader, device):
+    loss = 0.
+    total = 0.
+    step = 0
+
+    with torch.no_grad():
+        for x, y in loader:
+            x = x.to(device)
+            y = y.to(device)
+            p = network.predict(x)
+            batch = torch.ones(len(x), dtype=torch.float64)
+            batch = batch.to(device)
+            total += batch.sum().item()
+            loss += F.cross_entropy(p, y) * len(y)
+            # the cross entropy is avged over the minibatch
+            step += 1
+    loss = loss.item()
+    return loss / total
