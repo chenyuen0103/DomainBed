@@ -380,15 +380,26 @@ python -m domainbed.scripts.sweep delete_incomplete\
        --n_trials 3
 ```
 
+python -m domainbed.scripts.sweep launch\
+       --data_dir=./domainbed/data/\
+       --output_dir=./domainbed/results_vits_hessian_bias\
+       --command_launcher multi_gpu\
+       --algorithms HessianAlignment\
+       --datasets RotatedMNIST\
+       --single_test_envs\
+       --n_hparams 5\
+       --n_trials 1
+
+
 python -m domainbed.scripts.sweep delete_incomplete\
        --data_dir=./domainbed/data/\
        --output_dir=./domainbed/results_vits_hessian_bias\
        --command_launcher multi_gpu\
        --algorithms HessianAlignment\
-       --datasets ColoredMNIST\
+       --datasets RotatedMNIST ColoredMNIST\
        --single_test_envs\
        --n_hparams 5\
-       --n_trials 1
+       --n_trials 3
 
 
 To view the results of your sweep:
