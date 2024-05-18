@@ -221,7 +221,7 @@ class HessianAlignment(ERM):
         H2 /= batch_size
         # breakpoint()
         # H2 /= dC
-        H2 /= num_classes
+        # H2 /= num_classes
         return H2
 
 
@@ -261,7 +261,7 @@ class HessianAlignment(ERM):
         # grad_w /= (grad_w.shape[0] * grad_w.shape[1]) ** 0.25
         # breakpoint()
         # grad_w /= dC ** 0.5
-        grad_w /= C ** 0.5
+        # grad_w /= C ** 0.5
 
         return grad_w
 

@@ -386,9 +386,9 @@ python -m domainbed.scripts.sweep launch\
        --output_dir=./domainbed/results_vits_hessian_bias\
        --command_launcher multi_gpu\
        --algorithms HessianAlignment\
-       --datasets RotatedMNIST\
+       --datasets ColoredMNIST\
        --single_test_envs\
-       --n_hparams 5\
+       --n_hparams 1\
        --n_trials 1
 
 
