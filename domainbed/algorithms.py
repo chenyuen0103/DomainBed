@@ -356,6 +356,7 @@ class HessianAlignment(ERM):
         env_gradients = []
         num_envs = len(torch.unique(envs))
         envs_idx_here = torch.unique(envs)
+        breakpoint()
         for e in envs_idx_here:
             idx = (envs == e).nonzero().squeeze()
             if idx.numel() == 0:
@@ -384,6 +385,7 @@ class HessianAlignment(ERM):
     def hessian_pen(self, x, logits, envs):
         env_hessians = []
         envs_indices_unique = envs.unique()
+        breakpoint()
         for e in envs_indices_unique:
             idx = (envs == e).nonzero().squeeze()
             if idx.numel() == 0:

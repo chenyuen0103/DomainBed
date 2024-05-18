@@ -100,8 +100,8 @@ CUDA_VISIBLE_DEVICES=2 python3 -m domainbed.scripts.train\
 CUDA_VISIBLE_DEVICES=2 python -m domainbed.scripts.train\
        --data_dir=./domainbed/data/\
        --algorithm HessianAlignment\
-       --hparams {\"grad_alpha\":5000\,\"hess_beta\":1000\,\"penalty_anneal_iters\":4500}\
-       --dataset ColoredMNIST\
+       --hparams {\"grad_alpha\":50\,\"hess_beta\":5000}\
+       --dataset VLCS\
        --test_env 2
 ```
 #       --hparams {\"model_type\":\"ResNet\"}\
@@ -384,11 +384,12 @@ python -m domainbed.scripts.sweep delete_incomplete\
 python -m domainbed.scripts.sweep launch\
        --data_dir=./domainbed/data/\
        --output_dir=./domainbed/results_vits_hessian_bias\
+        --hparams {\"grad_alpha\":5000\,\"hess_beta\":5000}\
        --command_launcher multi_gpu\
        --algorithms HessianAlignment\
        --datasets ColoredMNIST\
        --single_test_envs\
-       --n_hparams 1\
+       --n_hparams 5\
        --n_trials 1
 
 
