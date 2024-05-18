@@ -97,10 +97,10 @@ CUDA_VISIBLE_DEVICES=2 python3 -m domainbed.scripts.train\
 ```
 #       --hparams {\"grad_alpha\":1000\,\"hess_beta\":500000}\
 ```sh
-CUDA_VISIBLE_DEVICES=4 python -m domainbed.scripts.train\
+python -m domainbed.scripts.train\
        --data_dir=./domainbed/data/\
        --algorithm HessianAlignment\
-       --dataset TerraIncognita\
+       --dataset ColoredMNIST\
        --test_env 2
 ```
 #       --hparams {\"model_type\":\"ResNet\"}\
