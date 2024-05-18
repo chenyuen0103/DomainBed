@@ -150,7 +150,7 @@ def _hparams(algorithm, dataset, random_seed, model_type='ViT-S'):
         # _hparam('hess_beta', 1000, lambda r: 10 ** r.uniform(2, 4))
         # _hparam('penalty_anneal_iters', 2400, lambda r: int(np.random.choice([2400, 3000, 3600, 4200])))
 
-        _hparam('grad_alpha', 100, lambda r: 10 ** r.uniform(1, 3))
+        _hparam('grad_alpha', 500, lambda r: 10 ** r.uniform(1, 3))
         _hparam('hess_beta', 500, lambda r: 10 ** r.uniform(2, 4))
         # _hparam('penalty_anneal_iters', 2500, lambda r: int(r.uniform(0., 5000.)))
         _hparam('penalty_anneal_iters', 2500, lambda r: int(np.random.choice([1500, 2500, 3500, 4500])))
