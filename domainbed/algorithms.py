@@ -219,6 +219,7 @@ class HessianAlignment(ERM):
 
 
         H2 /= batch_size
+        breakpoint()
         # breakpoint()
         # H2 /= dC
         # H2 /= num_classes
@@ -356,7 +357,6 @@ class HessianAlignment(ERM):
         env_gradients = []
         num_envs = len(torch.unique(envs))
         envs_idx_here = torch.unique(envs)
-        breakpoint()
         for e in envs_idx_here:
             idx = (envs == e).nonzero().squeeze()
             if idx.numel() == 0:
@@ -372,6 +372,7 @@ class HessianAlignment(ERM):
             env_gradients.append(grad_w)
 
         avg_gradient = torch.mean(torch.stack(env_gradients), dim=0)
+        breakpoint()
 
         # avg_grad_minus_grad_bar_2_sq = torch.mean(torch.stack([(grad - avg_gradient).norm(2) ** 2 for grad in env_gradients]))
         sum_grad_minus_grad_bar_2_sq = 0
@@ -385,7 +386,6 @@ class HessianAlignment(ERM):
     def hessian_pen(self, x, logits, envs):
         env_hessians = []
         envs_indices_unique = envs.unique()
-        breakpoint()
         for e in envs_indices_unique:
             idx = (envs == e).nonzero().squeeze()
             if idx.numel() == 0:
