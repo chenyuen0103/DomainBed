@@ -403,7 +403,7 @@ python -m domainbed.scripts.collect_results\
        
        
 python -m domainbed.scripts.collect_results\
-       --input_dir=./domainbed/results_vits_hessian_class
+       --input_dir=./domainbed/results_vits_hessian_bias_7500
 ````
 
 ## Running unit tests
