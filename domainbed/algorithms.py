@@ -642,6 +642,7 @@ class HessianAlignment(ERM):
         x = self.featurizer(x)
         # add a bias term to the features
         x = torch.cat([torch.ones(x.shape[0], 1, device=x.device),x], dim=1)
+        breakpoint()
         return self.classifier(x)
         # return self.network(x)
 
