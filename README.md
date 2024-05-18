@@ -280,12 +280,12 @@ CUDA_VISIBLE_DEVICES=2,3,4,5,6,7 python -m domainbed.scripts.sweep launch\
        --n_hparams 5\
        --n_trials 1
      
-    CUDA_VISIBLE_DEVICES=2 python -m domainbed.scripts.sweep launch\
+    CUDA_VISIBLE_DEVICES=2,5 python -m domainbed.scripts.sweep launch\
        --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results_vits_hessian_VLCS\
+       --output_dir=./domainbed/results_vits_hessian_real_bias\
        --command_launcher multi_gpu\
        --algorithms HessianAlignment\
-       --datasets ColoredMNIST\
+       --datasets TerraIncognita\
        --single_test_envs\
        --n_hparams 5\
        --n_trials 1
@@ -366,21 +366,6 @@ python -m domainbed.scripts.sweep delete_incomplete\
        --n_hparams 5\
        --n_trials 3
 ```
-
-For ResNet 
-```sh
-python -m domainbed.scripts.sweep delete_incomplete\
-       --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results_resnet\
-       --command_launcher multi_gpu\
-       --hparams {\"model_type\":\"ResNet\"}\
-       --algorithms HessianAlignment\
-       --datasets PACS VLCS OfficeHome TerraIncognita DomainNet\
-       --single_test_envs\
-       --n_hparams 20\
-       --n_trials 3
-```
-
 
         --hparams {\"grad_alpha\":5000\,\"hess_beta\":5000}\
 
