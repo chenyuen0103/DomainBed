@@ -219,10 +219,9 @@ class HessianAlignment(ERM):
 
 
         H2 /= batch_size
-        breakpoint()
         # breakpoint()
         # H2 /= dC
-        # H2 /= num_classes
+        H2 /= num_classes
         return H2
 
 
@@ -262,7 +261,7 @@ class HessianAlignment(ERM):
         # grad_w /= (grad_w.shape[0] * grad_w.shape[1]) ** 0.25
         # breakpoint()
         # grad_w /= dC ** 0.5
-        # grad_w /= C ** 0.5
+        grad_w /= C ** 0.5
 
         return grad_w
 
@@ -372,7 +371,6 @@ class HessianAlignment(ERM):
             env_gradients.append(grad_w)
 
         avg_gradient = torch.mean(torch.stack(env_gradients), dim=0)
-        breakpoint()
 
         # avg_grad_minus_grad_bar_2_sq = torch.mean(torch.stack([(grad - avg_gradient).norm(2) ** 2 for grad in env_gradients]))
         sum_grad_minus_grad_bar_2_sq = 0
@@ -642,7 +640,6 @@ class HessianAlignment(ERM):
         x = self.featurizer(x)
         # add a bias term to the features
         x = torch.cat([torch.ones(x.shape[0], 1, device=x.device),x], dim=1)
-        breakpoint()
         return self.classifier(x)
         # return self.network(x)
 
