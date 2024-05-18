@@ -381,10 +381,13 @@ python -m domainbed.scripts.sweep delete_incomplete\
        --n_trials 3
 ```
 
+
+        --hparams {\"grad_alpha\":5000\,\"hess_beta\":5000}\
+
+
 python -m domainbed.scripts.sweep launch\
        --data_dir=./domainbed/data/\
        --output_dir=./domainbed/results_vits_hessian_bias\
-        --hparams {\"grad_alpha\":5000\,\"hess_beta\":5000}\
        --command_launcher multi_gpu\
        --algorithms HessianAlignment\
        --datasets ColoredMNIST\
