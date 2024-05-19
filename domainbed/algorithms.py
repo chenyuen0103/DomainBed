@@ -2659,7 +2659,7 @@ class HGP(Algorithm):
 
         loss += sadg_penalty
 
-        print("Time for SDAG: ", sdag_times)
+        # print("Time for SDAG: ", sdag_times)
         self.optimizer.zero_grad()
         # start = time.time()
         loss.backward()
