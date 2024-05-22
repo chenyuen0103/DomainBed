@@ -66,7 +66,7 @@ ALGORITHMS = [
     'EQRM',
     'HGP',
     'Hutchinson',
-    'HessianAlignment',
+    'CMA',
 ]
 
 def get_algorithm_class(algorithm_name):
@@ -133,13 +133,13 @@ class ERM(Algorithm):
         return self.network(x)
 
 
-class HessianAlignment(ERM):
+class CMA(ERM):
     """
     Hessian Alignment
     """
 
     def __init__(self, input_shape, num_classes, num_domains, hparams):
-        super(HessianAlignment, self).__init__(input_shape, num_classes, num_domains,
+        super(CMA, self).__init__(input_shape, num_classes, num_domains,
                                   hparams)
         self.grad_alpha = hparams['grad_alpha']
         self.hess_beta = hparams['hess_beta']
@@ -319,36 +319,6 @@ class HessianAlignment(ERM):
 
         return x_pca
 
-    def exact_hessian_loss_old(self, logits, x, y, envs_indices, alpha=10e-5, beta=10e-5):
-        x = self.featurizer(x)
-        # if the features dimension is larger than 1000, apply PCA to reduce the dimension to 1000
-        num_classes = logits.size(1)
-        envs_indices_unique = envs_indices.unique()
-
-
-        erm_loss = 0
-        for env_idx in envs_indices_unique:
-            y_env = y[env_idx]
-            logits_env = logits[env_idx]
-            # env_fraction = len(idx) / len(envs_indices)
-            loss = F.cross_entropy(logits_env, y_env.long())
-            num_envs = len(envs_indices_unique)
-            erm_loss += loss / num_envs
-
-        grad_pen, hess_pen = 0, 0
-        if alpha != 0:
-            start = time.time()
-            grad_pen = self.grad_pen(x, logits, y, envs_indices)
-            print(f"Time taken to compute grad_pen: {time.time() - start}")
-
-        if beta != 0:
-            start = time.time()
-            hess_pen = self.hessian_pen(x, logits, envs_indices)
-            print(f"Time taken to compute hess_pen: {time.time() - start}")
-
-        total_loss = erm_loss + alpha * grad_pen + beta * hess_pen
-
-        return total_loss, erm_loss, hess_pen, grad_pen
 
 
 
@@ -416,80 +386,7 @@ class HessianAlignment(ERM):
 
 
 
-    def hessian_pen_old(self, x, logits, envs):
-        unique_envs = torch.unique(envs)
-        num_envs = len(unique_envs)
-        p = F.softmax(logits, dim=1)
-        diag = torch.diag_embed(p)
-        batch_size = x.shape[0]
-        off_diag = torch.einsum('bi,bj->bij', p, p)
-        diff = diag - off_diag
-        prob_trace = torch.einsum('bik,cjk->bcij', diff, diff).diagonal(dim1=-2, dim2=-1).sum(-1)
-        X_outer = torch.einsum('bi,bj->bij', x, x)
-
-        # x_traces = torch.einsum('bik,cjk->bcij', X_outer, X_outer).diagonal(dim1=-2, dim2=-1).sum(-1)
-
-        # start = time.time()
-        x_traces = torch.zeros(batch_size, batch_size, device=x.device)
-        for i in range(batch_size):
-            for j in range(i, batch_size):
-                x_traces[i, j] = torch.matmul(X_outer[i], X_outer[j]).trace()
-                x_traces[j, i] = x_traces[i, j]
-        # print(f"Time taken to compute x_traces: {time.time() - start}")
-
-        masks = unique_envs.unsqueeze(1) == envs.unsqueeze(0)  # Shape (num_envs, num_samples)
-
-        # Compare env_indices with envs to create the masks tensor
-        # masks = env_ids == envs
-
-        # Compute product of prob_trace and x_traces
-        product_matrix = prob_trace * x_traces
-
-        # Precompute the denominators using broadcasting
-        denoms = masks.sum(1).unsqueeze(1) * masks.sum(1).unsqueeze(0)
-
-        # Expand masks for all pairwise environment combinations using broadcasting
-        mask1_expanded = masks.unsqueeze(1).unsqueeze(3)  # Shape (num_envs, 1, num_samples, 1)
-        mask2_expanded = masks.unsqueeze(0).unsqueeze(2)  # Shape (1, num_envs, 1, num_samples)
-
-        # Compute all pairwise masks by logical and
-        pairwise_masks = mask1_expanded & mask2_expanded  # Shape (num_envs, num_envs, num_samples, num_samples)
-
-        # start = time.time()
-        # Apply the pairwise masks to the product_matrix and sum over the last two dimensions
-        masked_products = pairwise_masks * product_matrix.unsqueeze(0).unsqueeze(0)  # Broadcast product_matrix
-        H_H_f = masked_products.sum(dim=-1).sum(dim=-1) / denoms
-        # print(f"Time taken to compute H_H_f: {time.time() - start}")
-
-        # start = time.time()
-        f_norm_env = H_H_f.diagonal()
-
-        # Compute the shared terms
-        shared_term = H_H_f.sum() / (num_envs ** 2)
-
-        # Compute the sum for each environment, divided by num_envs
-        individual_term = 2 * H_H_f.sum(dim=1) / num_envs
-
-        # Calculate the full expression in a vectorized form
-        avg_h_minus_h_bar_sq = torch.mean(f_norm_env + shared_term - individual_term)
-
-        # sum_h_minus_h_bar_sq = 0
-        # for e in range(num_envs):
-        #     sum_h_minus_h_bar_sq += f_norm_env[e] + shared_term - individual_term[e]
-        # avg_h_minus_h_bar_sq = sum_h_minus_h_bar_sq / num_envs
-
-        # normalize by the dimmension of the hessian
-        num_classes = logits.shape[1]
-        # avg_h_minus_h_bar_sq /= (x.shape[1] * num_classes) ** 2
-        avg_h_minus_h_bar_sq /= num_classes ** 2
-
-        # print(f"Time taken to compute avg_h_minus_h_bar_sq: {time.time() - start}")
-        # breakpoint()
-        # return f_norm_env, avg_h_minus_h_bar_sq , H_H_f
-        return avg_h_minus_h_bar_sq
-
-
-    def hessian_pen2(self, x, logits, envs):
+    def hessian_pen_mem(self, x, logits, envs):
         unique_envs = envs.unique()
         num_envs = len(unique_envs)
         H_H_f = torch.zeros(num_envs, num_envs, device=x.device)
@@ -512,42 +409,32 @@ class HessianAlignment(ERM):
             for e2 in range(e1, num_envs):
                 mask1 = envs == unique_envs[e1]
                 mask2 = envs == unique_envs[e2]
-                # x_env1 = x[mask1]
-                # x_env2 = x[mask2]
-                # logits_env1 = logits[mask1]
-                # logits_env2 = logits[mask2]
-                # p1 = F.softmax(logits_env1, dim=1)
-                # p2 = F.softmax(logits_env2, dim=1)
-                # diag1 = torch.diag_embed(p1)
-                # diag2 = torch.diag_embed(p2)
-                # off_diag1 = torch.einsum('bi,bj->bij', p1, p1)
-                # off_diag2 = torch.einsum('bi,bj->bij', p2, p2)
-                # diff1 = diag1 - off_diag1
-                # diff2 = diag2 - off_diag2
+
                 diff1 = diff_envs[e1]
                 diff2 = diff_envs[e2]
 
 
                 prob_trace_1_2 = torch.einsum('bik,cjk->bcij', diff1, diff2).diagonal(dim1=-2, dim2=-1).sum(-1)
-                # X_outer1 = torch.einsum('bi,bj->bij', x_env1, x_env1)
-                # X_outer2 = torch.einsum('bi,bj->bij', x_env2, x_env2)
+
                 X_outer1 = x_outer_envs[e1]
                 X_outer2 = x_outer_envs[e2]
                 # x_traces_1_2 = torch.einsum('bik,cjk->bcij', X_outer1, X_outer2).diagonal(dim1=-2, dim2=-1).sum(-1)
                 x_traces_list = []
                 # x_traces_1_2 = torch.zeros(X_outer1.shape[0], X_outer2.shape[0], device=x.device)
-                for i in range(0, X_outer1.shape[0],16):
+
+                # change this to adjust the batch size
+                mini_batch_size = 16
+
+                for i in range(0, X_outer1.shape[0], mini_batch_size):
                     try:
-                        x_traces_1 = torch.einsum('bik,cjk->bcij', X_outer1[i: i + 16], X_outer2).diagonal(dim1=-2, dim2=-1).sum(-1)
+                        x_traces_1 = torch.einsum('bik,cjk->bcij', X_outer1[i: i + mini_batch_size], X_outer2).diagonal(dim1=-2, dim2=-1).sum(-1)
                     except:
                         x_traces_1 = torch.einsum('bik,cjk->bcij', X_outer1[i:], X_outer2).diagonal(dim1=-2, dim2=-1).sum(-1)
                     x_traces_list.append(x_traces_1)
                     # for j in range(i, X_outer2.shape[0]):
                     # x_traces_1_2[i, j] = torch.matmul(X_outer1[i], X_outer2[j]).trace()
                 x_traces_1_2 = torch.concat(x_traces_list, dim=0)
-                # breakpoint()
-                # H_H_f[e1, e2] = torch.sum(prob_trace_1_2 * x_traces_1_2).sum(dim=-1).sum(dim=-1) / (
-                #             mask1.sum() * mask2.sum())
+
 
                 H_H_f[e1, e2] = torch.einsum('bc,bc->', prob_trace_1_2, x_traces_1_2) / (X_outer1.shape[0] * X_outer2.shape[0])
                 H_H_f[e2, e1] = H_H_f[e1, e2]
@@ -557,9 +444,8 @@ class HessianAlignment(ERM):
         individual_term = 2 * H_H_f.sum(dim=1) / num_envs
         sum_h_minus_h_bar_sq = torch.sum(f_norm_env + shared_term - individual_term) / num_envs
 
-        dC = x.shape[1] * logits.shape[1]
 
-        sum_h_minus_h_bar_sq /= (dC)
+        sum_h_minus_h_bar_sq /= (logits.shape[1] ** 2)
         return f_norm_env, sum_h_minus_h_bar_sq, H_H_f
 
 
@@ -574,27 +460,20 @@ class HessianAlignment(ERM):
         grad_pen, hess_pen = 0, 0
         # breakpoint()
         if alpha != 0:
-            # start = time.time()
             grad_pen = self.grad_pen(x, logits, y, env_indices)
-            # print(f"Time taken to compute grad_pen: {time.time() - start}")
 
         if beta != 0:
             # start = time.time()
             hess_pen= self.hessian_pen(x, logits, env_indices)
-            # print(f"Time taken to compute hess_pen: {time.time() - start}")
+
+            # use hess_pen_mem for memory efficient computation
+            # _, hess_pen, _ = self.hessian_pen_mem(x, logits, env_indices)
 
 
         # erm_loss = torch.mean(env_erm)
         erm_loss = F.cross_entropy(logits, y)
         total_loss = erm_loss + alpha * grad_pen + beta * hess_pen
 
-        #
-        # stats['total_loss'] = total_loss.item()
-        # stats['erm_loss'] = erm_loss.item()
-        # stats['hessian_loss'] = beta * hess_pen.item() if beta != 0 else 0
-        # stats['grad_loss'] = alpha * grad_pen.item() if alpha != 0 else 0
-
-        # return total_loss, erm_loss, alpha * grad_pen, beta * hess_pen, stats
         return total_loss, erm_loss, grad_pen, hess_pen
 
     def update(self, minibatches, unlabeled=None):
@@ -2607,7 +2486,6 @@ class HGP(Algorithm):
     def update(self, minibatches, unlabeled=False):
 
         envs = []
-        sdag_times = 0
         for edx, (x, y) in enumerate(minibatches):
             features = self.featurizer(x)
             logits = self.classifier(features)
@@ -2727,7 +2605,6 @@ class Hutchinson(Algorithm):
             env['nll'] = F.cross_entropy(logits, y)
             # start = time.time()
             env['sadg'], env['grad'] = self.compute_sadg_penalty(logits, y)
-            end = time.time()
             # grad_pen_times += end-start
             envs.append(env)
 
@@ -2762,10 +2639,7 @@ class Hutchinson(Algorithm):
         loss += sadg_penalty
 
         self.optimizer.zero_grad()
-        # start = time.time()
         loss.backward()
-        # end = time.time()
-        # print("Time for backward pass in Hutchinson: ", end-start)
         self.optimizer.step()
         self.update_count += 1
         return {'loss': loss.item(), 'nll': train_nll.item(), 'penalty': sadg_penalty.item()}

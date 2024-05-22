@@ -130,6 +130,26 @@ for exp in os.listdir(new_hessian_MNIST_dir):
         continue
         # os.system(f"cp -r {os.path.join(new_hessian_MNIST_dir, exp)} {combined_dir}")
 
+coral_dir = './results_vits_coral'
+coral_mnist_dir = './results_vits_coral_MNIST'
+
+for exp in os.listdir(coral_dir):
+    if not os.path.isdir(os.path.join(coral_dir, exp)) or len(os.listdir(os.path.join(coral_dir, exp))) == 0:
+        continue
+    with open(os.path.join(coral_dir, exp, "results.jsonl")) as f:
+        first_line = f.readline()
+        first_line = json.loads(first_line)
+    if (first_line['args']['algorithm'] == 'CORAL'):
+        os.system(f"cp -r {os.path.join(coral_dir, exp)} {combined_dir}")
+
+for exp in os.listdir(coral_mnist_dir):
+    if not os.path.isdir(os.path.join(coral_mnist_dir, exp)) or len(os.listdir(os.path.join(coral_mnist_dir, exp))) == 0:
+        continue
+    with open(os.path.join(coral_mnist_dir, exp, "results.jsonl")) as f:
+        first_line = f.readline()
+        first_line = json.loads(first_line)
+    if (first_line['args']['algorithm'] == 'CORAL'):
+        os.system(f"cp -r {os.path.join(coral_mnist_dir, exp)} {combined_dir}")
 
 # for exp in os.listdir(terr_dir):
 #     if not os.path.isdir(os.path.join(terr_dir, exp)) or len(os.listdir(os.path.join(terr_dir, exp))) == 0:

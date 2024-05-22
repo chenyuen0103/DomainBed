@@ -103,7 +103,7 @@ class IIDAccuracySelectionMethod(SelectionMethod):
         index_of_max = test_records.map(self._step_acc).map(lambda x: x['val_acc'])._list.index(
             max(test_records.map(self._step_acc).map(lambda x: x['val_acc'])))
         full_record_with_hyperparams = test_records[index_of_max]
-        print(f"Hyperparameters for {full_record_with_hyperparams['args']['dataset']}, env {full_record_with_hyperparams['args']['test_envs']}:", full_record_with_hyperparams['hparams'])
+        # print(f"Hyperparameters for {full_record_with_hyperparams['args']['dataset']}, env {full_record_with_hyperparams['args']['test_envs']}:", full_record_with_hyperparams['hparams'])
         return test_records.map(self._step_acc).argmax('val_acc')
 
 class LeaveOneOutSelectionMethod(SelectionMethod):

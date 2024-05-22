@@ -40,7 +40,7 @@ if __name__ == "__main__":
     parser.add_argument('--device', type=int, default=0)
     parser.add_argument('--data_dir', type=str, default="../data")
     parser.add_argument('--dataset', type=str, default="ColoredMNIST")
-    parser.add_argument('--algorithm', type=str, default="HessianAlignment")
+    parser.add_argument('--algorithm', type=str, default="CMA")
     parser.add_argument('--task', type=str, default="domain_generalization",
         choices=["domain_generalization", "domain_adaptation"])
     parser.add_argument('--hparams', type=str,
@@ -235,7 +235,7 @@ if __name__ == "__main__":
     for step in range(start_step, n_steps):
         step_start_time = time.time()
         # breakpoint()
-        if args.algorithm == "HessianAlignment":
+        if args.algorithm == "CMA":
             minibatches_device = [(x.to(device), y.to(device), g.to(device)) for x,y,g in next(train_minibatches_iterator)]
         else:
             minibatches_device = [(x.to(device), y.to(device)) for x,y,_ in next(train_minibatches_iterator)]

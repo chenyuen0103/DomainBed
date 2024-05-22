@@ -142,7 +142,7 @@ def _hparams(algorithm, dataset, random_seed, model_type='ViT-S'):
         _hparam('eqrm_burnin_iters', 2500, lambda r: 10 ** r.uniform(2.5, 3.5))
         _hparam('eqrm_lr', 1e-6, lambda r: 10 ** r.uniform(-7, -5))
 
-    elif algorithm == 'HessianAlignment':
+    elif algorithm == 'CMA':
 
         # _hparam('model_type','ViT-S', lambda r: 'ViT-S')
         # try
@@ -210,7 +210,7 @@ def _hparams(algorithm, dataset, random_seed, model_type='ViT-S'):
     #     _hparam('batch_size', 8, lambda r: 8)
     # elif dataset == 'DomainNet':
     #     _hparam('batch_size', 32, lambda r: int(2**r.uniform(3, 5)))
-    # elif algorithm == 'HessianAlignment':
+    # elif algorithm == 'CMA':
     #     _hparam('batch_size', 32, lambda r: 32)
     # else:
     #     _hparam('batch_size', 32, lambda r: int(2**r.uniform(3, 5.5)))

@@ -81,341 +81,42 @@ python3 -m domainbed.scripts.download \
 Train a model:
 
 ```sh
-CUDA_VISIBLE_DEVICES=3 python3 -m domainbed.scripts.train\
-       --data_dir=./domainbed/data/\
-       --algorithm Hutchinson\
-       --dataset ColoredMNIST\
-       --test_env 2
-       
-       
-       
-CUDA_VISIBLE_DEVICES=2 python3 -m domainbed.scripts.train\
-       --data_dir=./domainbed/data/\
-       --algorithm Fishr\
+python3 -m domainbed.scripts.train\
+       --data_dir=./domainbed/data/MNIST/\
+       --algorithm IGA\
        --dataset ColoredMNIST\
        --test_env 2
 ```
-#       --hparams {\"grad_alpha\":1000\,\"hess_beta\":500000}\
-```sh
-CUDA_VISIBLE_DEVICES=5 python -m domainbed.scripts.train\
-       --data_dir=./domainbed/data/\
-       --algorithm HessianAlignment\
-       --hparams {\"grad_alpha\":50\,\"hess_beta\":5000}\
-       --dataset VLCS\
-       --test_env 2
-```
-#       --hparams {\"model_type\":\"ResNet\"}\
+
 Launch a sweep:
 
 ```sh
 python -m domainbed.scripts.sweep launch\
-       --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results\
-       --command_launcher multi_gpu
+       --data_dir=/my/datasets/path\
+       --output_dir=/my/sweep/output/path\
+       --command_launcher MyLauncher
 ```
 
 Here, `MyLauncher` is your cluster's command launcher, as implemented in `command_launchers.py`. At the time of writing, the entire sweep trains tens of thousands of models (all algorithms x all datasets x 3 independent trials x 20 random hyper-parameter choices). You can pass arguments to make the sweep smaller:
 
-Local 
-```sh
-CUDA_VISIBLE_DEVICES=1,2 python -m domainbed.scripts.sweep launch\
-       --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results_vits_hessian_MNIST_rescale\
-       --command_launcher multi_gpu\
-       --algorithms HessianAlignment\
-       --datasets ColoredMNIST\
-       --single_test_envs\
-       --n_hparams 5\
-       --n_trials 3
-       
-       
-   CUDA_VISIBLE_DEVICES=1,2 python -m domainbed.scripts.sweep delete_incomplete\
-       --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results_vits_hessian_rescale\
-       --command_launcher multi_gpu\
-       --algorithms HessianAlignment\
-       --datasets PACS TerraIncognita VLCS\
-       --single_test_envs\
-       --n_hparams 5\
-       --n_trials 3
-```
-
-Euler: HessianAlignment on ColoredMNIST and RotatedMNIST
- python -m domainbed.scripts.sweep launch\
-       --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results_vits_MNIST_ERM_Fishr\
-       --command_launcher multi_gpu\
-       --algorithms ERM Fishr\
-       --datasets ColoredMNIST RotatedMNIST\
-       --single_test_envs\
-       --n_hparams 5\
-       --n_trials 3
-
- python -m domainbed.scripts.sweep launch\
-       --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results_vits_3600_32\
-       --command_launcher multi_gpu\
-       --algorithms HessianAlignment\
-       --datasets PACS TerraIncognita\
-       --single_test_envs\
-       --n_hparams 5\
-       --n_trials 3
-```sh
-       
-
-       
- python -m domainbed.scripts.sweep launch\
-       --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results_vits_3600_32\
-       --command_launcher multi_gpu\
-       --algorithms HessianAlignment\
-       --datasets ColoredMNIST RotatedMNIST\
-       --single_test_envs\
-       --n_hparams 5\
-       --n_trials 3
-       
-```
-
-Newton: 
-HessainAlignment on VLCS #DONE
-HessainAlignment on PACS TerraIncognita
-ERM and Fishr on VLCS #DONE
-ERM and Fishr on RotatedMNIST, ColoredMNIST
-ERM and Fishr on PACS, TerraIncognita
-
-```sh
-(tmux a -t db_vlcs_erm_fishr)
-CUDA_VISIBLE_DEVICES=7 python -m domainbed.scripts.sweep launch\
-       --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results_vits_hessian_mnist_random\
-       --command_launcher multi_gpu\
-       --algorithms HessianAlignment\
-       --datasets ColoredMNIST\
-       --single_test_envs\
-       --n_hparams 5\
-       --n_trials 3
-       
-
-(tmux a -t db_vlcs)
-CUDA_VISIBLE_DEVICES=2,3,4,5,6,7 python -m domainbed.scripts.sweep launch\
-       --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results_vits_ERM_Fishr\
-       --command_launcher multi_gpu\
-       --algorithms ERM Fishr\
-       --datasets PACS TerraIncognita\
-       --single_test_envs\
-       --n_hparams 5\
-       --n_trials 3
-
-
-       
- CUDA_VISIBLE_DEVICES=0,1,4 python -m domainbed.scripts.sweep launch\
-       --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results_vits_terra_pacs\
-       --command_launcher multi_gpu\
-       --algorithms HessianAlignment\
-       --datasets VLCS\
-       --single_test_envs\
-       --n_hparams 5\
-       --n_trials 3
-       
- CUDA_VISIBLE_DEVICES=0,1,4,5 python -m domainbed.scripts.sweep launch\
-       --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results_vits_VLCS_ERM_Fishr\
-       --command_launcher multi_gpu\
-       --algorithms ERM Fishr\
-       --datasets VLCS\
-       --single_test_envs\
-       --n_hparams 5\
-       --n_trials 3
-       
-       
-  CUDA_VISIBLE_DEVICES=4,5,6,7 python -m domainbed.scripts.sweep launch\
-       --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results_pacs_hessian_pacs_random\
-       --command_launcher multi_gpu\
-       --algorithms HessianAlignment\
-       --datasets PACS\
-       --single_test_envs\
-       --n_hparams 5\
-       --n_trials 3
-       
-    CUDA_VISIBLE_DEVICES=4,5,6,7 python -m domainbed.scripts.sweep delete_incomplete\
-       --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results_vits_hessian_pacs_random\
-       --command_launcher multi_gpu\
-       --algorithms HessianAlignment\
-       --datasets PACS\
-       --single_test_envs\
-       --n_hparams 5\
-       --n_trials 1
-       
-    CUDA_VISIBLE_DEVICES=4,5,7 python -m domainbed.scripts.sweep launch\
-       --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results_vits_hessian_class\
-       --command_launcher multi_gpu\
-       --algorithms HessianAlignment\
-       --datasets PACS\
-       --single_test_envs\
-       --n_hparams 5\
-       --n_trials 1
-       
-    CUDA_VISIBLE_DEVICES=0,1,2 python -m domainbed.scripts.sweep launch\
-       --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results_vits_hessian_class\
-       --command_launcher multi_gpu\
-       --algorithms HessianAlignment\
-       --datasets PACS\
-       --single_test_envs\
-       --n_hparams 5\
-       --n_trials 1
-    
-    CUDA_VISIBLE_DEVICES=0,1,2 python -m domainbed.scripts.sweep launch\
-       --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results_vits_hessian_class\
-       --command_launcher multi_gpu\
-       --algorithms HessianAlignment\
-       --datasets TerraIncognita\
-       --single_test_envs\
-       --n_hparams 5\
-       --n_trials 1
-     
-    CUDA_VISIBLE_DEVICES=1,2,4,5 python -m domainbed.scripts.sweep launch\
-       --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results_vits_hessian_real_bias\
-       --command_launcher multi_gpu\
-       --algorithms HessianAlignment\
-       --datasets VLCS\
-       --single_test_envs\
-       --n_hparams 5\
-       --n_trials 3
-       
-       
-       
-CUDA_VISIBLE_DEVICES=0,1,2 python -m domainbed.scripts.sweep delete_incomplete\
-       --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results_vits_hessian_bias\
-       --command_launcher multi_gpu\
-       --algorithms HessianAlignment\
-       --datasets ColoredMNIST\
-       --single_test_envs\
-       --n_hparams 5\
-       --n_trials 3
-       
-    CUDA_VISIBLE_DEVICES=4,5,6,7 python -m domainbed.scripts.sweep launch\
-   --data_dir=./domainbed/data/\
-   --output_dir=./domainbed/results_vits_hessian_vlcs_terra_anneal_2500\
-   --hparams {\"penalty_anneal_iters\":2500}\
-   --command_launcher multi_gpu\
-   --algorithms HessianAlignment\
-   --datasets VLCS\
-   --single_test_envs\
-   --n_hparams 5\
-   --n_trials 3
-```
-   --hparams {\"penalty_anneal_iters\":2500}\
-
 ```sh
 python -m domainbed.scripts.sweep launch\
-       --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results_vits_coral_MNIST\
-       --command_launcher multi_gpu\
-       --algorithms CORAL\
-       --datasets ColoredMNIST RotatedMNIST\
-       --single_test_envs\
+       --data_dir=/my/datasets/path\
+       --output_dir=/my/sweep/output/path\
+       --command_launcher MyLauncher\
+       --algorithms ERM DANN\
+       --datasets RotatedMNIST VLCS\
        --n_hparams 5\
-       --n_trials 3
-
-
-
-python -m domainbed.scripts.sweep delete_incomplete\
-       --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results_vits_3600_32\
-       --command_launcher multi_gpu\
-       --algorithms ERM Fishr HessianAlignment\
-       --datasets ColoredMNIST RotatedMNIST PACS VLCS TerraIncognita\
-       --single_test_envs\
-       --n_hparams 5\
-       --n_trials 3
-```
-
-```sh
-python -m domainbed.scripts.sweep delete_incomplete\
-       --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results_vits_terra_pacs\
-       --command_launcher multi_gpu\
-       --algorithms ERM Fishr HessianAlignment\
-       --datasets PACS TerraIncognita\
-       --single_test_envs\
-       --n_hparams 5\
-       --n_trials 3
-```
-
-For ResNet 
-```sh
-python -m domainbed.scripts.sweep launch\
-       --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results_vits_new\
-       --command_launcher multi_gpu\
-#       --hparams {\"model_type\":\"ResNet\"}\
-       --algorithms ERM HessianAlignment\
-       --datasets VLCS\
-       --single_test_envs\
-       --n_hparams 1\
        --n_trials 1
 ```
 
 After all jobs have either succeeded or failed, you can delete the data from failed jobs with ``python -m domainbed.scripts.sweep delete_incomplete`` and then re-launch them by running ``python -m domainbed.scripts.sweep launch`` again. Specify the same command-line arguments in all calls to `sweep` as you did the first time; this is how the sweep script knows which jobs were launched originally.
 
-```sh
-python -m domainbed.scripts.sweep delete_incomplete\      
-       --data_dir=./domainbed/data/\       
-       --output_dir=./domainbed/results_vits\
-       --command_launcher multi_gpu\       
-       --algorithms ERM Fishr HessianAlignment IRM\
-       --datasets PACS RotatedMNIST VLCS OfficeHome TerraIncognita WILDSCamelyon\
-       --single_test_envs\
-       --n_hparams 5\
-       --n_trials 3
-```
-
-        --hparams {\"grad_alpha\":5000\,\"hess_beta\":5000}\
-
-
-python -m domainbed.scripts.sweep launch\
-       --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results_vits_hessian_bias\
-       --command_launcher multi_gpu\
-       --algorithms HessianAlignment\
-       --datasets ColoredMNIST\
-       --single_test_envs\
-       --n_hparams 5\
-       --n_trials 1
-
-
-python -m domainbed.scripts.sweep delete_incomplete\
-       --data_dir=./domainbed/data/\
-       --output_dir=./domainbed/results_vits_hessian_bias\
-       --command_launcher multi_gpu\
-       --algorithms HessianAlignment\
-       --datasets RotatedMNIST ColoredMNIST\
-       --single_test_envs\
-       --n_hparams 5\
-       --n_trials 3
-
-
 To view the results of your sweep:
 
 ````sh
 python -m domainbed.scripts.collect_results\
-       --input_dir=./domainbed/results_vits_3600_32
-       
-python -m domainbed.scripts.collect_results\
-       --input_dir=./domainbed/results_vits_hessian_vlcs_random2
-       
-       
-python -m domainbed.scripts.collect_results\
-       --input_dir=./domainbed/results_vits_hessian_bias_7500
+       --input_dir=/my/sweep/output/path
 ````
 
 ## Running unit tests
