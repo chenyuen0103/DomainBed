@@ -437,7 +437,6 @@ class CMA(ERM):
 
         if beta != 0:
             # start = time.time()
-            breakpoint()
             hess_pen= self.hessian_pen(x, logits, env_indices)
 
             # use hess_pen_mem for memory efficient computation
