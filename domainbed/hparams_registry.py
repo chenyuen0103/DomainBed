@@ -143,31 +143,12 @@ def _hparams(algorithm, dataset, random_seed, model_type='ViT-S'):
         _hparam('eqrm_lr', 1e-6, lambda r: 10 ** r.uniform(-7, -5))
 
     elif algorithm == 'CMA':
-
-        # _hparam('model_type','ViT-S', lambda r: 'ViT-S')
-        # try
-        # _hparam('grad_alpha', 100, lambda r: 10 ** r.uniform(1, 3))
-        # _hparam('hess_beta', 1000, lambda r: 10 ** r.uniform(2, 4))
-        # _hparam('penalty_anneal_iters', 2400, lambda r: int(np.random.choice([2400, 3000, 3600, 4200])))
-
         _hparam('grad_alpha', 5000, lambda r: 10 ** r.uniform(1, 4))
         _hparam('hess_beta', 1000, lambda r: 10 ** r.uniform(1, 4))
         # _hparam('penalty_anneal_iters', 2500, lambda r: int(r.uniform(0., 5000.)))
         _hparam('penalty_anneal_iters', 2500, lambda r: int(np.random.choice([500, 1500, 2500, 3500, 4500])))
 
-        # _hparam('grad_alpha', 1000, lambda r: 1000)
-        # _hparam('hess_beta', 1000, lambda r: 1000)
-        # _hparam('penalty_anneal_iters', 500, lambda r: int(10 ** r.uniform(0, 4)))
-        # _hparam('penalty_anneal_iters', 0, lambda r: int(r.uniform(0., 5000.)))
-        # _hparam('penalty_anneal_iters', 3600, lambda r: np.random.choice([3600, 4000]))
-        # _hparam('penalty_anneal_iters', 3600, lambda r: np.random.randint(0, 3600))
-        # _hparam('penalty_anneal_iters', 2500, lambda r: 2500)
-        # _hparam('penalty_anneal_iters', 2400, lambda r: int(np.random.choice([2400, 3000, 3600, 4200])))
 
-    # used for results_vits_hessian_vlcs_random2
-    #     _hparam('grad_alpha', 1000, lambda r: 10 ** r.uniform(1, 3))
-    #     _hparam('hess_beta', 1000, lambda r: 10 ** r.uniform(2, 4))
-        # _hparam('penalty_anneal_iters', 2500, lambda r: int(r.choice([2500, 3500, 4500])))
 
     elif algorithm == "HGP":
         _hparam('penalty_alpha', 0.0001, lambda r: 10 ** r.uniform(-3, -5))
