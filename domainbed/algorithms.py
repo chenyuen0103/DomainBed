@@ -372,7 +372,7 @@ class CMA(ERM):
             y_env = y[idx]
             hessian = self.hessian(x_env, logits_env)
             hessian_diag = self.hessian_diagonal(logits_env, logits_env)
-            hessian_diag_backpack = self.hessian_diag_backpack(logits_env, y_env, self.classifier, F.cross_entropy)
+            hessian_diag_backpack = self.hessian_diag_backpack(logits_env, y_env, self.classifier, F.cross_entropy())
             breakpoint()
             assert torch.allclose(hessian.diag(), hessian_diag), "Hessian computation is incorrect"
             assert torch.allclose(hessian.diag(), hessian_diag_backpack), "Hessian computation is incorrect"
