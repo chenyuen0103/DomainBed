@@ -8,13 +8,9 @@ import torch.autograd as autograd
 import copy
 import numpy as np
 from collections import OrderedDict
-try:
-    from backpack import backpack, extend
-    from backpack.extensions import BatchGrad
-except:
-    breakpoint()
-    backpack = None
 
+from backpack import backpack, extend
+from backpack.extensions import BatchGrad, DiagHessian
 
 from domainbed import networks
 from domainbed.lib.misc import (
@@ -145,7 +141,6 @@ class CMA(ERM):
         self.hess_beta = hparams['hess_beta']
         self.penalty_anneal_iters = hparams['penalty_anneal_iters']
         self.update_count = 0
-        # breakpoint()
         self.classifier = networks.Classifier_nobiases(
             self.featurizer.n_outputs, num_classes, self.hparams['nonlinear_classifier']
         )
@@ -224,8 +219,48 @@ class CMA(ERM):
         H2 /= num_classes
         return H2
 
+    def hessian_diag_backpack(self, logits, y, model, loss_fn):
+        model.zero_grad()
+        loss_fn = extend(loss_fn)
+        loss = loss_fn(logits, y)
 
+        with backpack(DiagHessian()):
+            loss.backward()
+        # loss.backward()
 
+        hessian_diag = []
+        for param in model.parameters():
+            hessian_diag.append(param.diag_h.flatten())
+
+        hessian_diag = torch.cat(hessian_diag) / logits.shape[1]
+        return hessian_diag
+
+    def hessian_diagonal(self, x, logits):
+        batch_size, d = x.shape  # Shape: [batch_size, d]
+        num_classes = logits.shape[1]  # Number of classes
+        dC = num_classes * d  # Total number of parameters in the flattened gradient
+        p = F.softmax(logits, dim=1)  # Shape: [batch_size, num_classes]
+
+        # Compute p_k(1-p_k) for diagonal blocks
+        p_diag = p * (1 - p)  # Shape: [batch_size, num_classes]
+
+        # Outer product of x, but only considering the diagonal part
+        x_squared = x ** 2  # Shape: [batch_size, d]
+
+        # Compute the diagonal of the Hessian matrix
+        H2_diag = torch.einsum('bk,bi->bki', p_diag, x_squared)  # Shape: [batch_size, num_classes, d]
+
+        # Sum across the batch dimension
+        H2_diag = H2_diag.sum(0)  # Shape: [num_classes, d]
+
+        # Normalize the result
+        H2_diag /= batch_size
+        H2_diag /= num_classes
+
+        # Reshape the result to match the diagonal of the Hessian matrix
+        H2_diag_flat = H2_diag.flatten()  # Shape: [dC]
+
+        return H2_diag_flat
 
     def gradient(self, x, logits, y):
         """
@@ -351,18 +386,23 @@ class CMA(ERM):
         return avg_grad_minus_grad_bar_2_sq
 
 
-    def hessian_pen(self, x, logits, envs):
+    def hessian_pen(self, x, logits, envs, y = None):
         env_hessians = []
         envs_indices_unique = envs.unique()
         for e in envs_indices_unique:
             idx = (envs == e).nonzero().squeeze()
             if idx.numel() == 0:
-                breakpoint()
                 continue
 
             logits_env = logits[idx]
             x_env = x[idx]
+            y_env = y[idx]
             hessian = self.hessian(x_env, logits_env)
+            hessian_diag = self.hessian_diagonal(logits_env, logits_env)
+            hessian_diag_backpack = self.hessian_diag_backpack(logits_env, y_env, self.classifier, F.cross_entropy)
+            breakpoint()
+            assert torch.allclose(hessian.diag(), hessian_diag), "Hessian computation is incorrect"
+            assert torch.allclose(hessian.diag(), hessian_diag_backpack), "Hessian computation is incorrect"
             env_hessians.append(hessian)
 
         avg_hessian = torch.mean(torch.stack(env_hessians), dim=0)
@@ -371,7 +411,6 @@ class CMA(ERM):
             # hessian_pytorch = env_hessians_pytorch[env_idx]
             idx = (envs == env_idx).nonzero().squeeze()
             if idx.numel() == 0:
-                breakpoint()
                 continue
 
             # Compute the Frobenius norm of the difference between the Hessian for this environment and the average Hessian
@@ -456,7 +495,6 @@ class CMA(ERM):
 
         x = torch.cat([torch.ones(x.shape[0], 1, device=x.device),x], dim=1)
 
-
         grad_pen, hess_pen = 0, 0
         # breakpoint()
         if alpha != 0:
@@ -464,11 +502,10 @@ class CMA(ERM):
 
         if beta != 0:
             # start = time.time()
-            hess_pen= self.hessian_pen(x, logits, env_indices)
+            hess_pen= self.hessian_pen(x, logits, env_indices, y)
 
             # use hess_pen_mem for memory efficient computation
             # _, hess_pen, _ = self.hessian_pen_mem(x, logits, env_indices)
-
 
         # erm_loss = torch.mean(env_erm)
         erm_loss = F.cross_entropy(logits, y)

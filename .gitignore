@@ -20,3 +20,5 @@ domainbed/datasets/*
 
 domainbed/*.ipynb
 domainbed/merge_folders.py
+
+*.DS_Store
