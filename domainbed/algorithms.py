@@ -227,7 +227,8 @@ class CMA(ERM):
         # loss.backward()
 
         hessian_diag = []
-        for param in model.parameters():
+        breakpoint()
+        for name, param in model.named_parameters():
             hessian_diag.append(param.diag_h.flatten())
 
         hessian_diag = torch.cat(hessian_diag) / logits.shape[1]
