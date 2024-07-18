@@ -217,6 +217,7 @@ class CMA(ERM):
         return H2
 
     def hessian_diag_backpack(self, logits, y, model, loss_fn):
+        model = extend(model)
         model.zero_grad()
         loss_fn = extend(loss_fn)
         loss = loss_fn(logits, y)
