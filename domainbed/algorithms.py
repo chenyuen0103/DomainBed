@@ -130,9 +130,6 @@ class ERM(Algorithm):
 
 
 class CMA(ERM):
-    """
-    Hessian Alignment
-    """
 
     def __init__(self, input_shape, num_classes, num_domains, hparams):
         super(CMA, self).__init__(input_shape, num_classes, num_domains,
@@ -330,30 +327,6 @@ class CMA(ERM):
             hessian_manual[i] = grad_grad_i.flatten()
 
         return hessian_manual
-
-    def pca(self, x, n_components):
-        # Ensure x is a float tensor for SVD
-        x = x.float()
-
-        # Center the data (subtract the mean of each feature from all data points)
-        x_mean = torch.mean(x, dim=0)
-        x_centered = x - x_mean
-
-        # Compute the SVD of the centered data.
-        U, S, V = torch.svd(x_centered)
-
-        # U contains the left singular vectors (corresponds to the principal components),
-        # S contains the singular values (sqrt of eigenvalues of the covariance matrix),
-        # V contains the right singular vectors (corresponds to the directions in the original space).
-        # We are interested in U and S to compute the principal components.
-
-        # Take the first n_components of U (principal components) and multiply by the singular values.
-        # Note: To match PCA exactly, you'd use the square of S for eigenvalues, but here we project the data
-        #       onto the principal components directly.
-        x_pca = torch.matmul(U[:, :n_components], torch.diag(S[:n_components]))
-
-        return x_pca
-
 
 
 
