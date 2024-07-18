@@ -216,11 +216,13 @@ class CMA(ERM):
         H2 /= num_classes
         return H2
 
-    def hessian_diag_backpack(self, logits, y, model, loss_fn):
+    def hessian_diag_backpack(self, x, y, model, loss_fn):
         model = extend(model)
-        model.zero_grad()
         loss_fn = extend(loss_fn)
+        model.zero_grad()
+        logits = model(x)
         loss = loss_fn(logits, y)
+
 
         with backpack(DiagHessian()):
             loss.backward()
@@ -374,7 +376,7 @@ class CMA(ERM):
             y_env = y[idx]
             hessian = self.hessian(x_env, logits_env)
             hessian_diag = self.hessian_diagonal(logits_env, logits_env)
-            hessian_diag_backpack = self.hessian_diag_backpack(logits_env, y_env, self.classifier, nn.CrossEntropyLoss())
+            hessian_diag_backpack = self.hessian_diag_backpack(x_env, y_env, self.classifier, nn.CrossEntropyLoss())
             breakpoint()
             assert torch.allclose(hessian.diag(), hessian_diag), "Hessian computation is incorrect"
             assert torch.allclose(hessian.diag(), hessian_diag_backpack), "Hessian computation is incorrect"
