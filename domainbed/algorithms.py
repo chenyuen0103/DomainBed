@@ -469,9 +469,10 @@ class CMA(ERM):
         x = torch.cat([torch.ones(x.shape[0], 1, device=x.device),x], dim=1)
 
         grad_pen, hess_pen = 0, 0
-        # breakpoint()
+        breakpoint()
         if alpha != 0:
             grad_pen = self.grad_pen(x, logits, y, env_indices)
+
 
         if beta != 0:
             # start = time.time()
