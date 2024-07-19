@@ -229,7 +229,6 @@ class CMA(ERM):
         # loss.backward()
 
         hessian_diag = []
-        breakpoint()
         for name, param in model.named_parameters():
             hessian_diag.append(param.diag_h.flatten())
 
