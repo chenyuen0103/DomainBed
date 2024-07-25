@@ -180,8 +180,8 @@ class CMA(ERM):
         X_outer = torch.einsum('bi,bj->bij', x, x)  # Shape: [batch_size, d, d]
 
         H2 = torch.einsum('bkl,bij->bklij', p_off_diag, X_outer)
-        H2 = H2.sum(0).reshape(dC, dC)  # Shape: [dC, dC]
-
+        # H2 = H2.sum(0).reshape(dC, dC)  # Shape: [dC, dC]
+        H2 = H2.sum(0).reshape(num_classes, d, num_classes, d)
         # Combine the probabilities with the outer product of x
         # H2 = torch.zeros(dC, dC, device=x.device)
         #
@@ -261,6 +261,34 @@ class CMA(ERM):
         H2_diag_flat = H2_diag.flatten()  # Shape: [dC]
 
         return H2_diag_flat
+
+    def hessian_tri_diag(self, x, logits):
+        batch_size, d = x.shape
+        num_classes = logits.shape[1]
+        dC = num_classes * d
+        p = F.softmax(logits, dim=1)
+        # Compute p_k(1-p_k) for diagonal blocks
+        p_diag = p * (1 - p)  # Shape: [batch_size, num_classes]
+
+        # Compute the diagonal of the Hessian matrix
+        x_squared = x ** 2  # Shape: [batch_size, d]
+        H2_diag = torch.einsum('bk,bi->bki', p_diag, x_squared)  # Shape: [batch_size, num_classes, d]
+        H2_diag = H2_diag.sum(0) / (batch_size * num_classes)  # Shape: [num_classes, d]
+
+        # Compute the off-diagonal elements of the Hessian matrix
+        x_shifted = x[:, 1:]  # Shape: [batch_size, d-1]
+        x_adjacent = x[:, :-1]  # Shape: [batch_size, d-1]
+        H2_off_diag = torch.einsum('bk,bi->bki', p_diag[:, :-1],
+                                   x_adjacent * x_shifted)  # Shape: [batch_size, num_classes, d-1]
+        H2_off_diag = H2_off_diag.sum(0) / (batch_size * num_classes)  # Shape: [num_classes, d-1]
+
+        # Initialize the tri-diagonal Hessian
+        H2_tri_diag = torch.zeros(num_classes, d, 3)  # Shape: [num_classes, d, 3]
+        H2_tri_diag[:, :, 1] = H2_diag  # Main diagonal
+        H2_tri_diag[:, :-1, 2] = H2_off_diag  # Upper diagonal
+        H2_tri_diag[:, 1:, 0] = H2_off_diag  # Lower diagonal
+
+        return H2_tri_diag
 
     def gradient(self, x, logits, y):
         """
@@ -375,8 +403,10 @@ class CMA(ERM):
             y_env = y[idx]
             # hessian = self.hessian(x_env, logits_env)
             hessian = self.hessian_diagonal(x_env, logits_env)
-            # hessian_diag = self.hessian_diagonal(x_env, logits_env)
-            # hessian_diag_backpack = self.hessian_diag_backpack(x_env, y_env, self.classifier, nn.CrossEntropyLoss())
+            hessian_diag = self.hessian_diagonal(x_env, logits_env)
+            hessian_diag_backpack = self.hessian_diag_backpack(x_env, y_env, self.classifier, nn.CrossEntropyLoss())
+            hessian_tri_diag = self.hessian_tri_diag(x_env, logits_env)
+            breakpoint()
             # assert torch.allclose(hessian.diag(), hessian_diag), "Hessian computation is incorrect"
             # assert torch.allclose(hessian.diag(), hessian_diag_backpack), "Hessian computation is incorrect"
             env_hessians.append(hessian)
