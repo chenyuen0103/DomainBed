@@ -264,7 +264,7 @@ class CMA(ERM):
         return H2_diag_flat
 
 
-    def hessian_tridiagonal(x, logits):
+    def hessian_tridiagonal(self, x, logits):
         batch_size, d = x.shape  # Shape: [batch_size, d]
         num_classes = logits.shape[1]  # Number of classes
         p = F.softmax(logits, dim=1)  # Shape: [batch_size, num_classes]
