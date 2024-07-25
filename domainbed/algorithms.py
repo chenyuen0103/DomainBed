@@ -263,31 +263,48 @@ class CMA(ERM):
 
         return H2_diag_flat
 
-    def hessian_tri_diag(self, x, logits):
-        batch_size, d = x.shape
-        num_classes = logits.shape[1]
-        dC = num_classes * d
-        p = F.softmax(logits, dim=1)
+
+    def hessian_tridiagonal(x, logits):
+        batch_size, d = x.shape  # Shape: [batch_size, d]
+        num_classes = logits.shape[1]  # Number of classes
+        p = F.softmax(logits, dim=1)  # Shape: [batch_size, num_classes]
+
         # Compute p_k(1-p_k) for diagonal blocks
         p_diag = p * (1 - p)  # Shape: [batch_size, num_classes]
 
-        # Compute the diagonal of the Hessian matrix
+        # Compute p_k * p_l for off-diagonal blocks
+        p_off_diag = -p.unsqueeze(2) * p.unsqueeze(1)  # Shape: [batch_size, num_classes, num_classes]
+        indices = torch.arange(num_classes)
+        p_off_diag[:, indices, indices] = p_diag  # Shape: [batch_size, num_classes, num_classes]
+
+        # Compute the main diagonal of the Hessian matrix
         x_squared = x ** 2  # Shape: [batch_size, d]
         H2_diag = torch.einsum('bk,bi->bki', p_diag, x_squared)  # Shape: [batch_size, num_classes, d]
-        H2_diag = H2_diag.sum(0) / (batch_size * num_classes)  # Shape: [num_classes, d]
+        H2_diag = H2_diag.sum(0) / batch_size  # Shape: [num_classes, d]
+        H2_diag /= num_classes  # Normalize the diagonal terms
 
         # Compute the off-diagonal elements of the Hessian matrix
-        x_shifted = x[:, 1:]  # Shape: [batch_size, d-1]
-        x_adjacent = x[:, :-1]  # Shape: [batch_size, d-1]
-        H2_off_diag = torch.einsum('bk,bi->bki', p_diag[:, :-1],
-                                   x_adjacent * x_shifted)  # Shape: [batch_size, num_classes, d-1]
-        H2_off_diag = H2_off_diag.sum(0) / (batch_size * num_classes)  # Shape: [num_classes, d-1]
+        H2_sub_diag = torch.zeros(num_classes, d - 1)  # Shape: [num_classes, d-1]
+        H2_super_diag = torch.zeros(num_classes, d - 1)  # Shape: [num_classes, d-1]
+
+        for k in range(num_classes):
+            for i in range(d - 1):
+                H2_super_diag[k, i] = (p_off_diag[:, k, k] * x[:, i] * x[:, i + 1]).sum() / batch_size
+                H2_sub_diag[k, i] = (p_off_diag[:, k, k] * x[:, i + 1] * x[:, i]).sum() / batch_size
+
+        H2_super_diag /= num_classes  # Normalize the super-diagonal terms
+        H2_sub_diag /= num_classes  # Normalize the sub-diagonal terms
 
         # Initialize the tri-diagonal Hessian
         H2_tri_diag = torch.zeros(num_classes, d, 3)  # Shape: [num_classes, d, 3]
+
+        # Fill the main diagonal
         H2_tri_diag[:, :, 1] = H2_diag  # Main diagonal
-        H2_tri_diag[:, :-1, 2] = H2_off_diag  # Upper diagonal
-        H2_tri_diag[:, 1:, 0] = H2_off_diag  # Lower diagonal
+
+        # Fill the off-diagonals
+        for k in range(num_classes):
+            H2_tri_diag[k, :-1, 2] = H2_super_diag[k]  # Super-diagonal
+            H2_tri_diag[k, 1:, 0] = H2_sub_diag[k]  # Sub-diagonal
 
         return H2_tri_diag
 
@@ -416,7 +433,7 @@ class CMA(ERM):
             # hessian = self.hessian_diagonal(x_env, logits_env)
             hessian_diag = self.hessian_diagonal(x_env, logits_env)
             hessian_diag_backpack = self.hessian_diag_backpack(x_env, y_env, self.classifier, nn.CrossEntropyLoss())
-            hessian_tri_diag = self.hessian_tri_diag(x_env, logits_env)
+            hessian_tri_diag = self.hessian_tridiagonal(x_env, logits_env)
             sub_diag, main_diag, super_diag = self.extract_tridiagonal(hessian)
             breakpoint()
             assert torch.allclose(sub_diag, hessian_tri_diag[:, :, 0]), "Hessian computation is incorrect"
