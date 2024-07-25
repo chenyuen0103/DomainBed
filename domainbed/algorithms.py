@@ -290,6 +290,16 @@ class CMA(ERM):
 
         return H2_tri_diag
 
+    def extract_tridiagonal(self, matrix):
+        rows, cols = matrix.shape
+        assert rows == cols, "Matrix must be square"
+
+        main_diag = matrix.diag()  # Main diagonal
+        super_diag = matrix.diag(1)  # Super-diagonal (above the main diagonal)
+        sub_diag = matrix.diag(-1)  # Sub-diagonal (below the main diagonal)
+
+        return sub_diag, main_diag, super_diag
+
     def gradient(self, x, logits, y):
         """
         Compute gradients of the cross-entropy loss with respect to model parameters (weights),
@@ -406,6 +416,12 @@ class CMA(ERM):
             hessian_diag = self.hessian_diagonal(x_env, logits_env)
             hessian_diag_backpack = self.hessian_diag_backpack(x_env, y_env, self.classifier, nn.CrossEntropyLoss())
             hessian_tri_diag = self.hessian_tri_diag(x_env, logits_env)
+            sub_diag, main_diag, super_diag = self.extract_tridiagonal(hessian)
+            breakpoint()
+            assert torch.allclose(sub_diag, hessian_tri_diag[:, :, 0]), "Hessian computation is incorrect"
+            assert torch.allclose(main_diag, hessian_tri_diag[:, :, 1]), "Hessian computation is incorrect"
+            assert torch.allclose(super_diag, hessian_tri_diag[:, :, 2]), "Hessian computation is incorrect"
+
             breakpoint()
             # assert torch.allclose(hessian.diag(), hessian_diag), "Hessian computation is incorrect"
             # assert torch.allclose(hessian.diag(), hessian_diag_backpack), "Hessian computation is incorrect"
