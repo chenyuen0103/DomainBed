@@ -298,7 +298,7 @@ class CMA(ERM):
         super_diag = matrix.diag(1)  # Super-diagonal (above the main diagonal)
         sub_diag = matrix.diag(-1)  # Sub-diagonal (below the main diagonal)
 
-        return sub_diag, main_diag, super_diag
+        return (sub_diag, main_diag, super_diag)
 
     def gradient(self, x, logits, y):
         """
@@ -411,8 +411,8 @@ class CMA(ERM):
             logits_env = logits[idx]
             x_env = x[idx]
             y_env = y[idx]
-            # hessian = self.hessian(x_env, logits_env)
-            hessian = self.hessian_diagonal(x_env, logits_env)
+            hessian = self.hessian(x_env, logits_env)
+            # hessian = self.hessian_diagonal(x_env, logits_env)
             hessian_diag = self.hessian_diagonal(x_env, logits_env)
             hessian_diag_backpack = self.hessian_diag_backpack(x_env, y_env, self.classifier, nn.CrossEntropyLoss())
             hessian_tri_diag = self.hessian_tri_diag(x_env, logits_env)
