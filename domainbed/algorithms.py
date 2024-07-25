@@ -181,6 +181,7 @@ class CMA(ERM):
 
         H2 = torch.einsum('bkl,bij->bklij', p_off_diag, X_outer)
         # H2 = H2.sum(0).reshape(dC, dC)  # Shape: [dC, dC]
+        H2 = H2.sum(0).reshape(num_classes, d, num_classes, d)
         H2 = H2.permute(0, 2, 1, 3).reshape(dC, dC)
         # Combine the probabilities with the outer product of x
         # H2 = torch.zeros(dC, dC, device=x.device)
