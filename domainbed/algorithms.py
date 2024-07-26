@@ -429,18 +429,12 @@ class CMA(ERM):
             logits_env = logits[idx]
             x_env = x[idx]
             y_env = y[idx]
-            hessian = self.hessian(x_env, logits_env)
+            # hessian = self.hessian(x_env, logits_env)
             # hessian = self.hessian_diagonal(x_env, logits_env)
-            hessian_diag = self.hessian_diagonal(x_env, logits_env)
-            hessian_diag_backpack = self.hessian_diag_backpack(x_env, y_env, self.classifier, nn.CrossEntropyLoss())
-            hessian_tri_diag = self.hessian_tridiagonal(x_env, logits_env)
-            sub_diag, main_diag, super_diag = self.extract_tridiagonal(hessian)
-            breakpoint()
-            assert torch.allclose(sub_diag, hessian_tri_diag[:, :, 0]), "Hessian computation is incorrect"
-            assert torch.allclose(main_diag, hessian_tri_diag[:, :, 1]), "Hessian computation is incorrect"
-            assert torch.allclose(super_diag, hessian_tri_diag[:, :, 2]), "Hessian computation is incorrect"
-
-            breakpoint()
+            hessian = self.hessian_tridiagonal(x_env, logits_env)
+            # hessian_diag_backpack = self.hessian_diag_backpack(x_env, y_env, self.classifier, nn.CrossEntropyLoss())
+            # hessian_tri_diag = self.hessian_tridiagonal(x_env, logits_env)
+            # sub_diag, main_diag, super_diag = self.extract_tridiagonal(hessian)
             # assert torch.allclose(hessian.diag(), hessian_diag), "Hessian computation is incorrect"
             # assert torch.allclose(hessian.diag(), hessian_diag_backpack), "Hessian computation is incorrect"
             env_hessians.append(hessian)
