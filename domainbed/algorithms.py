@@ -498,6 +498,7 @@ class CMA(ERM):
                 # change this to adjust the batch size
                 mini_batch_size = 16
 
+
                 for i in range(0, X_outer1.shape[0], mini_batch_size):
                     try:
                         x_traces_1 = torch.einsum('bik,cjk->bcij', X_outer1[i: i + mini_batch_size], X_outer2).diagonal(dim1=-2, dim2=-1).sum(-1)
@@ -536,10 +537,13 @@ class CMA(ERM):
 
         if beta != 0:
             # start = time.time()
-            # hess_pen = self.hessian_pen(x, logits, env_indices, y)
+            hess_pen = self.hessian_pen(x, logits, env_indices, y)
 
             # use hess_pen_mem for memory efficient computation
-            _, hess_pen, _ = self.hessian_pen_mem(x, logits, env_indices)
+            _, hess_pen_mem, _ = self.hessian_pen_mem(x, logits, env_indices)
+            breakpoint()
+            print(torch.allclose(hess_pen, hess_pen_mem), "Hessian computation is incorrect")
+
 
         # erm_loss = torch.mean(env_erm)
         erm_loss = F.cross_entropy(logits, y)
