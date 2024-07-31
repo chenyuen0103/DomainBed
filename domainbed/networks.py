@@ -185,7 +185,7 @@ class ContextNet(nn.Module):
 
 def Featurizer(input_shape, hparams):
     """Auto-select an appropriate featurizer for the given input shape."""
-
+    breakpoint()
     if len(input_shape) == 1:
         return MLP(input_shape[0], hparams["mlp_width"], hparams)
     elif input_shape[1:3] == (28, 28):
