@@ -429,9 +429,9 @@ class CMA(ERM):
             logits_env = logits[idx]
             x_env = x[idx]
             y_env = y[idx]
-            # hessian = self.hessian(x_env, logits_env)
+            hessian = self.hessian(x_env, logits_env)
             # hessian = self.hessian_diagonal(x_env, logits_env)
-            hessian = self.hessian_tridiagonal(x_env, logits_env)
+            # hessian = self.hessian_tridiagonal(x_env, logits_env)
             # hessian_diag_backpack = self.hessian_diag_backpack(x_env, y_env, self.classifier, nn.CrossEntropyLoss())
             # hessian_tri_diag = self.hessian_tridiagonal(x_env, logits_env)
             # sub_diag, main_diag, super_diag = self.extract_tridiagonal(hessian)
