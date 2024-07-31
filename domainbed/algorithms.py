@@ -537,10 +537,12 @@ class CMA(ERM):
 
         if beta != 0:
             # start = time.time()
-            # hess_pen = self.hessian_pen(x, logits, env_indices, y)
+            if logits.shape[1] <= 5:
+                hess_pen = self.hessian_pen(x, logits, env_indices, y)
 
             # use hess_pen_mem for memory efficient computation
-            _, hess_pen, _ = self.hessian_pen_mem(x, logits, env_indices)
+            else:
+                _, hess_pen, _ = self.hessian_pen_mem(x, logits, env_indices)
             # breakpoint()
             # print(torch.allclose(hess_pen, hess_pen_mem), "Hessian computation is incorrect")
 
