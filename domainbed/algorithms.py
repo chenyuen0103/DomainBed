@@ -539,7 +539,7 @@ class CMA(ERM):
             hess_pen = self.hessian_pen(x, logits, env_indices, y)
 
             # use hess_pen_mem for memory efficient computation
-            _, hess_pen, _ = self.hessian_pen_mem(x, logits, env_indices)
+            # _, hess_pen, _ = self.hessian_pen_mem(x, logits, env_indices)
 
         # erm_loss = torch.mean(env_erm)
         erm_loss = F.cross_entropy(logits, y)
