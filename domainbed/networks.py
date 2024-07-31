@@ -195,6 +195,8 @@ def Featurizer(input_shape, hparams):
     elif input_shape[1:3] == (224, 224) and 'model_type' in hparams and hparams['model_type'] == 'ViT-S':
         return ViT_S(hparams)
     elif input_shape[1:3] == (224, 224):
+        print('Using ResNet')
+        breakpoint()
         return ResNet(input_shape, hparams)
 
     else:
