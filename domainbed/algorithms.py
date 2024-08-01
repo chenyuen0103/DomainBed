@@ -539,7 +539,6 @@ class CMA(ERM):
             # start = time.time()
             if logits.shape[1] <= 5:
                 hess_pen = self.hessian_pen(x, logits, env_indices, y)
-
             # use hess_pen_mem for memory efficient computation
             else:
                 _, hess_pen, _ = self.hessian_pen_mem(x, logits, env_indices)
