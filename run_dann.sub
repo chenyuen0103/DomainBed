@@ -1,7 +1,7 @@
 executable = /home/yuenchen/anaconda3/envs/isr/bin/python
 arguments = -m domainbed.scripts.sweep launch \
-            --data_dir=./domainbed/data/ \
-            --output_dir=./domainbed/results_dann \
+            --data_dir=/home/yuenchen/Domainbed/data/ \
+            --output_dir=/home/yuenchen/Domainbed/results_dann \
             --command_launcher multi_gpu \
             --algorithms DANN \
             --datasets ColoredMNIST \
