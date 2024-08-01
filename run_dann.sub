@@ -1,0 +1,18 @@
+executable = /home/yuenchen/anaconda3/envs/isr/bin/python
+arguments = -m domainbed.scripts.sweep launch \
+            --data_dir=./domainbed/data/ \
+            --output_dir=./domainbed/results_resnet \
+            --command_launcher multi_gpu \
+            --algorithms DANN \
+            --datasets ColoredMNIST \
+            --single_test_envs \
+            --n_hparams 5 \
+            --n_trials 3
+error = /home/yuenchen/Domainbed/dann.err
+output = /home/yuenchen/Domainbed/dann.out
+log = /home/yuenchen/Domainbed/dann.log
+request_memory = 16G
+request_disk = 20G
+request_cpus = 1
+request_gpus = 8
+requirements = TARGET.CUDAGlobalMemoryMb  > 16000
