@@ -6,7 +6,7 @@ log = /home/yuenchen/Domainbed/dann.log
 request_memory = 16G
 request_disk = 20G
 request_cpus = 1
-request_gpus = 8
+request_gpus = 2
 requirements = TARGET.CUDAGlobalMemoryMb  > 16000
 queue
 
