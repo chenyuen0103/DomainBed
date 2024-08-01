@@ -16,3 +16,6 @@ request_disk = 20G
 request_cpus = 1
 request_gpus = 8
 requirements = TARGET.CUDAGlobalMemoryMb  > 16000
+queue
+
+```
