@@ -1,5 +1,6 @@
 executable = /home/yuenchen/anaconda3/envs/isr/bin/python
-arguments = -m domainbed.scripts.sweep launch \
+arguments = /home/yuenchen/Domainbeddomainbed/scripts/sweep \
+            command launch \
             --data_dir=/home/yuenchen/Domainbed/data/ \
             --output_dir=/home/yuenchen/Domainbed/results_dann \
             --command_launcher multi_gpu \
