@@ -18,4 +18,3 @@ request_gpus = 8
 requirements = TARGET.CUDAGlobalMemoryMb  > 16000
 queue
 
-```
