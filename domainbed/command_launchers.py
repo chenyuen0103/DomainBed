@@ -28,12 +28,12 @@ def multi_gpu_launcher(commands):
     """
     Launch commands on the local machine, using all GPUs in parallel.
     """
-    print('WARNING: using experimental multi_gpu_launcher.')
+    print('WARNING: using experimental multi_gpu_launcher.', flush=True)
     try:
         # Get list of GPUs from env, split by ',' and remove empty string ''
         # To handle the case when there is one extra comma: `CUDA_VISIBLE_DEVICES=0,1,2,3, python3 ...`
         available_gpus = [x for x in os.environ['CUDA_VISIBLE_DEVICES'].split(',') if x != '']
-        print(f'Using GPUs: {available_gpus}')
+        print(f'Using GPUs: {available_gpus}', flush=True)
     except Exception:
         # If the env variable is not set, we use all GPUs
         available_gpus = [str(x) for x in range(torch.cuda.device_count())]
