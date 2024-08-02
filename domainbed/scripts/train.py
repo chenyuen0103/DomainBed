@@ -74,18 +74,18 @@ if __name__ == "__main__":
     sys.stdout = misc.Tee(os.path.join(args.output_dir, 'out.txt'))
     sys.stderr = misc.Tee(os.path.join(args.output_dir, 'err.txt'))
 
-    print("Environment:")
-    print("\tPython: {}".format(sys.version.split(" ")[0]))
-    print("\tPyTorch: {}".format(torch.__version__))
-    print("\tTorchvision: {}".format(torchvision.__version__))
-    print("\tCUDA: {}".format(torch.version.cuda))
-    print("\tCUDNN: {}".format(torch.backends.cudnn.version()))
-    print("\tNumPy: {}".format(np.__version__))
-    print("\tPIL: {}".format(PIL.__version__))
+    print("Environment:",flush=True)
+    print("\tPython: {}".format(sys.version.split(" ")[0]),flush = True)
+    print("\tPyTorch: {}".format(torch.__version__),flush = True)
+    print("\tTorchvision: {}".format(torchvision.__version__),flush = True)
+    print("\tCUDA: {}".format(torch.version.cuda),flush = True)
+    print("\tCUDNN: {}".format(torch.backends.cudnn.version()),flush = True)
+    print("\tNumPy: {}".format(np.__version__),flush = True)
+    print("\tPIL: {}".format(PIL.__version__),flush = True)
 
-    print('Args:')
+    print('Args:',flush = True)
     for k, v in sorted(vars(args).items()):
-        print('\t{}: {}'.format(k, v))
+        print('\t{}: {}'.format(k, v),flush = True)
 
     if args.hparams and 'model_type' in json.loads(args.hparams):
         model_type = json.loads(args.hparams)['model_type']
@@ -100,9 +100,9 @@ if __name__ == "__main__":
         hparams.update(json.loads(args.hparams))
 
 
-    print('HParams:')
+    print('HParams:',flush = True)
     for k, v in sorted(hparams.items()):
-        print('\t{}: {}'.format(k, v))
+        print('\t{}: {}'.format(k, v),flush = True)
 
     random.seed(args.seed)
     np.random.seed(args.seed)
