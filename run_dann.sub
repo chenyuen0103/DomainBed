@@ -1,5 +1,4 @@
 executable = /home/yuenchen/anaconda3/envs/isr/bin/python
-
 arguments = /home/yuenchen/Domainbed/check_import.py
 error = /home/yuenchen/Domainbed/dann.err
 output = /home/yuenchen/Domainbed/dann.out
