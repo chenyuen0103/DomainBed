@@ -1,13 +1,7 @@
 executable = /home/yuenchen/anaconda3/envs/isr/bin/python
-arguments = -m domainbed.scripts.sweep launch \
-            --data_dir=/absolute/path/to/domainbed/data/ \
-            --output_dir=/absolute/path/to/domainbed/results_resnet \
-            --command_launcher multi_gpu \
-            --algorithms DANN \
-            --datasets ColoredMNIST \
-            --single_test_envs \
-            --n_hparams 5 \
-            --n_trials 3
+
+arguments = -c "import os; print('PYTHONPATH:', os.environ.get('PYTHONPATH')); print('PATH:', os.environ.get('PATH')); import domainbed.scripts.sweep; print('DomainBed module imported successfully'); import sys; print('sys.path:', sys.path); sys.exit(0)"
+
 error = /home/yuenchen/Domainbed/dann.err
 output = /home/yuenchen/Domainbed/dann.out
 log = /home/yuenchen/Domainbed/dann.log
