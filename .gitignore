@@ -29,3 +29,6 @@ domainbed/merge_folders.py
 */.ipynb_checkpoints
 */.ipynb_checkpoints/*
 
+*.err
+*.out
+*.log
