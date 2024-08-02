@@ -1,7 +1,6 @@
 executable = /home/yuenchen/anaconda3/envs/isr/bin/python
 
-arguments = -c "import os; print('PYTHONPATH:', os.environ.get('PYTHONPATH')); print('PATH:', os.environ.get('PATH')); import domainbed.scripts.sweep; print('DomainBed module imported successfully'); import sys; print('sys.path:', sys.path); sys.exit(0)"
-
+arguments = -c "import os; print(\"PYTHONPATH:\", os.environ.get(\"PYTHONPATH\")); print(\"PATH:\", os.environ.get(\"PATH\")); import domainbed.scripts.sweep; print(\"DomainBed module imported successfully\"); import sys; print(\"sys.path:\", sys.path); sys.exit(0)"
 error = /home/yuenchen/Domainbed/dann.err
 output = /home/yuenchen/Domainbed/dann.out
 log = /home/yuenchen/Domainbed/dann.log
