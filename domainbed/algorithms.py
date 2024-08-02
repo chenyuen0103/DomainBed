@@ -480,8 +480,8 @@ class CMA(ERM):
 
         for e1 in range(num_envs):
             for e2 in range(e1, num_envs):
-                mask1 = envs == unique_envs[e1]
-                mask2 = envs == unique_envs[e2]
+                # mask1 = envs == unique_envs[e1]
+                # mask2 = envs == unique_envs[e2]
 
                 diff1 = diff_envs[e1]
                 diff2 = diff_envs[e2]
