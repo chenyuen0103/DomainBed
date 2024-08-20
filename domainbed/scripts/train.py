@@ -38,7 +38,8 @@ class EnvDataset(torch.utils.data.Dataset):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Domain generalization')
     parser.add_argument('--device', type=int, default=0)
-    parser.add_argument('--data_dir', type=str, default="../data")
+    # parser.add_argument('--data_dir', type=str, default="../data")
+    parser.add_argument('--data_dir', type=str, default="/data/common/domainbed")
     parser.add_argument('--dataset', type=str, default="ColoredMNIST")
     parser.add_argument('--algorithm', type=str, default="CMA")
     parser.add_argument('--task', type=str, default="domain_generalization",
