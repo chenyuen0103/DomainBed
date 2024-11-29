@@ -23,7 +23,7 @@ import pickle
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Domain generalization')
-    parser.add_argument('--data_dir', type=str, default='domainbed/datasets/')
+    parser.add_argument('--data_dir', type=str, default='domainbed/data/')
     parser.add_argument('--dataset', type=str, default="RotatedMNIST")
     parser.add_argument('--algorithm', type=str, default="ERM")
     parser.add_argument('--task', type=str, default="domain_generalization",
@@ -112,8 +112,8 @@ if __name__ == "__main__":
         device = "cuda"
     else:
         device = "cpu"
-
     if args.dataset in vars(datasets):
+        
         dataset = vars(datasets)[args.dataset](args.data_dir,
             args.test_envs, hparams)
     else:

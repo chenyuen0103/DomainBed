@@ -141,6 +141,7 @@ class CMA(ERM):
         self.classifier = networks.Classifier_nobiases(
             self.featurizer.n_outputs, num_classes, self.hparams['nonlinear_classifier']
         )
+        breakpoint()
 
         # self.classifier = networks.Classifier_nobiases(
         #     768, num_classes, self.hparams['nonlinear_classifier']

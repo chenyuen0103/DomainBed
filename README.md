@@ -84,7 +84,7 @@ Train a model:
 python3 -m domainbed.scripts.train\
        --data_dir=./domainbed/data/MNIST/\
        --algorithm CMA\
-       --dataset ColoredMNIST\
+       --dataset VLCS\
        --test_env 2
 ```
 
