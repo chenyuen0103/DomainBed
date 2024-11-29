@@ -145,6 +145,11 @@ def _hparams(algorithm, dataset, random_seed, model_type='ViT-S'):
     elif algorithm == 'CMA':
         _hparam('grad_alpha', 5000, lambda r: 10 ** r.uniform(1, 4))
         _hparam('hess_beta', 1000, lambda r: 10 ** r.uniform(1, 4))
+        if model_type == 'ResNet':
+            # breakpoint()
+            # divide the grad_alpha and hess_beta by (2048/384) for resnet
+            _hparam('grad_alpha', 5000/((2048/384)), lambda r: 10 ** r.uniform(1, 4) / ((2048/384)))
+            _hparam('hess_beta', 1000/((2048/384)**2), lambda r: 10 ** r.uniform(1, 4) / ((2048/384))**2)
         # _hparam('penalty_anneal_iters', 2500, lambda r: int(r.uniform(0., 5000.)))
         # _hparam('penalty_anneal_iters', 2500, lambda r: int(10 ** r.uniform(2, 4)))
         _hparam('penalty_anneal_iters', 2500, lambda r: int(np.random.choice([500, 1500, 2500, 3500, 4500])))

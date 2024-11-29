@@ -1,0 +1,15 @@
+executable = /home/yuenchen/DomainBed/run_resnet.sh
+error = /home/yuenchen/DomainBed/resnet_pacs_cma.err
+output = /home/yuenchen/DomainBed/resnet_pacs_cma.out
+log = /home/yuenchen/DomainBed/resnet_pacs_cma.log
+request_memory = 40G
+request_disk = 20G
+request_cpus = 1
+request_gpus = 1
+requirements = TARGET.CUDAGlobalMemoryMb  > 40000
+
+# Set the environment
+getenv = True
+environment = "PYTHONPATH=/home/yuenchen/DomainBed:$PYTHONPATH"
+queue
+
