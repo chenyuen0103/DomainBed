@@ -3,7 +3,8 @@ import os
 
 import numpy as np
 import tqdm
-results_dir = 'results_vits_combined_bias'
+# results_dir = 'results_vits_combined_bias'
+results_dir = 'results_hess_mem'
 
 
 # read the results in results_dir/*/results.json

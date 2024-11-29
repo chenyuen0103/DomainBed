@@ -141,7 +141,7 @@ class CMA(ERM):
         self.classifier = networks.Classifier_nobiases(
             self.featurizer.n_outputs, num_classes, self.hparams['nonlinear_classifier']
         )
-        breakpoint()
+        # breakpoint()
 
         # self.classifier = networks.Classifier_nobiases(
         #     768, num_classes, self.hparams['nonlinear_classifier']
@@ -538,13 +538,13 @@ class CMA(ERM):
 
         if beta != 0:
             # start = time.time()
-            if logits.shape[1] < 5:
-                hess_pen = self.hessian_pen(x, logits, env_indices, y)
-            # use hess_pen_mem for memory efficient computation
-            else:
-                _, hess_pen, _ = self.hessian_pen_mem(x, logits, env_indices)
-            # breakpoint()
-            # print(torch.allclose(hess_pen, hess_pen_mem), "Hessian computation is incorrect")
+            # if logits.shape[1] < 5:
+            #     hess_pen = self.hessian_pen(x, logits, env_indices, y)
+            # else:
+            #     _, hess_pen, _ = self.hessian_pen_mem(x, logits, env_indices)
+            hess_pen = self.hessian_pen(x, logits, env_indices, y)
+            # _, hess_pen, _ = self.hessian_pen_mem(x, logits, env_indices)
+
 
 
         # erm_loss = torch.mean(env_erm)
