@@ -538,11 +538,11 @@ class CMA(ERM):
 
         if beta != 0:
             # start = time.time()
-            # if logits.shape[1] < 5:
-            #     hess_pen = self.hessian_pen(x, logits, env_indices, y)
-            # else:
-            #     _, hess_pen, _ = self.hessian_pen_mem(x, logits, env_indices)
-            hess_pen = self.hessian_pen(x, logits, env_indices, y)
+            if logits.shape[1] < 5:
+                hess_pen = self.hessian_pen(x, logits, env_indices, y)
+            else:
+                _, hess_pen, _ = self.hessian_pen_mem(x, logits, env_indices)
+            # hess_pen = self.hessian_pen(x, logits, env_indices, y)
             # _, hess_pen, _ = self.hessian_pen_mem(x, logits, env_indices)
 
 
