@@ -4,9 +4,16 @@ import os
 import numpy as np
 import tqdm
 # results_dir = 'results_vits_combined_bias'
-# results_dir = 'results_hess_mem'
+results_dir = 'results_hess_mem'
 
-results_dir_list = ['results_hess_mem']
+# results_dir_list = [ 'results_vits_combined_bias']
+# results_dir_list = ['results_hess_officehome']
+results_dir_list = ['results_time_mem']
+
+
+
+
+
 
 # read the results in results_dir/*/results.json
 
@@ -34,6 +41,8 @@ for r in records:
     if (dataset, algorithm) not in result:
         result[(dataset, algorithm)] = []
     result[(dataset, algorithm)].append(r)
+    # if r["args"]["algorithm"] == 'Fishr':
+    #     print(r.keys())
 
 averaged_step_time = {}
 averaged_step_mem = {}

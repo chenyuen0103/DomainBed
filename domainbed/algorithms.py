@@ -353,7 +353,8 @@ class CMA(ERM):
         # grad_w /= (grad_w.shape[0] * grad_w.shape[1]) ** 0.25
         # breakpoint()
         # grad_w /= dC ** 0.5
-        grad_w /= C ** 0.5
+        # grad_w /= C ** 0.5
+        grad_w /= C
 
         return grad_w
 
