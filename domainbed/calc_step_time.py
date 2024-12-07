@@ -13,8 +13,6 @@ results_dir_list = ['results_time_mem']
 
 
 
-
-
 # read the results in results_dir/*/results.json
 
 results = {}

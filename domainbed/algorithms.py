@@ -141,7 +141,7 @@ class CMA(ERM):
         self.classifier = networks.Classifier_nobiases(
             self.featurizer.n_outputs, num_classes, self.hparams['nonlinear_classifier']
         )
-        breakpoint()
+        # breakpoint()
 
         # self.classifier = networks.Classifier_nobiases(
         #     768, num_classes, self.hparams['nonlinear_classifier']
@@ -541,11 +541,11 @@ class CMA(ERM):
             # start = time.time()
             if logits.shape[1] < 5:
                 hess_pen = self.hessian_pen(x, logits, env_indices, y)
-            # use hess_pen_mem for memory efficient computation
             else:
                 _, hess_pen, _ = self.hessian_pen_mem(x, logits, env_indices)
-            # breakpoint()
-            # print(torch.allclose(hess_pen, hess_pen_mem), "Hessian computation is incorrect")
+            # hess_pen = self.hessian_pen(x, logits, env_indices, y)
+            # _, hess_pen, _ = self.hessian_pen_mem(x, logits, env_indicesd)
+
 
 
         # erm_loss = torch.mean(env_erm)
@@ -1434,6 +1434,51 @@ class SD(ERM):
 
         return {'loss': loss.item(), 'penalty': penalty.item()}
 
+class dANDMask(ERM):
+    """
+    Learning Explanations that are Hard to Vary [https://arxiv.org/abs/2009.00329]
+    AND-Mask implementation from [https://github.com/gibipara92/learning-explanations-hard-to-vary]
+    """
+
+    def __init__(self, input_shape, num_classes, num_domains, hparams):
+        super(ANDMask, self).__init__(input_shape, num_classes, num_domains, hparams)
+
+        self.tau = hparams["tau"]
+
+    def update(self, minibatches, unlabeled=None):
+        mean_loss = 0
+        param_gradients = [[] for _ in self.network.parameters()]
+        for i, (x, y) in enumerate(minibatches):
+            logits = self.network(x)
+
+            env_loss = F.cross_entropy(logits, y)
+            mean_loss += env_loss.item() / len(minibatches)
+
+            env_grads = autograd.grad(env_loss, self.network.parameters())
+            for grads, env_grad in zip(param_gradients, env_grads):
+                grads.append(env_grad)
+
+        self.optimizer.zero_grad()
+        self.mask_grads(self.tau, param_gradients, self.network.parameters())
+        self.optimizer.step()
+
+        return {'loss': mean_loss}
+
+    def mask_grads(self, tau, gradients, params):
+
+        for param, grads in zip(params, gradients):
+            grads = torch.stack(grads, dim=0)
+            grad_signs = torch.sign(grads)
+            mask = torch.mean(grad_signs, dim=0).abs() >= self.tau
+            mask = mask.to(torch.float32)
+            avg_grad = torch.mean(grads, dim=0)
+
+            mask_t = (mask.sum() / mask.numel())
+            param.grad = mask * avg_grad
+            param.grad *= (1. / (1e-10 + mask_t))
+
+        return 0
+
 class ANDMask(ERM):
     """
     Learning Explanations that are Hard to Vary [https://arxiv.org/abs/2009.00329]
@@ -1478,6 +1523,7 @@ class ANDMask(ERM):
             param.grad *= (1. / (1e-10 + mask_t))
 
         return 0
+    
 
 class IGA(ERM):
     """
