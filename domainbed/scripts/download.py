@@ -1,5 +1,6 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
 
+from collections import defaultdict
 from torchvision.datasets import MNIST
 import xml.etree.ElementTree as ET
 from zipfile import ZipFile
@@ -117,7 +118,7 @@ def download_pacs(data_dir):
     # Original URL: http://www.eecs.qmul.ac.uk/~dl307/project_iccv2017
     full_path = stage_path(data_dir, "PACS")
 
-    download_and_extract('https://drive.google.com/uc?id=1JFr8f805nMUelQWWmfnJR3y4_SYoN5Pd',
+    download_and_extract("https://drive.google.com/uc?id=1JFr8f805nMUelQWWmfnJR3y4_SYoN5Pd",
                          os.path.join(data_dir, "PACS.zip"))
 
     os.rename(os.path.join(data_dir, "kfold"),
@@ -172,12 +173,14 @@ def download_terra_incognita(data_dir):
     full_path = stage_path(data_dir, "terra_incognita")
 
     download_and_extract(
-        "https://lilablobssc.blob.core.windows.net/caltechcameratraps/eccv_18_all_images_sm.tar.gz",
+        "https://storage.googleapis.com/public-datasets-lila/caltechcameratraps/eccv_18_all_images_sm.tar.gz",
         os.path.join(full_path, "terra_incognita_images.tar.gz"))
 
+
     download_and_extract(
-        "https://lilablobssc.blob.core.windows.net/caltechcameratraps/labels/caltech_camera_traps.json.zip",
-        os.path.join(full_path, "caltech_camera_traps.json.zip"))
+        "https://storage.googleapis.com/public-datasets-lila/caltechcameratraps/eccv_18_annotations.tar.gz",
+        os.path.join(full_path, "eccv_18_annotations.tar.gz"))
+
 
     include_locations = ["38", "46", "100", "43"]
 
@@ -187,23 +190,36 @@ def download_terra_incognita(data_dir):
     ]
 
     images_folder = os.path.join(full_path, "eccv_18_all_images_sm/")
-    annotations_file = os.path.join(full_path, "caltech_images_20210113.json")
+    annotations_folder = os.path.join(full_path,"eccv_18_annotation_files/")
+    cis_test_annotations_file = os.path.join(full_path, "eccv_18_annotation_files/cis_test_annotations.json")
+    cis_val_annotations_file =   os.path.join(full_path, "eccv_18_annotation_files/cis_val_annotations.json")
+    train_annotations_file =   os.path.join(full_path, "eccv_18_annotation_files/train_annotations.json")
+    trans_test_annotations_file =   os.path.join(full_path, "eccv_18_annotation_files/trans_test_annotations.json")
+    trans_val_annotations_file =   os.path.join(full_path, "eccv_18_annotation_files/trans_val_annotations.json")
+    annotations_file_list = [cis_test_annotations_file, cis_val_annotations_file, train_annotations_file, trans_test_annotations_file, trans_val_annotations_file]
     destination_folder = full_path
 
     stats = {}
+    data = defaultdict(list)
 
     if not os.path.exists(destination_folder):
         os.mkdir(destination_folder)
 
-    with open(annotations_file, "r") as f:
-        data = json.load(f)
+    for annotations_file in annotations_file_list:
+        annots = {}
+        with open(annotations_file, "r") as f:
+            annots = json.load(f)
+            for k, v in annots.items():
+                data[k].extend(v)
+
+
 
     category_dict = {}
     for item in data['categories']:
         category_dict[item['id']] = item['name']
 
     for image in data['images']:
-        image_location = image['location']
+        image_location = str(image['location'])
 
         if image_location not in include_locations:
             continue
@@ -243,7 +259,8 @@ def download_terra_incognita(data_dir):
                 shutil.copyfile(src_path, dst_path)
 
     shutil.rmtree(images_folder)
-    os.remove(annotations_file)
+    shutil.rmtree(annotations_folder)
+
 
 
 # SVIRO #################################################################
@@ -273,15 +290,15 @@ def download_spawrious(data_dir, remove=True):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Download datasets')
-    parser.add_argument('--data_dir', type=str, required=True)
+    parser.add_argument('--data_dir', default="/projects/bdmr/chenyuen0103/domainbed/datasets", type=str, required=False)
     args = parser.parse_args()
 
-    # download_mnist(args.data_dir)
-    # download_pacs(args.data_dir)
+    download_mnist(args.data_dir)
+    download_pacs(args.data_dir)
     # download_office_home(args.data_dir)
     # download_domain_net(args.data_dir)
     # download_vlcs(args.data_dir)
-    download_terra_incognita(args.data_dir)
+    # download_terra_incognita(args.data_dir)
     # download_spawrious(args.data_dir)
     # download_sviro(args.data_dir)
     # Camelyon17Dataset(root_dir=args.data_dir, download=True)

@@ -39,7 +39,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Domain generalization')
     parser.add_argument('--device', type=int, default=0)
     # parser.add_argument('--data_dir', type=str, default="../data")
-    parser.add_argument('--data_dir', type=str, default="/data/common/domainbed")
+    parser.add_argument('--data_dir', type=str, default = '/projects/bdmr/chenyuen0103/domainbed/datasets')
     parser.add_argument('--dataset', type=str, default="ColoredMNIST")
     parser.add_argument('--algorithm', type=str, default="CMA")
     parser.add_argument('--task', type=str, default="domain_generalization",
@@ -58,12 +58,12 @@ if __name__ == "__main__":
     parser.add_argument('--checkpoint_freq', type=int, default=None,
         help='Checkpoint every N steps. Default is dataset-dependent.')
     parser.add_argument('--test_envs', type=int, nargs='+', default=[0])
-    parser.add_argument('--output_dir', type=str, default="train_output")
+    parser.add_argument('--output_dir', default= '/projects/bdmr/chenyuen0103/domainbed/results_resnet_uai', type=str)
     parser.add_argument('--holdout_fraction', type=float, default=0.2)
     parser.add_argument('--uda_holdout_fraction', type=float, default=0,
         help="For domain adaptation, % of test to use unlabeled for training.")
     parser.add_argument('--skip_model_save', action='store_true')
-    parser.add_argument('--save_model_every_checkpoint', action='store_true')
+    parser.add_argument('--save_model_every_checkpoint', action='store_true', default=True)
     args = parser.parse_args()
 
     # If we ever want to implement checkpointing, just persist these values
@@ -245,7 +245,7 @@ if __name__ == "__main__":
                 for x,_,_ in next(uda_minibatches_iterator)]
         else:
             uda_device = None
-        # breakpoint()
+
         step_vals = algorithm.update(minibatches_device, uda_device)
         checkpoint_vals['step_time'].append(time.time() - step_start_time)
 
@@ -310,6 +310,7 @@ if __name__ == "__main__":
             algorithm_dict = algorithm.state_dict()
             start_step = step + 1
             checkpoint_vals = collections.defaultdict(lambda: [])
+
 
             if args.save_model_every_checkpoint:
                 save_checkpoint(f'model_step{step}.pkl')
