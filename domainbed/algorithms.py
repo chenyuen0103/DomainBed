@@ -172,7 +172,7 @@ class CMA(ERM):
         # Diagonal part
         p_diag = p * (1 - p)  # Shape: [batch_size, num_classes]
         # Off-diagonal part
-        p_off_diag = -p.unsqueeze(2) * p.unsqueeze(1)  # Shape: [batch_size, num_classes, num_classes]
+        p_off_diag = -p.unsqueeze(2) * p.unsqueeze(1)  # Shape: [batch_size, num_cla_classes]
 
         # Fill the diagonal part in off-diagonal tensor
         indices = torch.arange(num_classes)
@@ -180,13 +180,11 @@ class CMA(ERM):
         # Outer product of x
         X_outer = torch.einsum('bi,bj->bij', x, x)  # Shape: [batch_size, d, d]
 
-        H2 = torch.einsum('bkl,bij->bklij', p_off_diag, X_outer)
-        # H2 = H2.sum(0).reshape(dC, dC)  # Shape: [dC, dC]
-        H2 = H2.sum(0).reshape(num_classes, d, num_classes, d)
-        H2 = H2.permute(0, 2, 1, 3).reshape(dC, dC)
-        # Combine the probabilities with the outer product of x
-        # H2 = torch.zeros(dC, dC, device=x.device)
-        #
+        # H2 = torch.einsum('bkl,bij->bklij', p_off_diag, X_outer)
+        # H2 = H2.sum(0).reshape(num_classes, d, num_classes, d)
+        # H2 = H2.permute(0, 2, 1, 3).reshape(dC, dC)
+        H2 = torch.einsum('bkl,bij->klij', p_off_diag, X_outer).reshape(num_classes, d, num_classes, d).permute(0, 2, 1, 3).reshape(dC, dC)
+
         # mini_batch_size = batch_size
         # if num_classes >= 5:
         #     mini_batch_size = 16
@@ -539,8 +537,9 @@ class CMA(ERM):
 
         if beta != 0:
             # start = time.time()
-            if logits.shape[1] < 5:
+            if logits.shape[1] < 11:
                 hess_pen = self.hessian_pen(x, logits, env_indices, y)
+            
             else:
                 _, hess_pen, _ = self.hessian_pen_mem(x, logits, env_indices)
             # hess_pen = self.hessian_pen(x, logits, env_indices, y)

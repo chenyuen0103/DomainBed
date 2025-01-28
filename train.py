@@ -47,7 +47,7 @@ if __name__ == "__main__":
     parser.add_argument('--holdout_fraction', type=float, default=0.2)
     parser.add_argument('--uda_holdout_fraction', type=float, default=0)
     parser.add_argument('--skip_model_save', action='store_true')
-    parser.add_argument('--save_model_every_checkpoint', action='store_true')
+    parser.add_argument('--save_model_every_checkpoint', action='store_true', default=True)
     parser.add_argument('--d_steps_per_g', type=int, default=30)
     parser.add_argument('--train_delta', type=float, default=0.5)
     parser.add_argument('--lr_d', type=float, default=1e-3, help='step size for the maximization optimizer')
@@ -208,20 +208,18 @@ if __name__ == "__main__":
 
     n_steps = args.steps or dataset.N_STEPS
 
-    def save_checkpoint(output_dir, filename, step):
+    def save_checkpoint(filename):
         if args.skip_model_save:
             return
         save_dict = {
             "args": vars(args),
-            "step": step, 
             "model_input_shape": dataset.input_shape,
             "model_num_classes": dataset.num_classes,
             "model_num_domains": len(dataset) - len(args.test_envs),
             "model_hparams": hparams,
-            "model_dict": algorithm.cpu().state_dict()
+            "model_dict": algorithm.state_dict()
         }
-        torch.save(save_dict, os.path.join(output_dir, filename))
-
+        torch.save(save_dict, os.path.join(args.output_dir, filename))
 
     last_results_keys = None
 
@@ -277,17 +275,21 @@ if __name__ == "__main__":
                 f.write(json.dumps(results, sort_keys=True) + "\n")
 
             algorithm_dict = algorithm.state_dict()
+            start_step = step + 1
             checkpoint_vals = collections.defaultdict(lambda: [])
 
-            #if args.save_model_every_checkpoint:
 
-            if step % args.checkpoint_freq == 0 and step != 0:
-                print("saving to checkpoint", 'checkpoint dir: ', args.checkpoint_dir, 'output dir: ', output_dir)
-                save_checkpoint(args.checkpoint_dir, f'model_temp.pkl', step)
-                check_path = os.path.join(args.checkpoint_dir, 'model.pkl')
-                temp_path = os.path.join(args.checkpoint_dir, 'model_temp.pkl')
-                os.replace(temp_path, check_path)
-                save_checkpoint(output_dir, f'model_step{step}.pkl', step)
+            # breakpoint()ㄆ
+            if args.save_model_every_checkpoint:
+                save_checkpoint(f'model_step{step}.pkl')
+
+            # if step % args.checkpoint_freq == 0 and step != 0:
+            #     print("saving to checkpoint", 'checkpoint dir: ', args.checkpoint_dir, 'output dir: ', output_dir)
+            #     save_checkpoint(args.checkpoint_dir, f'model_temp.pkl', step)
+            #     check_path = os.path.join(args.checkpoint_dir, 'model.pkl')
+            #     temp_path = os.path.join(args.checkpoint_dir, 'model_temp.pkl')
+            #     os.replace(temp_path, check_path)
+            #     save_checkpoint(output_dir, f'model_step{step}.pkl', step)
 
     save_checkpoint(output_dir, 'model.pkl', step)
 

@@ -261,7 +261,7 @@ class PACS(MultipleEnvironmentImageFolder):
         super().__init__(self.dir, test_envs, hparams['data_augmentation'], hparams)
 
 class DomainNet(MultipleEnvironmentImageFolder):
-    CHECKPOINT_FREQ = 1000
+    CHECKPOINT_FREQ = 300
     ENVIRONMENTS = ["clip", "info", "paint", "quick", "real", "sketch"]
     def __init__(self, root, test_envs, hparams):
         self.dir = os.path.join(root, "domain_net/")
