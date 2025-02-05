@@ -527,31 +527,50 @@ class CMA(ERM):
         x = self.featurizer(x)
 
         # add a bias term to the features
-
         x = torch.cat([torch.ones(x.shape[0], 1, device=x.device),x], dim=1)
+        if logits.shape[1] >= 60:
+            # Mask feature dimensions (columns) with all-zero values to ensure consistent Hessian dimensions
+            feature_nonzero_mask = (x.abs().sum(dim=0) > 0)  # Identify feature dimensions with non-zero values
+            x = x[:, feature_nonzero_mask]  # Filter out zero feature dimensions
+
+
 
         grad_pen, hess_pen = 0, 0
         if alpha != 0:
             grad_pen = self.grad_pen(x, logits, y, env_indices)
 
-
+        l1_regularization = torch.sum(torch.abs(x)) * 1e-5
         if beta != 0:
+            # reset memory usage
+            # torch.cuda.reset_peak_memory_stats()
             # start = time.time()
-            if logits.shape[1] < 11:
+            if logits.shape[1] < 60:
                 hess_pen = self.hessian_pen(x, logits, env_indices, y)
-            
+                # l1_regularization = 0
             else:
                 _, hess_pen, _ = self.hessian_pen_mem(x, logits, env_indices)
+                # _, hess_pen2, _ = self.hessian_pen_mem_optimized(x, logits, env_indices)
+                # breakpoint()
+                # erm_loss = torch.mean(env_erm)
+
+            # breakpoint()
             # hess_pen = self.hessian_pen(x, logits, env_indices, y)
-            # _, hess_pen, _ = self.hessian_pen_mem(x, logits, env_indicesd)
+            # _, hess_pen, _ = self.hessian_pen_mem(x, logits, env_indices)
+            # print(f"Time taken to compute hessian pen: {time.time() - start}")
+            #print peak memory usage
+            # print(f"Using {torch.cuda.max_memory_allocated() / 1024 ** 2} MB")
 
 
 
-        # erm_loss = torch.mean(env_erm)
+
         erm_loss = F.cross_entropy(logits, y)
-        total_loss = erm_loss + alpha * grad_pen + beta * hess_pen
+        if logits.shape[1] < 60:
+            total_loss = erm_loss + alpha * grad_pen + beta * hess_pen
+        else:
+            total_loss = erm_loss + alpha * grad_pen + beta * hess_pen + l1_regularization
+        return total_loss, erm_loss, grad_pen, hess_pen, l1_regularization
 
-        return total_loss, erm_loss, grad_pen, hess_pen
+
 
     def update(self, minibatches, unlabeled=None):
         all_x = torch.cat([x for x, y, env in minibatches])
@@ -570,26 +589,34 @@ class CMA(ERM):
                 self._init_optimizer()
 
 
-        loss, erm_loss, grad_pen, hess_pen = self.exact_hessian_loss(logits, all_x, all_y, all_envs, alpha=alpha, beta=beta)
+        loss, erm_loss, grad_pen, hess_pen, l1_regularization = self.exact_hessian_loss(logits, all_x, all_y, all_envs, alpha=alpha, beta=beta)
         if isinstance(hess_pen, torch.Tensor):
             hess_pen = hess_pen.item()
         if isinstance(grad_pen, torch.Tensor):
             grad_pen = grad_pen.item()
         self.optimizer.zero_grad()
+        
+        #reset memory usage
+        # torch.cuda.reset_peak_memory_stats()
         # start = time.time()
         loss.backward()
         # print(f"Time taken to compute backward: {time.time() - start}")
+        # print peak memory usage
+        # print(f"Using {torch.cuda.max_memory_allocated() / 1024 ** 2} MB")
 
+        # torch.cuda.reset_peak_memory_stats()
         # start = time.time()
         self.optimizer.step()
         # print(f"Time taken to compute step: {time.time() - start}")
+        # print(f"Using {torch.cuda.max_memory_allocated() / 1024 ** 2} MB")
         self.update_count += 1
         # if 'model_type' in self.hparams and self.hparams['model_type'] == 'ViT-S':
         #     self.scheduler.step()
         # self.scheduler.step()
 
         # return {'loss': loss.item(), 'erm_loss': erm_loss.item(), 'grad_loss': alpha * grad_pen, 'hess_loss': beta * hess_pen}
-        return {'loss': loss.item(), 'erm_loss': erm_loss.item(), 'grad_pen': grad_pen, 'hess_pen': hess_pen}
+        return {'loss': loss.item(), 'erm_loss': erm_loss.item(), 'grad_pen': grad_pen, 'hess_pen': hess_pen, 'l1_reg': l1_regularization.item()}
+
 
     def predict(self, x):
         # breakpoint()

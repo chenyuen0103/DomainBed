@@ -9,22 +9,37 @@ import tqdm
 
 from domainbed.lib.query import Q
 
-def load_records(path):
+# def load_records(path):
+#     records = []
+#     for i, subdir in tqdm.tqdm(list(enumerate(os.listdir(path))),
+#                                ncols=80,
+#                                leave=False):
+#         results_path = os.path.join(path, subdir, "results.jsonl")
+#         # breakpoint()
+#         try:
+#             with open(results_path, "r") as f:
+#                 for line in f:
+#                     records.append(json.loads(line[:-1]))
+#         except IOError:
+#             pass
+
+#     return Q(records)
+
+def load_records(input_dir):
     records = []
-    for i, subdir in tqdm.tqdm(list(enumerate(os.listdir(path))),
-                               ncols=80,
-                               leave=False):
-        results_path = os.path.join(path, subdir, "results.jsonl")
-        # breakpoint()
-        try:
-            with open(results_path, "r") as f:
-                for line in f:
-                    records.append(json.loads(line[:-1]))
-        except IOError:
-            pass
-
-    return Q(records)
-
+    for subdir, dirs, files in os.walk(input_dir):
+        for file in files:
+            if file.endswith(".jsonl"):
+                file_path = os.path.join(subdir, file)
+                with open(file_path, "r") as f:
+                    for line in f:
+                        try:
+                            records.append(json.loads(line[:-1]))
+                        except json.JSONDecodeError as e:
+                            print(f"JSONDecodeError in file: {file_path}")
+                            # print(f"Offending line: {line}")
+                            continue
+    return records
 
 
 def get_grouped_records(records):
