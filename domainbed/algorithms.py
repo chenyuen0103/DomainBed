@@ -115,15 +115,51 @@ class ERM(Algorithm):
         )
 
     def update(self, minibatches, unlabeled=None):
-        all_x = torch.cat([x for x, y in minibatches])
-        all_y = torch.cat([y for x, y in minibatches])
+        all_x = torch.cat([x for x, y, g in minibatches])
+        all_y = torch.cat([y for x, y, g in minibatches])
+        all_envs = torch.cat([g for x, y, g in minibatches])
+        features = self.featurizer(all_x)
+        features_np = features.detach().cpu().numpy()  # shape: (N, feature_dim)
+        envs_np = all_envs.detach().cpu().numpy()         # shape: (N,)
+
+        # ===== Compute Domain-wise First and Second Moments =====
+        unique_envs = np.unique(envs_np)
+        means = {}
+        covs = {}
+        for d in unique_envs:
+            idx = envs_np == d
+            feats_d = features_np[idx]
+            means[d] = np.mean(feats_d, axis=0)
+            # If only one sample is present, np.cov may fail, so we default to zeros.
+            if feats_d.shape[0] > 1:
+                covs[d] = np.cov(feats_d, rowvar=False)
+            else:
+                covs[d] = np.zeros((feats_d.shape[1], feats_d.shape[1]))
+
+
+        # ===== Compute Pairwise Differences Between Domains =====
+        # For each pair of domains, compute:
+        # 1. Euclidean distance between the mean vectors.
+        # 2. Frobenius norm of the difference between the covariance matrices.
+        mean_diffs = []
+        cov_diffs = []
+        for i, d1 in enumerate(unique_envs):
+            for d2 in unique_envs[i+1:]:
+                mean_diff = np.linalg.norm(means[d1] - means[d2])
+                cov_diff = np.linalg.norm(covs[d1] - covs[d2], ord='fro')
+                mean_diffs.append(mean_diff)
+                cov_diffs.append(cov_diff)
+        avg_mean_diff = np.mean(mean_diffs) if len(mean_diffs) > 0 else 0.0
+        avg_cov_diff = np.mean(cov_diffs) if len(cov_diffs) > 0 else 0.0
+
+
         loss = F.cross_entropy(self.predict(all_x), all_y)
 
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
 
-        return {'loss': loss.item()}
+        return {'loss': loss.item(), 'first_moment_diff': avg_mean_diff, 'second_moment_diff': avg_cov_diff}
 
     def predict(self, x):
         return self.network(x)
@@ -141,15 +177,7 @@ class CMA(ERM):
         self.classifier = networks.Classifier_nobiases(
             self.featurizer.n_outputs, num_classes, self.hparams['nonlinear_classifier']
         )
-        # breakpoint()
 
-        # self.classifier = networks.Classifier_nobiases(
-        #     768, num_classes, self.hparams['nonlinear_classifier']
-        # )
-
-
-        # self.proj = nn.Linear(self.featurizer.n_outputs, 768, bias=False)
-        # self.featurizer = nn.Sequential(self.featurizer, self.proj)
         self.network = nn.Sequential(self.featurizer, self.classifier)
         self._init_optimizer()
 
@@ -172,7 +200,7 @@ class CMA(ERM):
         # Diagonal part
         p_diag = p * (1 - p)  # Shape: [batch_size, num_classes]
         # Off-diagonal part
-        p_off_diag = -p.unsqueeze(2) * p.unsqueeze(1)  # Shape: [batch_size, num_classes, num_classes]
+        p_off_diag = -p.unsqueeze(2) * p.unsqueeze(1)  # Shape: [batch_size, num_cla_classes]
 
         # Fill the diagonal part in off-diagonal tensor
         indices = torch.arange(num_classes)
@@ -180,11 +208,11 @@ class CMA(ERM):
         # Outer product of x
         X_outer = torch.einsum('bi,bj->bij', x, x)  # Shape: [batch_size, d, d]
 
+        # H2 = torch.einsum('bkl,bij->bklij', p_off_diag, X_outer)
+        # H2 = H2.sum(0).reshape(num_classes, d, num_classes, d)
+        # H2 = H2.permute(0, 2, 1, 3).reshape(dC, dC)
         H2 = torch.einsum('bkl,bij->klij', p_off_diag, X_outer).reshape(num_classes, d, num_classes, d).permute(0, 2, 1, 3).reshape(dC, dC)
-        # breakpoint()
-        # Combine the probabilities with the outer product of x
-        # H2 = torch.zeros(dC, dC, device=x.device)
-        #
+
         # mini_batch_size = batch_size
         # if num_classes >= 5:
         #     mini_batch_size = 16
@@ -214,114 +242,7 @@ class CMA(ERM):
         # breakpoint()
         # H2 /= dC
         H2 /= num_classes
-
-
-        del x, p_off_diag, X_outer  # Delete large intermediate tensors
-        torch.cuda.empty_cache()
         return H2
-
-
-
-    def hessian2(self, x, logits):
-        """
-        Memory-efficient computation of the Hessian matrix.
-
-        Args:
-            x: Input features (dense tensor), shape: [batch_size, d]
-            logits: Logits (dense tensor), shape: [batch_size, num_classes]
-
-        Returns:
-            H2: Hessian matrix, shape: [num_classes * d, num_classes * d]
-        """
-        x = x.to(dtype=torch.float16)
-        logits = logits.to(dtype=torch.float16)
-        batch_size, d = x.shape  # Shape: [batch_size, d]
-        num_classes = logits.shape[1]  # Number of classes
-        dC = num_classes * d  # Total number of parameters in the flattened gradient
-
-        # Convert logits to probabilities
-        p = F.softmax(logits, dim=1)  # Shape: [batch_size, num_classes]
-
-        # Compute diagonal part: p_k(1-p_k)
-        p_diag = p * (1 - p)  # Shape: [batch_size, num_classes]
-
-        # Compute off-diagonal part: -p_k * p_l
-        p_off_diag = -torch.einsum('bi,bj->bij', p, p)  # Shape: [batch_size, num_classes, num_classes]
-
-        # Fill the diagonal part in the off-diagonal tensor
-        indices = torch.arange(num_classes, device=x.device)
-        p_off_diag[:, indices, indices] = p_diag  # Shape: [batch_size, num_classes, num_classes]
-        # breakpoint()  
-        # Initialize the Hessian to zero
-        # breakpoint()
-        H2 = torch.zeros((num_classes * d, num_classes * d), dtype=torch.float16, device=x.device)
-        memory_usage_bytes = H2.numel() * H2.element_size()
-        memory_usage_mb = memory_usage_bytes / (1024 ** 2)  # Convert bytes to MB       
-        # print(f"Size of Hessian: {H2.shape}")
-        # print(f"Memory usage of H2: {memory_usage_mb:.2f} MB")  
-
-        # Process in chunks to reduce memory usage
-        chunk_size = batch_size
-
-        if num_classes * d > 2 ** 15:
-            chunk_size = max(1, chunk_size // 32)
-        # elif num_classes * d > 2 ** 14:
-        #     chunk_size = max(1, chunk_size // 8)
-        # elif num_classes * d > 2 ** 13:
-        #     chunk_size = max(1, chunk_size // 4)
-        # breakpoint()
-        # chunk_size = chunk_size or batch_size
-
-            # Get GPU memory information
-        # if torch.cuda.is_available():
-        #     total_memory = torch.cuda.get_device_properties(x.device).total_memory
-        #     reserved_memory = torch.cuda.memory_reserved(x.device)
-        #     allocated_memory = torch.cuda.memory_allocated(x.device)
-        #     free_memory = reserved_memory - allocated_memory
-        #     # print({f"Free memory: {free_memory / 1024 ** 2} MB"})
-
-        #     # Estimate a chunk size based on free memory
-        #     memory_per_sample = 4 * d * d * num_classes * num_classes
-        #     chunk_size = max(1, int(free_memory // memory_per_sample))  # Ensure at least one batch is processed
-        #     # breakpoint()
-        # else:
-        #     chunk_size = batch_size  # Default to full batch processing on CPU
-
-        torch.cuda.reset_peak_memory_stats()
-        for start in range(0, batch_size, chunk_size):
-            end = min(start + chunk_size, batch_size)
-
-            # Get the chunk of features and probabilities
-            x_chunk = x[start:end]
-            # print(f"x_chunk memory: {x_chunk.numel() * x_chunk.element_size() / 1024 ** 2:.2f} MB")
-
-            p_off_diag_chunk = p_off_diag[start:end]
-            # print(f"p_off_diag_chunk memory: {p_off_diag_chunk.numel() * p_off_diag_chunk.element_size() / 1024 ** 2:.2f} MB")
-
-            X_outer = torch.bmm(x_chunk.unsqueeze(2), x_chunk.unsqueeze(1))
-            # print(f"X_outer memory: {X_outer.numel() * X_outer.element_size() / 1024 ** 2:.2f} MB")
-            # breakpoint()
-            # H2_chunk = torch.einsum('bkl,bij->bklij', p_off_diag_chunk, X_outer)
-            # print(f"H2_chunk memory (intermediate): {H2_chunk.numel() * H2_chunk.element_size() / 1024 ** 2:.2f} MB")  # Shape: [chunk_size, num_classes, num_classes, d, d]
-
-            # H2_chunk = H2_chunk.sum(dim=0).reshape(num_classes, d, num_classes, d).permute(0, 2, 1, 3).reshape(dC, dC)
-            H2_chunk =  torch.einsum('bkl,bij->klij', p_off_diag_chunk, X_outer).reshape(num_classes, d, num_classes, d).permute(0, 2, 1, 3).reshape(dC, dC)
-
-            # Add the chunk contribution to the final Hessian
-            # H2 += H2_chunk
-            H2.add_(H2_chunk)  # In-place addition to reduce memory usage
-            del H2_chunk, x_chunk, p_off_diag_chunk, X_outer  # Delete large intermediate tensors
-            torch.cuda.empty_cache()  # Clear unused memory from the cache
-        # print(f"Max memory used: {torch.cuda.max_memory_allocated() / 1024 ** 2} MB")
-        # Normalize the Hessian by batch size and number of classes
-        H2 /= batch_size
-        H2 /= num_classes
-
-
-
-        return H2
-
-
 
     def hessian_diag_backpack(self, x, y, model, loss_fn):
         model = extend(model)
@@ -473,7 +394,6 @@ class CMA(ERM):
         # Forward pass
         logits = self.classifier(x)
         loss = F.cross_entropy(logits, y)
-        num_classes = logits.shape[1]
 
         # Compute gradients of loss w.r.t. all parameters
         loss.backward(create_graph=True)
@@ -493,9 +413,7 @@ class CMA(ERM):
             # Fill the Hessian matrix row
             hessian_manual[i] = grad_grad_i.flatten()
 
-        H = hessian_manual/num_classes
-
-        return H
+        return hessian_manual
 
 
 
@@ -530,13 +448,7 @@ class CMA(ERM):
 
     def hessian_pen(self, x, logits, envs, y = None):
         env_hessians = []
-        avg_hessian = None
-        avg_hessian1 = None
         envs_indices_unique = envs.unique()
-        num_envs = len(envs_indices_unique)
-        count = 0
-        hess_pen = 0
-        hess_pen1 = 0
         for e in envs_indices_unique:
             idx = (envs == e).nonzero().squeeze()
             if idx.numel() == 0:
@@ -545,35 +457,27 @@ class CMA(ERM):
             logits_env = logits[idx]
             x_env = x[idx]
             y_env = y[idx]
-            hessian2 = self.hessian(x_env, logits_env)
-            # breakpoint()
-            # hessian2 = self.hessian2(x_env, logits_env)
-            # hessian3 = self.compute_pytorch_hessian(x_env, y_env)
+            hessian = self.hessian(x_env, logits_env)
+            # hessian = self.hessian_diagonal(x_env, logits_env)
+            # hessian = self.hessian_tridiagonal(x_env, logits_env)
+            # hessian_diag_backpack = self.hessian_diag_backpack(x_env, y_env, self.classifier, nn.CrossEntropyLoss())
+            # hessian_tri_diag = self.hessian_tridiagonal(x_env, logits_env)
+            # sub_diag, main_diag, super_diag = self.extract_tridiagonal(hessian)
+            # assert torch.allclose(hessian.diag(), hessian_diag), "Hessian computation is incorrect"
+            # assert torch.allclose(hessian.diag(), hessian_diag_backpack), "Hessian computation is incorrect"
+            env_hessians.append(hessian)
 
-            # assert torch.allclose(hessian, hessian2), "Hessian computation is incorrect"
-            # assert torch.allclose(hessian, hessian3), "Hessian computation is incorrect"
-            env_hessians.append(hessian2)
-            if avg_hessian is None:
-                avg_hessian = hessian2.clone()
-            else:
-                avg_hessian += hessian2
-
-        #     # Update running average
-        #     if avg_hessian1 is None:
-        #         avg_hessian1 = hessian2.clone()
-        #     else:
-        #         avg_hessian1 += (hessian2 - avg_hessian1) / (count + 1)
-
-
-        avg_hessian /= num_envs
-        # avg_hessian = torch.mean(torch.stack(env_hessians), dim=0)
+        avg_hessian = torch.mean(torch.stack(env_hessians), dim=0)
+        hess_pen = 0
         for env_idx, hessian in zip(envs_indices_unique, env_hessians):
             # hessian_pytorch = env_hessians_pytorch[env_idx]
             idx = (envs == env_idx).nonzero().squeeze()
             if idx.numel() == 0:
                 continue
+
             # Compute the Frobenius norm of the difference between the Hessian for this environment and the average Hessian
-            hessian_reg = torch.sum((hessian - avg_hessian) ** 2)
+            hessian_diff = hessian - avg_hessian
+            hessian_reg = torch.norm(hessian_diff, p='fro') ** 2
             num_envs = len(envs_indices_unique)
             hess_pen += hessian_reg / num_envs
 
@@ -586,30 +490,56 @@ class CMA(ERM):
     def hessian_pen_mem(self, x, logits, envs):
         unique_envs = envs.unique()
         num_envs = len(unique_envs)
-        
+        H_H_f = torch.zeros(num_envs, num_envs, device=x.device)
 
-        x_outer_envs = [torch.einsum('bi,bj->bij', x[envs == e], x[envs == e]) for e in unique_envs]
-        diff_envs = []
-        for e in unique_envs:
-            mask = envs == e
+        diff_envs = {}
+        x_outer_envs = {}
+        for e in range(num_envs):
+            mask = envs == unique_envs[e]
+            x_env = x[mask]
+            x_outer_envs[e] = torch.einsum('bi,bj->bij', x_env, x_env)
             logits_env = logits[mask]
             p = F.softmax(logits_env, dim=1)
-            diff_envs.append(torch.diag_embed(p) - torch.einsum('bi,bj->bij', p, p))
 
-        # Compute H_H_f with vectorized operations
-        H_H_f = torch.zeros(num_envs, num_envs, device=x.device, dtype=torch.float16)
+            diag = torch.diag_embed(p)
+            off_diag = torch.einsum('bi,bj->bij', p, p)
+            diff_envs[e] = diag - off_diag
+
+
         for e1 in range(num_envs):
             for e2 in range(e1, num_envs):
-                prob_trace = torch.einsum('bik,cjk->bcij', diff_envs[e1], diff_envs[e2]).diagonal(dim1=-2, dim2=-1).sum(-1)
-                x_trace = torch.einsum('bik,cjk->bcij', x_outer_envs[e1], x_outer_envs[e2]).diagonal(dim1=-2, dim2=-1).sum(-1)
+                # mask1 = envs == unique_envs[e1]
+                # mask2 = envs == unique_envs[e2]
+
+                diff1 = diff_envs[e1]
+                diff2 = diff_envs[e2]
 
 
-                # assert torch.allclose(x_trace, x_trace2), "x_trace computation is incorrect"
-                H_H_f[e1, e2] = torch.einsum('bc,bc->', prob_trace, x_trace) / (x_outer_envs[e1].shape[0] * x_outer_envs[e2].shape[0])
-                H_H_f[e2, e1] = H_H_f[e1, e2]  # Symmetry
+                prob_trace_1_2 = torch.einsum('bik,cjk->bcij', diff1, diff2).diagonal(dim1=-2, dim2=-1).sum(-1)
 
-        # breakpoint()
-        # assert torch.allclose(H_H_f, H_H_f2), "H_H_f computation is incorrect"
+                X_outer1 = x_outer_envs[e1]
+                X_outer2 = x_outer_envs[e2]
+                # x_traces_1_2 = torch.einsum('bik,cjk->bcij', X_outer1, X_outer2).diagonal(dim1=-2, dim2=-1).sum(-1)
+                x_traces_list = []
+                # x_traces_1_2 = torch.zeros(X_outer1.shape[0], X_outer2.shape[0], device=x.device)
+
+                # change this to adjust the batch size
+                mini_batch_size = 16
+
+
+                for i in range(0, X_outer1.shape[0], mini_batch_size):
+                    try:
+                        x_traces_1 = torch.einsum('bik,cjk->bcij', X_outer1[i: i + mini_batch_size], X_outer2).diagonal(dim1=-2, dim2=-1).sum(-1)
+                    except:
+                        x_traces_1 = torch.einsum('bik,cjk->bcij', X_outer1[i:], X_outer2).diagonal(dim1=-2, dim2=-1).sum(-1)
+                    x_traces_list.append(x_traces_1)
+                    # for j in range(i, X_outer2.shape[0]):
+                    # x_traces_1_2[i, j] = torch.matmul(X_outer1[i], X_outer2[j]).trace()
+                x_traces_1_2 = torch.concat(x_traces_list, dim=0)
+
+
+                H_H_f[e1, e2] = torch.einsum('bc,bc->', prob_trace_1_2, x_traces_1_2) / (X_outer1.shape[0] * X_outer2.shape[0])
+                H_H_f[e2, e1] = H_H_f[e1, e2]
 
         f_norm_env = H_H_f.diagonal()
         shared_term = H_H_f.sum() / (num_envs ** 2)
@@ -621,64 +551,15 @@ class CMA(ERM):
         return f_norm_env, sum_h_minus_h_bar_sq, H_H_f
 
 
-
-    def hessian_pen_mem_optimized(self, x, logits, envs):
-        unique_envs, inverse_indices = envs.unique(return_inverse=True)
-        num_envs = unique_envs.size(0)
-        
-        # Count number of samples per environment
-        env_counts = torch.bincount(inverse_indices)
-        
-        # Split x and logits based on environment counts
-        x_split = torch.split(x, env_counts.tolist())
-        logits_split = torch.split(logits, env_counts.tolist())
-        
-        # Compute softmax probabilities for each environment
-        p_split = [F.softmax(logit, dim=1) for logit in logits_split]  # list of [B_e, C]
-        
-        # Compute diff_envs: list of [B_e, C, C]
-        diff_envs = [torch.diag_embed(p) - torch.einsum('bi,bj->bij', p, p) for p in p_split]
-        
-        # Compute x_outer_envs: list of [B_e, D, D]
-        x_outer_envs = [torch.einsum('bi,bj->bij', xi, xi) for xi in x_split]
-        
-        # Initialize H_H_f
-        H_H_f = torch.zeros((num_envs, num_envs), device=x.device, dtype=torch.float16)
-        
-        # Compute H_H_f using nested loops
-        for e1 in range(num_envs):
-            for e2 in range(e1, num_envs):
-                # Compute prob_trace: [B_e1, B_e2]
-                prob_trace = torch.einsum('bik,cjk->bcij', diff_envs[e1], diff_envs[e2]).diagonal(dim1=-2, dim2=-1).sum(-1)  # [B_e1, B_e2]
-                
-                # Compute x_trace: [B_e1, B_e2]
-                x_trace = torch.einsum('bik,cjk->bcij', x_outer_envs[e1], x_outer_envs[e2]).diagonal(dim1=-2, dim2=-1).sum(-1)  # [B_e1, B_e2]
-                
-                # Compute H_H_f[e1, e2]
-                H_H_f[e1, e2] = (prob_trace * x_trace).sum() / (env_counts[e1] * env_counts[e2])
-                H_H_f[e2, e1] = H_H_f[e1, e2]  # Symmetry
-        
-        # Compute the final terms
-        f_norm_env = H_H_f.diagonal()
-        shared_term = H_H_f.sum() / (num_envs ** 2)
-        individual_term = 2 * H_H_f.sum(dim=1) / num_envs
-        sum_h_minus_h_bar_sq = torch.sum(f_norm_env + shared_term - individual_term) / num_envs
-        
-        sum_h_minus_h_bar_sq = sum_h_minus_h_bar_sq/(logits.size(1) ** 2)
-        
-        return f_norm_env, sum_h_minus_h_bar_sq, H_H_f
-    
-
     def exact_hessian_loss(self, logits, x, y, env_indices, alpha=10e-5, beta=10e-5, stats = {}):
         x = self.featurizer(x)
 
         # add a bias term to the features
-
         x = torch.cat([torch.ones(x.shape[0], 1, device=x.device),x], dim=1)
-
-        # Mask feature dimensions (columns) with all-zero values to ensure consistent Hessian dimensions
-        feature_nonzero_mask = (x.abs().sum(dim=0) > 0)  # Identify feature dimensions with non-zero values
-        x = x[:, feature_nonzero_mask]  # Filter out zero feature dimensions
+        if logits.shape[1] >= 70:
+            # Mask feature dimensions (columns) with all-zero values to ensure consistent Hessian dimensions
+            feature_nonzero_mask = (x.abs().sum(dim=0) > 0)  # Identify feature dimensions with non-zero values
+            x = x[:, feature_nonzero_mask]  # Filter out zero feature dimensions
 
 
 
@@ -691,7 +572,7 @@ class CMA(ERM):
             # reset memory usage
             # torch.cuda.reset_peak_memory_stats()
             # start = time.time()
-            if logits.shape[1] < 60:
+            if logits.shape[1] < 70:
                 hess_pen = self.hessian_pen(x, logits, env_indices, y)
                 # l1_regularization = 0
             else:
@@ -711,11 +592,13 @@ class CMA(ERM):
 
 
         erm_loss = F.cross_entropy(logits, y)
-        if logits.shape[1] < 60:
+        if logits.shape[1] < 70:
             total_loss = erm_loss + alpha * grad_pen + beta * hess_pen
         else:
             total_loss = erm_loss + alpha * grad_pen + beta * hess_pen + l1_regularization
         return total_loss, erm_loss, grad_pen, hess_pen, l1_regularization
+
+
 
     def update(self, minibatches, unlabeled=None):
         all_x = torch.cat([x for x, y, env in minibatches])
@@ -723,6 +606,39 @@ class CMA(ERM):
         all_envs = torch.cat([env for x, y, env in minibatches])
         # loss = F.cross_entropy(self.predict(all_x), all_y)
         logits = self.predict(all_x)
+        features = self.featurizer(all_x)
+        features_np = features.detach().cpu().numpy()  # shape: (N, feature_dim)
+        envs_np = all_envs.detach().cpu().numpy()         # shape: (N,)
+
+        # ===== Compute Domain-wise First and Second Moments =====
+        unique_envs = np.unique(envs_np)
+        means = {}
+        covs = {}
+        for d in unique_envs:
+            idx = envs_np == d
+            feats_d = features_np[idx]
+            means[d] = np.mean(feats_d, axis=0)
+            # If only one sample is present, np.cov may fail, so we default to zeros.
+            if feats_d.shape[0] > 1:
+                covs[d] = np.cov(feats_d, rowvar=False)
+            else:
+                covs[d] = np.zeros((feats_d.shape[1], feats_d.shape[1]))
+
+
+        # ===== Compute Pairwise Differences Between Domains =====
+        # For each pair of domains, compute:
+        # 1. Euclidean distance between the mean vectors.
+        # 2. Frobenius norm of the difference between the covariance matrices.
+        mean_diffs = []
+        cov_diffs = []
+        for i, d1 in enumerate(unique_envs):
+            for d2 in unique_envs[i+1:]:
+                mean_diff = np.linalg.norm(means[d1] - means[d2])
+                cov_diff = np.linalg.norm(covs[d1] - covs[d2], ord='fro')
+                mean_diffs.append(mean_diff)
+                cov_diffs.append(cov_diff)
+        avg_mean_diff = np.mean(mean_diffs) if len(mean_diffs) > 0 else 0.0
+        avg_cov_diff = np.mean(cov_diffs) if len(cov_diffs) > 0 else 0.0
 
 
         alpha = 0
@@ -759,9 +675,16 @@ class CMA(ERM):
         #     self.scheduler.step()
         # self.scheduler.step()
 
-        # return {'loss': loss.item(), 'erm_loss': erm_loss.item(), 'grad_loss': alpha * grad_pen, 'hess_loss': beta * hess_pen}
-        return {'loss': loss.item(), 'erm_loss': erm_loss.item(), 'grad_pen': grad_pen, 'hess_pen': hess_pen, 'l1_reg': l1_regularization.item()}
-
+        # return {'loss': loss.item(), 'erm_loss': erm_loss.item(), 'grad_pen': grad_pen, 'hess_pen': hess_pen, 'l1_reg': l1_regularization.item()}
+        return {
+        'loss': loss.item(),
+        'erm_loss': erm_loss.item(),
+        'grad_pen': grad_pen,
+        'hess_pen': hess_pen,
+        'l1_reg': l1_regularization.item(),
+        'first_moment_diff': avg_mean_diff,
+        'second_moment_diff': avg_cov_diff
+    }
     def predict(self, x):
         # breakpoint()
         x = self.featurizer(x)
@@ -1246,7 +1169,6 @@ class MLDG(ERM):
     #
     #     return objective
 
-
 class AbstractMMD(ERM):
     """
     Perform ERM while matching the pair-wise domain feature distributions
@@ -1302,9 +1224,56 @@ class AbstractMMD(ERM):
         penalty = 0
         nmb = len(minibatches)
 
-        features = [self.featurizer(xi) for xi, _ in minibatches]
+        features = [self.featurizer(xi) for xi, _,_ in minibatches]
         classifs = [self.classifier(fi) for fi in features]
-        targets = [yi for _, yi in minibatches]
+        targets = [yi for _, yi,_ in minibatches]
+        all_x = torch.cat([x for x, y,g in minibatches])
+        all_y = torch.cat([y for x, y,g in minibatches])
+        all_envs = torch.cat([g for x, y, g in minibatches])
+        len_minibatches = [x.shape[0] for x, y, g in minibatches]
+
+        
+
+        all_z = self.featurizer(all_x)
+        all_logits = self.classifier(all_z)
+
+        penalty = self.compute_fishr_penalty(all_logits, all_y, len_minibatches)
+        all_nll = F.cross_entropy(all_logits, all_y)
+        features = all_z
+        features_np = features.detach().cpu().numpy()  # shape: (N, feature_dim)
+        envs_np = all_envs.detach().cpu().numpy()         # shape: (N,)
+
+        # ===== Compute Domain-wise First and Second Moments =====
+        unique_envs = np.unique(envs_np)
+        means = {}
+        covs = {}
+        for d in unique_envs:
+            idx = envs_np == d
+            feats_d = features_np[idx]
+            means[d] = np.mean(feats_d, axis=0)
+            # If only one sample is present, np.cov may fail, so we default to zeros.
+            if feats_d.shape[0] > 1:
+                covs[d] = np.cov(feats_d, rowvar=False)
+            else:
+                covs[d] = np.zeros((feats_d.shape[1], feats_d.shape[1]))
+
+
+        # ===== Compute Pairwise Differences Between Domains =====
+        # For each pair of domains, compute:
+        # 1. Euclidean distance between the mean vectors.
+        # 2. Frobenius norm of the difference between the covariance matrices.
+        mean_diffs = []
+        cov_diffs = []
+        for i, d1 in enumerate(unique_envs):
+            for d2 in unique_envs[i+1:]:
+                mean_diff = np.linalg.norm(means[d1] - means[d2])
+                cov_diff = np.linalg.norm(covs[d1] - covs[d2], ord='fro')
+                mean_diffs.append(mean_diff)
+                cov_diffs.append(cov_diff)
+        avg_mean_diff = np.mean(mean_diffs) if len(mean_diffs) > 0 else 0.0
+        avg_cov_diff = np.mean(cov_diffs) if len(cov_diffs) > 0 else 0.0
+
+
 
         for i in range(nmb):
             objective += F.cross_entropy(classifs[i], targets[i])
@@ -1322,7 +1291,7 @@ class AbstractMMD(ERM):
         if torch.is_tensor(penalty):
             penalty = penalty.item()
 
-        return {'loss': objective.item(), 'penalty': penalty}
+        return {'loss': objective.item(), 'penalty': penalty, 'first_moment_diff': avg_mean_diff, 'second_moment_diff': avg_cov_diff}
 
 
 class MMD(AbstractMMD):
@@ -1890,7 +1859,6 @@ class SANDMask(ERM):
             param.grad *= (1. / (1e-10 + mask_t))
 
 
-
 class Fishr(Algorithm):
     "Invariant Gradients variances for Out-of-distribution Generalization"
 
@@ -1927,15 +1895,52 @@ class Fishr(Algorithm):
     def update(self, minibatches, unlabeled=None):
         assert len(minibatches) == self.num_domains
 
-        all_x = torch.cat([x for x, y in minibatches])
-        all_y = torch.cat([y for x, y in minibatches])
-        len_minibatches = [x.shape[0] for x, y in minibatches]
+        all_x = torch.cat([x for x, y,g  in minibatches])
+        all_y = torch.cat([y for x, y,g in minibatches])
+        all_envs = torch.cat([g for x, y, g in minibatches])
+        len_minibatches = [x.shape[0] for x, y, g in minibatches]
+
+        
 
         all_z = self.featurizer(all_x)
         all_logits = self.classifier(all_z)
 
         penalty = self.compute_fishr_penalty(all_logits, all_y, len_minibatches)
         all_nll = F.cross_entropy(all_logits, all_y)
+        features = all_z
+        features_np = features.detach().cpu().numpy()  # shape: (N, feature_dim)
+        envs_np = all_envs.detach().cpu().numpy()         # shape: (N,)
+
+        # ===== Compute Domain-wise First and Second Moments =====
+        unique_envs = np.unique(envs_np)
+        means = {}
+        covs = {}
+        for d in unique_envs:
+            idx = envs_np == d
+            feats_d = features_np[idx]
+            means[d] = np.mean(feats_d, axis=0)
+            # If only one sample is present, np.cov may fail, so we default to zeros.
+            if feats_d.shape[0] > 1:
+                covs[d] = np.cov(feats_d, rowvar=False)
+            else:
+                covs[d] = np.zeros((feats_d.shape[1], feats_d.shape[1]))
+
+
+        # ===== Compute Pairwise Differences Between Domains =====
+        # For each pair of domains, compute:
+        # 1. Euclidean distance between the mean vectors.
+        # 2. Frobenius norm of the difference between the covariance matrices.
+        mean_diffs = []
+        cov_diffs = []
+        for i, d1 in enumerate(unique_envs):
+            for d2 in unique_envs[i+1:]:
+                mean_diff = np.linalg.norm(means[d1] - means[d2])
+                cov_diff = np.linalg.norm(covs[d1] - covs[d2], ord='fro')
+                mean_diffs.append(mean_diff)
+                cov_diffs.append(cov_diff)
+        avg_mean_diff = np.mean(mean_diffs) if len(mean_diffs) > 0 else 0.0
+        avg_cov_diff = np.mean(cov_diffs) if len(cov_diffs) > 0 else 0.0
+
 
         penalty_weight = 0
         if self.update_count >= self.hparams["penalty_anneal_iters"]:
@@ -1951,7 +1956,7 @@ class Fishr(Algorithm):
         objective.backward()
         self.optimizer.step()
 
-        return {'loss': objective.item(), 'nll': all_nll.item(), 'penalty': penalty.item()}
+        return {'loss': objective.item(), 'nll': all_nll.item(), 'penalty': penalty.item(),'first_moment_diff': avg_mean_diff, 'second_moment_diff': avg_cov_diff}
 
     def compute_fishr_penalty(self, all_logits, all_y, len_minibatches):
         dict_grads = self._get_grads(all_logits, all_y)
