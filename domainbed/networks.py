@@ -196,7 +196,6 @@ def Featurizer(input_shape, hparams):
     elif input_shape[1:3] == (224, 224):
         print('Using ResNet')
         return ResNet(input_shape, hparams)
-
     else:
         raise NotImplementedError
 
@@ -227,15 +226,27 @@ def Classifier_nobiases(in_features, out_features, is_nonlinear=False):
 
 
 class WholeFish(nn.Module):
+    # def __init__(self, input_shape, num_classes, hparams, weights=None):
+        # super(WholeFish, self).__init__()
+        # featurizer = Featurizer(input_shape, hparams)
+        # classifier = Classifier(
+        #     featurizer.n_outputs,
+        #     num_classes,
+        #     hparams['nonlinear_classifier'])
+        # self.net = nn.Sequential(
+        #     featurizer, classifier
+        # )
+        # if weights is not None:
+        #     self.load_state_dict(copy.deepcopy(weights))
     def __init__(self, input_shape, num_classes, hparams, weights=None):
         super(WholeFish, self).__init__()
-        featurizer = Featurizer(input_shape, hparams)
+        self.featurizer = Featurizer(input_shape, hparams)  # Store featurizer explicitly
         classifier = Classifier(
-            featurizer.n_outputs,
+            self.featurizer.n_outputs,
             num_classes,
             hparams['nonlinear_classifier'])
         self.net = nn.Sequential(
-            featurizer, classifier
+            self.featurizer, classifier
         )
         if weights is not None:
             self.load_state_dict(copy.deepcopy(weights))

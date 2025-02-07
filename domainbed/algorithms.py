@@ -115,15 +115,51 @@ class ERM(Algorithm):
         )
 
     def update(self, minibatches, unlabeled=None):
-        all_x = torch.cat([x for x, y in minibatches])
-        all_y = torch.cat([y for x, y in minibatches])
+        all_x = torch.cat([x for x, y, g in minibatches])
+        all_y = torch.cat([y for x, y, g in minibatches])
+        all_envs = torch.cat([g for x, y, g in minibatches])
+        features = self.featurizer(all_x)
+        features_np = features.detach().cpu().numpy()  # shape: (N, feature_dim)
+        envs_np = all_envs.detach().cpu().numpy()         # shape: (N,)
+
+        # ===== Compute Domain-wise First and Second Moments =====
+        unique_envs = np.unique(envs_np)
+        means = {}
+        covs = {}
+        for d in unique_envs:
+            idx = envs_np == d
+            feats_d = features_np[idx]
+            means[d] = np.mean(feats_d, axis=0)
+            # If only one sample is present, np.cov may fail, so we default to zeros.
+            if feats_d.shape[0] > 1:
+                covs[d] = np.cov(feats_d, rowvar=False)
+            else:
+                covs[d] = np.zeros((feats_d.shape[1], feats_d.shape[1]))
+
+
+        # ===== Compute Pairwise Differences Between Domains =====
+        # For each pair of domains, compute:
+        # 1. Euclidean distance between the mean vectors.
+        # 2. Frobenius norm of the difference between the covariance matrices.
+        mean_diffs = []
+        cov_diffs = []
+        for i, d1 in enumerate(unique_envs):
+            for d2 in unique_envs[i+1:]:
+                mean_diff = np.linalg.norm(means[d1] - means[d2])
+                cov_diff = np.linalg.norm(covs[d1] - covs[d2], ord='fro')
+                mean_diffs.append(mean_diff)
+                cov_diffs.append(cov_diff)
+        avg_mean_diff = np.mean(mean_diffs) if len(mean_diffs) > 0 else 0.0
+        avg_cov_diff = np.mean(cov_diffs) if len(cov_diffs) > 0 else 0.0
+
+
         loss = F.cross_entropy(self.predict(all_x), all_y)
 
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
 
-        return {'loss': loss.item()}
+        return {'loss': loss.item(), 'first_moment_diff': avg_mean_diff, 'second_moment_diff': avg_cov_diff}
 
     def predict(self, x):
         return self.network(x)
@@ -141,15 +177,7 @@ class CMA(ERM):
         self.classifier = networks.Classifier_nobiases(
             self.featurizer.n_outputs, num_classes, self.hparams['nonlinear_classifier']
         )
-        # breakpoint()
 
-        # self.classifier = networks.Classifier_nobiases(
-        #     768, num_classes, self.hparams['nonlinear_classifier']
-        # )
-
-
-        # self.proj = nn.Linear(self.featurizer.n_outputs, 768, bias=False)
-        # self.featurizer = nn.Sequential(self.featurizer, self.proj)
         self.network = nn.Sequential(self.featurizer, self.classifier)
         self._init_optimizer()
 
@@ -578,6 +606,39 @@ class CMA(ERM):
         all_envs = torch.cat([env for x, y, env in minibatches])
         # loss = F.cross_entropy(self.predict(all_x), all_y)
         logits = self.predict(all_x)
+        features = self.featurizer(all_x)
+        features_np = features.detach().cpu().numpy()  # shape: (N, feature_dim)
+        envs_np = all_envs.detach().cpu().numpy()         # shape: (N,)
+
+        # ===== Compute Domain-wise First and Second Moments =====
+        unique_envs = np.unique(envs_np)
+        means = {}
+        covs = {}
+        for d in unique_envs:
+            idx = envs_np == d
+            feats_d = features_np[idx]
+            means[d] = np.mean(feats_d, axis=0)
+            # If only one sample is present, np.cov may fail, so we default to zeros.
+            if feats_d.shape[0] > 1:
+                covs[d] = np.cov(feats_d, rowvar=False)
+            else:
+                covs[d] = np.zeros((feats_d.shape[1], feats_d.shape[1]))
+
+
+        # ===== Compute Pairwise Differences Between Domains =====
+        # For each pair of domains, compute:
+        # 1. Euclidean distance between the mean vectors.
+        # 2. Frobenius norm of the difference between the covariance matrices.
+        mean_diffs = []
+        cov_diffs = []
+        for i, d1 in enumerate(unique_envs):
+            for d2 in unique_envs[i+1:]:
+                mean_diff = np.linalg.norm(means[d1] - means[d2])
+                cov_diff = np.linalg.norm(covs[d1] - covs[d2], ord='fro')
+                mean_diffs.append(mean_diff)
+                cov_diffs.append(cov_diff)
+        avg_mean_diff = np.mean(mean_diffs) if len(mean_diffs) > 0 else 0.0
+        avg_cov_diff = np.mean(cov_diffs) if len(cov_diffs) > 0 else 0.0
 
 
         alpha = 0
@@ -614,8 +675,16 @@ class CMA(ERM):
         #     self.scheduler.step()
         # self.scheduler.step()
 
-        # return {'loss': loss.item(), 'erm_loss': erm_loss.item(), 'grad_loss': alpha * grad_pen, 'hess_loss': beta * hess_pen}
-        return {'loss': loss.item(), 'erm_loss': erm_loss.item(), 'grad_pen': grad_pen, 'hess_pen': hess_pen, 'l1_reg': l1_regularization.item()}
+        # return {'loss': loss.item(), 'erm_loss': erm_loss.item(), 'grad_pen': grad_pen, 'hess_pen': hess_pen, 'l1_reg': l1_regularization.item()}
+        return {
+        'loss': loss.item(),
+        'erm_loss': erm_loss.item(),
+        'grad_pen': grad_pen,
+        'hess_pen': hess_pen,
+        'l1_reg': l1_regularization.item(),
+        'first_moment_diff': avg_mean_diff,
+        'second_moment_diff': avg_cov_diff
+    }
 
 
     def predict(self, x):
@@ -668,9 +737,48 @@ class Fish(Algorithm):
         return meta_weights
 
     def update(self, minibatches, unlabeled=None):
+        all_x = torch.cat([x for x, y, env in minibatches])
+        all_y = torch.cat([y for x, y, env in minibatches])
+        all_envs = torch.cat([env for x, y, env in minibatches])
+        # loss = F.cross_entropy(self.predict(all_x), all_y)
+        logits = self.predict(all_x)
+        features = self.network.featurizer(all_x)
+        features_np = features.detach().cpu().numpy()  # shape: (N, feature_dim)
+        envs_np = all_envs.detach().cpu().numpy()         # shape: (N,)
+
+        # ===== Compute Domain-wise First and Second Moments =====
+        unique_envs = np.unique(envs_np)
+        means = {}
+        covs = {}
+        for d in unique_envs:
+            idx = envs_np == d
+            feats_d = features_np[idx]
+            means[d] = np.mean(feats_d, axis=0)
+            # If only one sample is present, np.cov may fail, so we default to zeros.
+            if feats_d.shape[0] > 1:
+                covs[d] = np.cov(feats_d, rowvar=False)
+            else:
+                covs[d] = np.zeros((feats_d.shape[1], feats_d.shape[1]))
+
+
+        # ===== Compute Pairwise Differences Between Domains =====
+        # For each pair of domains, compute:
+        # 1. Euclidean distance between the mean vectors.
+        # 2. Frobenius norm of the difference between the covariance matrices.
+        mean_diffs = []
+        cov_diffs = []
+        for i, d1 in enumerate(unique_envs):
+            for d2 in unique_envs[i+1:]:
+                mean_diff = np.linalg.norm(means[d1] - means[d2])
+                cov_diff = np.linalg.norm(covs[d1] - covs[d2], ord='fro')
+                mean_diffs.append(mean_diff)
+                cov_diffs.append(cov_diff)
+        avg_mean_diff = np.mean(mean_diffs) if len(mean_diffs) > 0 else 0.0
+        avg_cov_diff = np.mean(cov_diffs) if len(cov_diffs) > 0 else 0.0
+
         self.create_clone(minibatches[0][0].device)
 
-        for x, y in minibatches:
+        for x, y, g in minibatches:
             loss = F.cross_entropy(self.network_inner(x), y)
             self.optimizer_inner.zero_grad()
             loss.backward()
@@ -684,7 +792,7 @@ class Fish(Algorithm):
         )
         self.network.reset_weights(meta_weights)
 
-        return {'loss': loss.item()}
+        return {'loss': loss.item(), 'first_moment_diff': avg_mean_diff, 'second_moment_diff': avg_cov_diff}
 
     def predict(self, x):
         return self.network(x)
@@ -1161,6 +1269,53 @@ class AbstractMMD(ERM):
         features = [self.featurizer(xi) for xi, _ in minibatches]
         classifs = [self.classifier(fi) for fi in features]
         targets = [yi for _, yi in minibatches]
+        all_x = torch.cat([x for x, y,g in minibatches])
+        all_y = torch.cat([y for x, y,g in minibatches])
+        all_envs = torch.cat([g for x, y, g in minibatches])
+        len_minibatches = [x.shape[0] for x, y, g in minibatches]
+
+        
+
+        all_z = self.featurizer(all_x)
+        all_logits = self.classifier(all_z)
+
+        penalty = self.compute_fishr_penalty(all_logits, all_y, len_minibatches)
+        all_nll = F.cross_entropy(all_logits, all_y)
+        features = all_z
+        features_np = features.detach().cpu().numpy()  # shape: (N, feature_dim)
+        envs_np = all_envs.detach().cpu().numpy()         # shape: (N,)
+
+        # ===== Compute Domain-wise First and Second Moments =====
+        unique_envs = np.unique(envs_np)
+        means = {}
+        covs = {}
+        for d in unique_envs:
+            idx = envs_np == d
+            feats_d = features_np[idx]
+            means[d] = np.mean(feats_d, axis=0)
+            # If only one sample is present, np.cov may fail, so we default to zeros.
+            if feats_d.shape[0] > 1:
+                covs[d] = np.cov(feats_d, rowvar=False)
+            else:
+                covs[d] = np.zeros((feats_d.shape[1], feats_d.shape[1]))
+
+
+        # ===== Compute Pairwise Differences Between Domains =====
+        # For each pair of domains, compute:
+        # 1. Euclidean distance between the mean vectors.
+        # 2. Frobenius norm of the difference between the covariance matrices.
+        mean_diffs = []
+        cov_diffs = []
+        for i, d1 in enumerate(unique_envs):
+            for d2 in unique_envs[i+1:]:
+                mean_diff = np.linalg.norm(means[d1] - means[d2])
+                cov_diff = np.linalg.norm(covs[d1] - covs[d2], ord='fro')
+                mean_diffs.append(mean_diff)
+                cov_diffs.append(cov_diff)
+        avg_mean_diff = np.mean(mean_diffs) if len(mean_diffs) > 0 else 0.0
+        avg_cov_diff = np.mean(cov_diffs) if len(cov_diffs) > 0 else 0.0
+
+
 
         for i in range(nmb):
             objective += F.cross_entropy(classifs[i], targets[i])
@@ -1178,7 +1333,7 @@ class AbstractMMD(ERM):
         if torch.is_tensor(penalty):
             penalty = penalty.item()
 
-        return {'loss': objective.item(), 'penalty': penalty}
+        return {'loss': objective.item(), 'penalty': penalty, 'first_moment_diff': avg_mean_diff, 'second_moment_diff': avg_cov_diff}
 
 
 class MMD(AbstractMMD):
@@ -1783,15 +1938,52 @@ class Fishr(Algorithm):
     def update(self, minibatches, unlabeled=None):
         assert len(minibatches) == self.num_domains
 
-        all_x = torch.cat([x for x, y in minibatches])
-        all_y = torch.cat([y for x, y in minibatches])
-        len_minibatches = [x.shape[0] for x, y in minibatches]
+        all_x = torch.cat([x for x, y,g in minibatches])
+        all_y = torch.cat([y for x, y,g in minibatches])
+        all_envs = torch.cat([g for x, y, g in minibatches])
+        len_minibatches = [x.shape[0] for x, y, g in minibatches]
+
+        
 
         all_z = self.featurizer(all_x)
         all_logits = self.classifier(all_z)
 
         penalty = self.compute_fishr_penalty(all_logits, all_y, len_minibatches)
         all_nll = F.cross_entropy(all_logits, all_y)
+        features = all_z
+        features_np = features.detach().cpu().numpy()  # shape: (N, feature_dim)
+        envs_np = all_envs.detach().cpu().numpy()         # shape: (N,)
+
+        # ===== Compute Domain-wise First and Second Moments =====
+        unique_envs = np.unique(envs_np)
+        means = {}
+        covs = {}
+        for d in unique_envs:
+            idx = envs_np == d
+            feats_d = features_np[idx]
+            means[d] = np.mean(feats_d, axis=0)
+            # If only one sample is present, np.cov may fail, so we default to zeros.
+            if feats_d.shape[0] > 1:
+                covs[d] = np.cov(feats_d, rowvar=False)
+            else:
+                covs[d] = np.zeros((feats_d.shape[1], feats_d.shape[1]))
+
+
+        # ===== Compute Pairwise Differences Between Domains =====
+        # For each pair of domains, compute:
+        # 1. Euclidean distance between the mean vectors.
+        # 2. Frobenius norm of the difference between the covariance matrices.
+        mean_diffs = []
+        cov_diffs = []
+        for i, d1 in enumerate(unique_envs):
+            for d2 in unique_envs[i+1:]:
+                mean_diff = np.linalg.norm(means[d1] - means[d2])
+                cov_diff = np.linalg.norm(covs[d1] - covs[d2], ord='fro')
+                mean_diffs.append(mean_diff)
+                cov_diffs.append(cov_diff)
+        avg_mean_diff = np.mean(mean_diffs) if len(mean_diffs) > 0 else 0.0
+        avg_cov_diff = np.mean(cov_diffs) if len(cov_diffs) > 0 else 0.0
+
 
         penalty_weight = 0
         if self.update_count >= self.hparams["penalty_anneal_iters"]:
@@ -1807,7 +1999,7 @@ class Fishr(Algorithm):
         objective.backward()
         self.optimizer.step()
 
-        return {'loss': objective.item(), 'nll': all_nll.item(), 'penalty': penalty.item()}
+        return {'loss': objective.item(), 'nll': all_nll.item(), 'penalty': penalty.item(),'first_moment_diff': avg_mean_diff, 'second_moment_diff': avg_cov_diff}
 
     def compute_fishr_penalty(self, all_logits, all_y, len_minibatches):
         dict_grads = self._get_grads(all_logits, all_y)
@@ -2326,6 +2518,41 @@ class AbstractCAD(Algorithm):
             for i, (x, y) in enumerate(minibatches)
         ])
 
+        features = self.featurizer(all_x)
+        features_np = features.detach().cpu().numpy()  # shape: (N, feature_dim)
+        envs_np = all_envs.detach().cpu().numpy()         # shape: (N,)
+
+        # ===== Compute Domain-wise First and Second Moments =====
+        unique_envs = np.unique(envs_np)
+        means = {}
+        covs = {}
+        for d in unique_envs:
+            idx = envs_np == d
+            feats_d = features_np[idx]
+            means[d] = np.mean(feats_d, axis=0)
+            # If only one sample is present, np.cov may fail, so we default to zeros.
+            if feats_d.shape[0] > 1:
+                covs[d] = np.cov(feats_d, rowvar=False)
+            else:
+                covs[d] = np.zeros((feats_d.shape[1], feats_d.shape[1]))
+
+
+        # ===== Compute Pairwise Differences Between Domains =====
+        # For each pair of domains, compute:
+        # 1. Euclidean distance between the mean vectors.
+        # 2. Frobenius norm of the difference between the covariance matrices.
+        mean_diffs = []
+        cov_diffs = []
+        for i, d1 in enumerate(unique_envs):
+            for d2 in unique_envs[i+1:]:
+                mean_diff = np.linalg.norm(means[d1] - means[d2])
+                cov_diff = np.linalg.norm(covs[d1] - covs[d2], ord='fro')
+                mean_diffs.append(mean_diff)
+                cov_diffs.append(cov_diff)
+        avg_mean_diff = np.mean(mean_diffs) if len(mean_diffs) > 0 else 0.0
+        avg_cov_diff = np.mean(cov_diffs) if len(cov_diffs) > 0 else 0.0
+
+        # ===== Compute Domain Bottleneck Loss =====
         bn_loss = self.bn_loss(all_z, all_y, all_d)
         clf_out = self.classifier(all_z)
         clf_loss = F.cross_entropy(clf_out, all_y)
@@ -2335,7 +2562,8 @@ class AbstractCAD(Algorithm):
         total_loss.backward()
         self.optimizer.step()
 
-        return {"clf_loss": clf_loss.item(), "bn_loss": bn_loss.item(), "total_loss": total_loss.item()}
+        return {"clf_loss": clf_loss.item(), "bn_loss": bn_loss.item(), "total_loss": total_loss.item(),
+                "first_moment_diff": avg_mean_diff, "second_moment__diff": avg_cov_diff}
 
     def predict(self, x):
         return self.classifier(self.featurizer(x))

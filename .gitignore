@@ -32,3 +32,5 @@ domainbed/merge_folders.py
 *.err
 *.out
 *.log
+
+domainbed/uai_plot*

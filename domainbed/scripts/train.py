@@ -236,7 +236,7 @@ if __name__ == "__main__":
     for step in range(start_step, n_steps):
         step_start_time = time.time()
         # breakpoint()
-        if args.algorithm == "CMA":
+        if args.algorithm in ["CMA", "ERM", "CORAL", "Fishr", 'Fish']:
             minibatches_device = [(x.to(device), y.to(device), g.to(device)) for x,y,g in next(train_minibatches_iterator)]
         else:
             minibatches_device = [(x.to(device), y.to(device)) for x,y,_ in next(train_minibatches_iterator)]
@@ -293,6 +293,8 @@ if __name__ == "__main__":
                         else:
                             print(f"Key: {full_key} | Type: {type(value)}")
 
+            # Convert any NumPy float32 values to Python float before serialization
+            results = {k: (v.item() if isinstance(v, np.generic) else v) for k, v in results.items()}
 
             with open(epochs_path, 'a') as f:
                 # inspect_data_types(results)
