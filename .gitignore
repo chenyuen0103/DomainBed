@@ -34,3 +34,5 @@ domainbed/merge_folders.py
 *.log
 
 domainbed/uai_plot*
+
+*pdf
