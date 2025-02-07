@@ -5,11 +5,13 @@ import torch
 from itertools import product
 
 
-algorithms = ["ERM", "Fishr", "Fish", "CMA"]
-datasets = ["ColoredMNIST", "VLCS"]
+algorithms = ["ERM", "Fishr", "CMA"]
+datasets = ["ColoredMNIST", 'VLCS', 'PACS']
 test_envs = {
-    "ColoredMNIST": [0, 1, 2],
-    "VLCS": [0, 1, 2, 3]
+    "ColoredMNIST": [0,1,2],
+    "VLCS": [0, 1, 2, 3],
+    "PACS": [0, 1, 2, 3],
+    "TerraIncognita": [0, 1, 2, 3],
 }
 data_dir = "/data/common/domainbed/"
 
@@ -34,6 +36,7 @@ def multi_gpu_launcher(commands):
             if proc is None or proc.poll() is not None:
                 # Launch a new command on this GPU
                 cmd = commands.pop(0)
+                print(f'Launching on GPU {gpu_idx}: {cmd}', flush=True)
                 new_proc = subprocess.Popen(
                     f'CUDA_VISIBLE_DEVICES={gpu_idx} {cmd}', shell=True)
                 procs_by_gpu[idx] = new_proc
@@ -51,16 +54,29 @@ def generate_commands():
         for test_env in test_envs[dataset]:
             output_dir = f"./domainbed/uai_plot_{dataset}_{algorithm}_testenv{test_env}"
             
-            # Skip if "done" file exists
-            done_file = os.path.join(output_dir, "done")
-            if os.path.exists(done_file):
-                print(f"Skipping {output_dir} (already done)")
-                continue
 
             cmd = (f"python3 -m domainbed.scripts.train "
                    f"--algorithm {algorithm} --dataset {dataset} "
                    f"--test_env {test_env} --data_dir={data_dir} "
                    f"--output_dir={output_dir}")
+            if algorithm == 'CMA':
+                cmd += f" --hparams '{{\"penalty_anneal_iters\":1500}}'"
+                output_dir_1500 = f"{output_dir}_1500"
+                cmd = cmd.replace(f"--output_dir={output_dir}", f"--output_dir={output_dir_1500}")
+
+                # Skip if "done" file exists
+                done_file = os.path.join(output_dir_1500, "done")
+                if os.path.exists(done_file):
+                    print(f"Skipping {output_dir_1500} (already done)")
+                    continue
+                            # Skip if "done" file exists
+            else:
+                done_file = os.path.join(output_dir, "done")
+                if os.path.exists(done_file):
+                    print(f"Skipping {output_dir} (already done)")
+                    continue
+            
+
             commands.append(cmd)
     return commands
 

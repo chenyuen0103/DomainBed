@@ -3,6 +3,8 @@ import argparse
 import os
 import torch
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')  # or "TkAgg" / "WXAgg" / "MacOSX"
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 import umap.umap_ as umap
@@ -17,9 +19,12 @@ from domainbed.lib import misc
 from domainbed.lib.fast_data_loader import InfiniteDataLoader, FastDataLoader
 import pickle
 from itertools import product
+import itertools
 
 import matplotlib.patches as mpatches
 import matplotlib.lines as mlines
+
+plt.ion()  # Turn on interactive mode
 
 
 class EnvDataset(torch.utils.data.Dataset):
@@ -55,95 +60,7 @@ def extract_features(model, dataloader, device, args={}):
 
     return features, labels, domains
 
-def plot_features_pca(features, labels, domains, args={}):
-    """Visualize features in 2D using PCA."""
-    pca = PCA(n_components=2)
-    features_2d = pca.fit_transform(features)
-    markers = ['o', '+', 's', '^', 'D']  # Add more if you have more classes
-    colors = ['r', 'g', 'b', 'c', 'm', 'y', 'k']
-    plt.figure(figsize=(8, 6))
-
-    for d in np.unique(domains):
-        for c in np.unique(labels):
-            idx = (labels == c) & (domains == d)
-            plt.scatter(features_2d[idx, 0], features_2d[idx, 1], 
-                        label=f"Env {d}, Cls {c}", alpha=0.5,  color=colors[c%len(colors)],marker=markers[d % len(markers)])
-    
-    plt.title(f"PCA - Feature Visualization {f'(trained) ' if args.trained else ''}")
-    plt.xlabel("PC1")
-    plt.ylabel("PC2")
-    plt.legend()
-    plt.savefig(os.path.join(args.save_dir, f"{args.data}_{args.algorithm}{'_trained' if args.trained else ''}_testenv{args.test_envs[0]}_pca.pdf"), format='pdf')
-    plt.show()
-
-def plot_features_umap(features, labels, domains, args={}):
-    """Visualize features in 2D using UMAP."""
-    reducer = umap.UMAP(n_components=2, random_state=42)
-    features_2d = reducer.fit_transform(features)
-    markers = ['o', '+', 's', '^', 'D']
-    colors = ['r', 'g', 'b', 'c', 'm', 'y', 'k']
-    plt.figure(figsize=(8, 6))
-    for d in np.unique(domains):
-        for c in np.unique(labels):
-            idx = (labels == c) & (domains == d)
-            plt.scatter(features_2d[idx, 0], features_2d[idx, 1], 
-                        label=f"Env {d}, Cls {c}", alpha=0.5,  color=colors[c%len(colors)],marker=markers[d % len(markers)])
-    
-    plt.title(f"UMAP - Feature Visualization {f'(trained) ' if args.trained else ''}")
-    plt.xlabel("UMAP1")
-    plt.ylabel("UMAP2")
-    plt.legend()
-    plt.savefig(os.path.join(args.save_dir, f"{args.data}_{args.algorithm}{'_trained' if args.trained else ''}_testenv{args.test_envs[0]}_umap.pdf"), format='pdf')
-    plt.show()
-
-# --- New 3D Plotting Functions ---
-
-def plot_features_pca_3d(features, labels, domains, args={}):
-    """Visualize features in 3D using PCA."""
-    pca = PCA(n_components=3)
-    features_3d = pca.fit_transform(features)
-    markers = ['o', '+', 's', '^', 'D']  # Extend this list as needed
-    colors = ['r', 'g', 'b', 'c', 'm', 'y', 'k']
-    fig = plt.figure(figsize=(10, 8))
-    ax = fig.add_subplot(111, projection='3d')
-    for d in np.unique(domains):
-        for c in np.unique(labels):
-            idx = (labels == c) & (domains == d)
-            ax.scatter(features_3d[idx, 0], features_3d[idx, 1], features_3d[idx, 2],
-                       label=f"Env {d}, Cls {c} {f'(Unseen)' if d in args.test_envs else ''}", alpha=0.5, color=colors[c%len(colors)],marker=markers[d % len(markers)])
-    
-    ax.set_title(f"{args.data.capitalize()}--PCA Features {f'(trained) ' if args.trained else ''}")
-    ax.set_xlabel("PC1")
-    ax.set_ylabel("PC2")
-    ax.set_zlabel("PC3")
-    plt.legend()
-    plt.savefig(os.path.join(args.save_dir, f"{args.data}_{args.algorithm}{'_trained' if args.trained else ''}_testenv{args.test_envs[0]}_pca3d.pdf"), format='pdf')
-    plt.show()
-
-def plot_features_umap_3d(features, labels, domains, args={}):
-    """Visualize features in 3D using UMAP."""
-    reducer = umap.UMAP(n_components=3, random_state=42)
-    features_3d = reducer.fit_transform(features)
-    markers = ['o', '+', 's', '^', 'D']
-    colors = ['r', 'g', 'b', 'c', 'm', 'y', 'k']
-
-    fig = plt.figure(figsize=(10, 8))
-    ax = fig.add_subplot(111, projection='3d')
-    for d in np.unique(domains):
-        for c in np.unique(labels):
-            idx = (labels == c) & (domains == d)
-            ax.scatter(features_3d[idx, 0], features_3d[idx, 1], features_3d[idx, 2],
-                       label=f"Env {d}, Cls {c}", alpha=0.5, color=colors[c%len(colors)],marker=markers[d % len(markers)])
-    
-    ax.set_title(f"{args.data.capitalize()}--UMAP Features {f'(trained) ' if args.trained else ''}")
-    ax.set_xlabel("UMAP1")
-    ax.set_ylabel("UMAP2")
-    ax.set_zlabel("UMAP3")
-    plt.legend()
-    plt.savefig(os.path.join(args.save_dir, f"{args.data}_{args.algorithm}{'_trained' if args.trained else ''}_testenv{args.test_envs[0]}_umap_3d.pdf"), format='pdf')
-    plt.show()
-
-def plot_features(features, labels, domains, method='pca', dims=2, args=None):
+def plot_features(features, labels, domains, method='pca', dims=2, args=None, subclass_suffix=''):
     """
     Plots features in 2D or 3D using PCA/UMAP and 
     combines class color + domain shape in one single legend.
@@ -178,7 +95,7 @@ def plot_features(features, labels, domains, method='pca', dims=2, args=None):
 
     unique_domains = np.unique(domains)
     unique_labels = np.unique(labels)
-
+    
     # --- 1) Scatter plot points WITHOUT labels ---
     for d in unique_domains:
         for c in unique_labels:
@@ -212,7 +129,7 @@ def plot_features(features, labels, domains, method='pca', dims=2, args=None):
         domain_marker = mlines.Line2D(
             [], [], color='black', marker=markers[d % len(markers)],
             linestyle='None', markersize=8,
-            label=f"Env {d}"
+            label=f"Env {d}{f' (Unseen)' if d in args.test_envs else ''}"
         )
         domain_handles.append(domain_marker)
 
@@ -241,7 +158,8 @@ def plot_features(features, labels, domains, method='pca', dims=2, args=None):
     test_env_str = args.test_envs[0]
     suffix = '_trained' if args.trained else ''
     file_suffix = f"_{method.lower()}{dims}d"
-    fig_name = f"{data_name}_{algo_name}{suffix}_testenv{test_env_str}{file_suffix}.pdf"
+    # breakpoint()
+    fig_name = f"{data_name}_{algo_name}{suffix}_testenv{test_env_str}{file_suffix}{subclass_suffix}.pdf"
 
     save_dir = args.save_dir
     os.makedirs(save_dir, exist_ok=True)
@@ -259,7 +177,7 @@ def main():
                         help="Dataset name (e.g., ColoredMNIST, RotatedMNIST)")
     parser.add_argument("--data_dir", type=str, default="/data/common/domainbed",
                         help="Directory containing dataset")
-    parser.add_argument("--save_dir", type=str, default="./plots",
+    parser.add_argument("--save_dir", type=str, default="./sub_plots",
                         help="Directory to save the plots")
     parser.add_argument("--algorithm", type=str, default="CMA",
                         choices=algorithms.ALGORITHMS,
@@ -280,170 +198,204 @@ def main():
 
 
 
-    # if not args.model_dir:
-    #     args.model_dir = f"./domainbed/uai_plot_{args.data}_{args.algorithm}_testenv{args.test_envs[0]}"
-    # if not os.path.exists(os.path.join(args.model_dir, "model.pkl") and args.trained):
-    #     print(f"Model not found in {args.model_dir}")
-    # feature_path = f"./features/{args.data}/{args.algorithm}_testenv{args.test_envs[0]}_{'trained_' if args.trained else ''}features.pkl"
-    # if os.path.exists(feature_path):
-    #     save_dic = pickle.load(open(feature_path, "rb"))
-    #     features = save_dic["features"]
-    #     labels = save_dic["labels"]
-    #     domains = save_dic["domains"]
-    #     print(f"Features loaded from {feature_path}")
-    # else:
-    #     if not os.path.exists(f"./features/{args.data}"):
-    #         os.makedirs(f"./features/{args.data}")
+    if not args.model_dir:
+        args.model_dir = f"./domainbed/uai_plot_{args.data}_{args.algorithm}_testenv{args.test_envs[0]}"
+    if not os.path.exists(os.path.join(args.model_dir, "model.pkl") and args.trained):
+        print(f"Model not found in {args.model_dir}")
+    feature_path = f"./features/{args.data}/{args.algorithm}_testenv{args.test_envs[0]}_{'trained_' if args.trained else ''}features.pkl"
+    # breakpoint()
+    if os.path.exists(feature_path):
+        save_dic = pickle.load(open(feature_path, "rb"))
+        features = save_dic["features"]
+        labels = save_dic["labels"]
+        domains = save_dic["domains"]
+        print(f"Features loaded from {feature_path}")
+    else:
+        if not os.path.exists(f"./features/{args.data}"):
+            os.makedirs(f"./features/{args.data}")
 
-    #     device = args.device if torch.cuda.is_available() else "cpu"
+        device = args.device if torch.cuda.is_available() else "cpu"
 
-    #     # Create the save directory if it doesn't exist
-    #     os.makedirs(args.save_dir, exist_ok=True)
+        # Create the save directory if it doesn't exist
+        os.makedirs(args.save_dir, exist_ok=True)
 
-    #     # Load dataset using domainbed.datasets
-    #     if args.data in vars(datasets):
-    #         hparams = hparams_registry.default_hparams('CMA', args.data, args.model_type)
-    #         dataset = vars(datasets)[args.data](args.data_dir, test_envs=[0], hparams=hparams)
-    #     else:
-    #         raise NotImplementedError(f"Dataset {args.data} not supported.")
-    #     # Split dataset into environments for training, testing, and UDA
-    #     in_splits = []
-    #     out_splits = []
-    #     uda_splits = []
-
-    #     for env_i, env in enumerate(dataset):
-    #         # Split dataset (in-split, out-split, and UDA-split if needed)
-    #         out, in_ = misc.split_dataset(env, int(len(env) * 0.2), misc.seed_hash(args.trial_seed, env_i))
-    #         in_ = EnvDataset(in_, env_i)
-    #         out = EnvDataset(out, env_i)
-    #         in_splits.append((in_, None))  # No weights in this example
-
-    #     # Create InfiniteDataLoader for feature extraction
-    #     train_loaders = [InfiniteDataLoader(
-    #         dataset=env,
-    #         weights=env_weights,
-    #         batch_size=args.batch_size,
-    #         num_workers=dataset.N_WORKERS)
-    #         for i, (env, env_weights) in enumerate(in_splits)]
-    #         # for i, (env, env_weights) in enumerate(in_splits) if i not in args.test_envs]
-    #     # breakpoint()
-        
-    #     # Evaluate with FastDataLoader (if needed)
-    #     eval_loaders = [FastDataLoader(
-    #         dataset=env,
-    #         batch_size=64,
-    #         num_workers=dataset.N_WORKERS)
-    #         for i, (env, _) in  enumerate((in_splits + out_splits + uda_splits)) if i in args.test_envs]
-        
-    #     input_shape = dataset.input_shape
-    #     hparams = {"model_type": args.model_type}
-    #     model = Featurizer(input_shape, hparams).to(device)
-    #     if args.trained:
-    #         model.load_state_dict(torch.load(os.path.join(args.model_dir, "model.pkl")), strict=False)
-
-    #     # Extract features
-    #     features, labels, domains = extract_features(model, train_loaders, device, args=args)
-
-    #     save_dic = {"features": features, "labels": labels, "domains": domains}
-    #     pickle.dump(save_dic, open(feature_path, "wb"))
-    #     print(f"Features saved to {feature_path}")
-
-    # plot_features(features, labels, domains, method='pca', dims=2, args=args)
-    # plot_features(features, labels, domains, method='umap', dims=2, args=args)
-    # plot_features(features, labels, domains, method='pca', dims=3, args=args)
-    # plot_features(features, labels, domains, method='umap', dims=3, args=args)
-    # 2D visualizations (existing)
-    # plot_features_pca(features, labels, domains, args=args)
-    # plot_features_umap(features, labels, domains, args=args)
-
-    # # 3D visualizations (new)
-    # plot_features_pca_3d(features, labels, domains, args=args)
-    # plot_features_umap_3d(features, labels, domains, args=args)
-
-
-
-
-
-    combo = product([True, False], [[0], [1], [2], [3]], ['ColoredMNIST', 'PACS','VLCS'], ['ERM','Fish','Fishr','CMA'])
-    for args.trained, args.test_envs, args.data, args.algorithm in combo:
-        if not args.trained and args.algorithm != 'ERM':
-            continue
-        feature_path = f"./features/{args.data}/{args.algorithm}_testenv{args.test_envs[0]}_{'trained_' if args.trained else ''}features.pkl"
-        if not args.model_dir:
-            args.model_dir = f"./domainbed/uai_plot_{args.data}_{args.algorithm}_testenv{args.test_envs[0]}"
-        if not os.path.exists(os.path.join(args.model_dir, "model.pkl") and args.trained):
-            print(f"Model not found in {args.model_dir}")
-            continue
-
-        
-        if os.path.exists(feature_path):
-            save_dic = pickle.load(open(feature_path, "rb"))
-            features = save_dic["features"]
-            labels = save_dic["labels"]
-            domains = save_dic["domains"]
-            print(f"Features loaded from {feature_path}")
+        # Load dataset using domainbed.datasets
+        if args.data in vars(datasets):
+            hparams = hparams_registry.default_hparams('CMA', args.data, args.model_type)
+            dataset = vars(datasets)[args.data](args.data_dir, test_envs=[0], hparams=hparams)
         else:
-            if not os.path.exists(f"./features/{args.data}"):
-                os.makedirs(f"./features/{args.data}")
+            raise NotImplementedError(f"Dataset {args.data} not supported.")
+        # Split dataset into environments for training, testing, and UDA
+        in_splits = []
+        out_splits = []
+        uda_splits = []
 
-            device = args.device if torch.cuda.is_available() else "cpu"
+        for env_i, env in enumerate(dataset):
+            # Split dataset (in-split, out-split, and UDA-split if needed)
+            out, in_ = misc.split_dataset(env, int(len(env) * 0.2), misc.seed_hash(args.trial_seed, env_i))
+            in_ = EnvDataset(in_, env_i)
+            out = EnvDataset(out, env_i)
+            in_splits.append((in_, None))  # No weights in this example
 
-            # Create the save directory if it doesn't exist
-            os.makedirs(args.save_dir, exist_ok=True)
+        # Create InfiniteDataLoader for feature extraction
+        train_loaders = [InfiniteDataLoader(
+            dataset=env,
+            weights=env_weights,
+            batch_size=args.batch_size,
+            num_workers=dataset.N_WORKERS)
+            for i, (env, env_weights) in enumerate(in_splits)]
+            # for i, (env, env_weights) in enumerate(in_splits) if i not in args.test_envs]
+        # breakpoint()
+        
+        # Evaluate with FastDataLoader (if needed)
+        eval_loaders = [FastDataLoader(
+            dataset=env,
+            batch_size=64,
+            num_workers=dataset.N_WORKERS)
+            for i, (env, _) in  enumerate((in_splits + out_splits + uda_splits)) if i in args.test_envs]
+        
+        input_shape = dataset.input_shape
+        hparams = {"model_type": args.model_type}
+        model = Featurizer(input_shape, hparams).to(device)
+        if args.trained:
+            model.load_state_dict(torch.load(os.path.join(args.model_dir, "model.pkl")), strict=False)
 
-            # Load dataset using domainbed.datasets
-            if args.data in vars(datasets):
-                hparams = hparams_registry.default_hparams('CMA', args.data, args.model_type)
-                dataset = vars(datasets)[args.data](args.data_dir, test_envs=[0], hparams=hparams)
-            else:
-                raise NotImplementedError(f"Dataset {args.data} not supported.")
-            # Split dataset into environments for training, testing, and UDA
-            in_splits = []
-            out_splits = []
-            uda_splits = []
+        # Extract features
+        features, labels, domains = extract_features(model, train_loaders, device, args=args)
 
-            for env_i, env in enumerate(dataset):
-                # Split dataset (in-split, out-split, and UDA-split if needed)
-                out, in_ = misc.split_dataset(env, int(len(env) * 0.2), misc.seed_hash(args.trial_seed, env_i))
-                in_ = EnvDataset(in_, env_i)
-                out = EnvDataset(out, env_i)
-                in_splits.append((in_, None))  # No weights in this example
+        save_dic = {"features": features, "labels": labels, "domains": domains}
+        pickle.dump(save_dic, open(feature_path, "wb"))
+        print(f"Features saved to {feature_path}")
 
-            # Create InfiniteDataLoader for feature extraction
-            train_loaders = [InfiniteDataLoader(
-                dataset=env,
-                weights=env_weights,
-                batch_size=args.batch_size,
-                num_workers=dataset.N_WORKERS)
-                # for i, (env, env_weights) in enumerate(in_splits)]
-                for i, (env, env_weights) in enumerate(in_splits) if i not in args.test_envs]
-            # breakpoint()
+    
+    unique_labels = np.unique(labels)
+    all_3class_combos = itertools.combinations(unique_labels, 3)
+    for combo in all_3class_combos:
+        # combo might be (0,1,2) for instance
+        combo_str = "_".join(str(cls) for cls in sorted(combo))
+
+        # Filter data to only these classes
+        idx = np.isin(labels, combo)
+        filtered_features = features[idx]
+        filtered_labels = labels[idx]
+        filtered_domains = domains[idx]
+
+        # Optional: store old data and save_dir in case you want to revert
+        old_data = args.data
+        old_save_dir = args.save_dir
+
+        # 1) Put the subset's plots in a subdir named after the classes
+        subset_save_dir = os.path.join(args.save_dir, f"classes_{combo_str}")
+        os.makedirs(subset_save_dir, exist_ok=True)
+        args.save_dir = subset_save_dir
+
+        # 2) Modify args.data to reflect which classes are plotted
+        #    e.g. "VLCS_cls0_1_2"
+        args.data = f"{old_data}_cls{combo_str}"
+
+        # 3) Now call your plotting function
+        #    For example, we want to do 2D/3D PCA/UMAP
+        #    We'll pass in the same args, but with updated data & save_dir
+        plot_features(filtered_features, filtered_labels, filtered_domains, 
+                      method='pca', dims=2, args=args)
+        plot_features(filtered_features, filtered_labels, filtered_domains, 
+                      method='umap', dims=2, args=args)
+        plot_features(filtered_features, filtered_labels, filtered_domains, 
+                      method='pca', dims=3, args=args)
+        plot_features(filtered_features, filtered_labels, filtered_domains, 
+                      method='umap', dims=3, args=args)
+
+        # 4) Restore original fields if needed
+        args.data = old_data
+        args.save_dir = old_save_dir
+
+
+    plot_features(features, labels, domains, method='pca', dims=2, args=args,subclass_suffix=subclass_suffix)
+    plot_features(features, labels, domains, method='umap', dims=2, args=args,subclass_suffix=subclass_suffix)
+    plot_features(features, labels, domains, method='pca', dims=3, args=args,subclass_suffix=subclass_suffix)
+    plot_features(features, labels, domains, method='umap', dims=3, args=args,subclass_suffix=subclass_suffix)
+
+
+    # combo = product([True, False], [[0], [1], [2], [3]], ['ColoredMNIST', 'PACS','VLCS'], ['ERM','Fish','Fishr','CMA'])
+    # for args.trained, args.test_envs, args.data, args.algorithm in combo:
+    #     if not args.trained and args.algorithm != 'ERM':
+    #         continue
+    #     feature_path = f"./features/{args.data}/{args.algorithm}_testenv{args.test_envs[0]}_{'trained_' if args.trained else ''}features.pkl"
+    #     if not args.model_dir:
+    #         args.model_dir = f"./domainbed/uai_plot_{args.data}_{args.algorithm}_testenv{args.test_envs[0]}"
+    #     if not os.path.exists(os.path.join(args.model_dir, "model.pkl") and args.trained):
+    #         print(f"Model not found in {args.model_dir}")
+    #         continue
+
+        
+    #     if os.path.exists(feature_path):
+    #         save_dic = pickle.load(open(feature_path, "rb"))
+    #         features = save_dic["features"]
+    #         labels = save_dic["labels"]
+    #         domains = save_dic["domains"]
+    #         print(f"Features loaded from {feature_path}")
+    #     else:
+    #         if not os.path.exists(f"./features/{args.data}"):
+    #             os.makedirs(f"./features/{args.data}")
+
+    #         device = args.device if torch.cuda.is_available() else "cpu"
+
+    #         # Create the save directory if it doesn't exist
+    #         os.makedirs(args.save_dir, exist_ok=True)
+
+    #         # Load dataset using domainbed.datasets
+    #         if args.data in vars(datasets):
+    #             hparams = hparams_registry.default_hparams('CMA', args.data, args.model_type)
+    #             dataset = vars(datasets)[args.data](args.data_dir, test_envs=[0], hparams=hparams)
+    #         else:
+    #             raise NotImplementedError(f"Dataset {args.data} not supported.")
+    #         # Split dataset into environments for training, testing, and UDA
+    #         in_splits = []
+    #         out_splits = []
+    #         uda_splits = []
+
+    #         for env_i, env in enumerate(dataset):
+    #             # Split dataset (in-split, out-split, and UDA-split if needed)
+    #             out, in_ = misc.split_dataset(env, int(len(env) * 0.2), misc.seed_hash(args.trial_seed, env_i))
+    #             in_ = EnvDataset(in_, env_i)
+    #             out = EnvDataset(out, env_i)
+    #             in_splits.append((in_, None))  # No weights in this example
+
+    #         # Create InfiniteDataLoader for feature extraction
+    #         train_loaders = [InfiniteDataLoader(
+    #             dataset=env,
+    #             weights=env_weights,
+    #             batch_size=args.batch_size,
+    #             num_workers=dataset.N_WORKERS)
+    #             # for i, (env, env_weights) in enumerate(in_splits)]
+    #             for i, (env, env_weights) in enumerate(in_splits) if i not in args.test_envs]
+    #         # breakpoint()
             
-            # Evaluate with FastDataLoader (if needed)
-            eval_loaders = [FastDataLoader(
-                dataset=env,
-                batch_size=64,
-                num_workers=dataset.N_WORKERS)
-                for i, (env, _) in  enumerate((in_splits + out_splits + uda_splits)) if i in args.test_envs]
+    #         # Evaluate with FastDataLoader (if needed)
+    #         eval_loaders = [FastDataLoader(
+    #             dataset=env,
+    #             batch_size=64,
+    #             num_workers=dataset.N_WORKERS)
+    #             for i, (env, _) in  enumerate((in_splits + out_splits + uda_splits)) if i in args.test_envs]
             
-            input_shape = dataset.input_shape
-            hparams = {"model_type": args.model_type}
-            model = Featurizer(input_shape, hparams).to(device)
-            if args.trained:
-                model.load_state_dict(torch.load(os.path.join(args.model_dir, "model.pkl")), strict=False)
+    #         input_shape = dataset.input_shape
+    #         hparams = {"model_type": args.model_type}
+    #         model = Featurizer(input_shape, hparams).to(device)
+    #         if args.trained:
+    #             model.load_state_dict(torch.load(os.path.join(args.model_dir, "model.pkl")), strict=False)
 
-            # Extract features
-            features, labels, domains = extract_features(model, train_loaders, device, args=args)
+    #         # Extract features
+    #         features, labels, domains = extract_features(model, train_loaders, device, args=args)
 
-            save_dic = {"features": features, "labels": labels, "domains": domains}
-            pickle.dump(save_dic, open(feature_path, "wb"))
-            print(f"Features saved to {feature_path}")
+    #         save_dic = {"features": features, "labels": labels, "domains": domains}
+    #         pickle.dump(save_dic, open(feature_path, "wb"))
+    #         print(f"Features saved to {feature_path}")
 
-        #                 # 2D visualizations (existing)
-        plot_features(features, labels, domains, method='pca', dims=2, args=args)
-        plot_features(features, labels, domains, method='umap', dims=2, args=args)
-        plot_features(features, labels, domains, method='pca', dims=3, args=args)
-        plot_features(features, labels, domains, method='umap', dims=3, args=args)
+    #     #                 # 2D visualizations (existing)
+    #     plot_features(features, labels, domains, method='pca', dims=2, args=args)
+    #     plot_features(features, labels, domains, method='umap', dims=2, args=args)
+    #     plot_features(features, labels, domains, method='pca', dims=3, args=args)
+    #     plot_features(features, labels, domains, method='umap', dims=3, args=args)
 
 if __name__ == "__main__":
     main()

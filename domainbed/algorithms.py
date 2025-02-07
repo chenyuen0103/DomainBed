@@ -166,7 +166,6 @@ class ERM(Algorithm):
 
 
 class CMA(ERM):
-
     def __init__(self, input_shape, num_classes, num_domains, hparams):
         super(CMA, self).__init__(input_shape, num_classes, num_domains,
                                   hparams)
@@ -556,7 +555,7 @@ class CMA(ERM):
 
         # add a bias term to the features
         x = torch.cat([torch.ones(x.shape[0], 1, device=x.device),x], dim=1)
-        if logits.shape[1] >= 60:
+        if logits.shape[1] >= 70:
             # Mask feature dimensions (columns) with all-zero values to ensure consistent Hessian dimensions
             feature_nonzero_mask = (x.abs().sum(dim=0) > 0)  # Identify feature dimensions with non-zero values
             x = x[:, feature_nonzero_mask]  # Filter out zero feature dimensions
@@ -572,7 +571,7 @@ class CMA(ERM):
             # reset memory usage
             # torch.cuda.reset_peak_memory_stats()
             # start = time.time()
-            if logits.shape[1] < 60:
+            if logits.shape[1] < 70:
                 hess_pen = self.hessian_pen(x, logits, env_indices, y)
                 # l1_regularization = 0
             else:
@@ -592,7 +591,7 @@ class CMA(ERM):
 
 
         erm_loss = F.cross_entropy(logits, y)
-        if logits.shape[1] < 60:
+        if logits.shape[1] < 70:
             total_loss = erm_loss + alpha * grad_pen + beta * hess_pen
         else:
             total_loss = erm_loss + alpha * grad_pen + beta * hess_pen + l1_regularization
@@ -1266,9 +1265,9 @@ class AbstractMMD(ERM):
         penalty = 0
         nmb = len(minibatches)
 
-        features = [self.featurizer(xi) for xi, _ in minibatches]
+        features = [self.featurizer(xi) for xi, _,_ in minibatches]
         classifs = [self.classifier(fi) for fi in features]
-        targets = [yi for _, yi in minibatches]
+        targets = [yi for _, yi, _ in minibatches]
         all_x = torch.cat([x for x, y,g in minibatches])
         all_y = torch.cat([y for x, y,g in minibatches])
         all_envs = torch.cat([g for x, y, g in minibatches])
@@ -1942,8 +1941,6 @@ class Fishr(Algorithm):
         all_y = torch.cat([y for x, y,g in minibatches])
         all_envs = torch.cat([g for x, y, g in minibatches])
         len_minibatches = [x.shape[0] for x, y, g in minibatches]
-
-        
 
         all_z = self.featurizer(all_x)
         all_logits = self.classifier(all_z)
