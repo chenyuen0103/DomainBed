@@ -4,11 +4,11 @@ import os
 import numpy as np
 import tqdm
 # results_dir = 'results_vits_combined_bias'
-results_dir = 'results_hess_mem'
+# results_dir = 'results_hess_mem'
 
 # results_dir_list = [ 'results_vits_combined_bias']
-# results_dir_list = ['results_hess_officehome']
-results_dir_list = ['results_time_mem']
+results_dir_list = ['results_uai_rebuttal']
+# results_dir_list = ['results_time_mem']
 
 
 
@@ -53,7 +53,7 @@ for key, records in result.items():
 
 def generate_markdown_table(data):
     # Define the order of algorithms and datasets
-    algorithms = ['ERM', 'CORAL', 'Fishr', 'HessianAlignment', 'CMA']
+    algorithms = ['ERM', 'CORAL', 'Fishr', 'HessianAlignment', 'CMA','Hutchinson', 'HGP']
     datasets = ['ColoredMNIST', 'RotatedMNIST', 'VLCS', 'PACS', 'TerraIncognita','OfficeHome']
 
     # Initialize the table

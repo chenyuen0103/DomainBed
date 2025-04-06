@@ -1267,54 +1267,7 @@ class AbstractMMD(ERM):
 
         features = [self.featurizer(xi) for xi, _,_ in minibatches]
         classifs = [self.classifier(fi) for fi in features]
-        targets = [yi for _, yi, _ in minibatches]
-        all_x = torch.cat([x for x, y,g in minibatches])
-        all_y = torch.cat([y for x, y,g in minibatches])
-        all_envs = torch.cat([g for x, y, g in minibatches])
-        len_minibatches = [x.shape[0] for x, y, g in minibatches]
-
-        
-
-        all_z = self.featurizer(all_x)
-        all_logits = self.classifier(all_z)
-
-        penalty = self.compute_fishr_penalty(all_logits, all_y, len_minibatches)
-        all_nll = F.cross_entropy(all_logits, all_y)
-        features = all_z
-        features_np = features.detach().cpu().numpy()  # shape: (N, feature_dim)
-        envs_np = all_envs.detach().cpu().numpy()         # shape: (N,)
-
-        # ===== Compute Domain-wise First and Second Moments =====
-        unique_envs = np.unique(envs_np)
-        means = {}
-        covs = {}
-        for d in unique_envs:
-            idx = envs_np == d
-            feats_d = features_np[idx]
-            means[d] = np.mean(feats_d, axis=0)
-            # If only one sample is present, np.cov may fail, so we default to zeros.
-            if feats_d.shape[0] > 1:
-                covs[d] = np.cov(feats_d, rowvar=False)
-            else:
-                covs[d] = np.zeros((feats_d.shape[1], feats_d.shape[1]))
-
-
-        # ===== Compute Pairwise Differences Between Domains =====
-        # For each pair of domains, compute:
-        # 1. Euclidean distance between the mean vectors.
-        # 2. Frobenius norm of the difference between the covariance matrices.
-        mean_diffs = []
-        cov_diffs = []
-        for i, d1 in enumerate(unique_envs):
-            for d2 in unique_envs[i+1:]:
-                mean_diff = np.linalg.norm(means[d1] - means[d2])
-                cov_diff = np.linalg.norm(covs[d1] - covs[d2], ord='fro')
-                mean_diffs.append(mean_diff)
-                cov_diffs.append(cov_diff)
-        avg_mean_diff = np.mean(mean_diffs) if len(mean_diffs) > 0 else 0.0
-        avg_cov_diff = np.mean(cov_diffs) if len(cov_diffs) > 0 else 0.0
-
-
+        targets = [yi for _, yi,_ in minibatches]
 
         for i in range(nmb):
             objective += F.cross_entropy(classifs[i], targets[i])
@@ -1332,8 +1285,7 @@ class AbstractMMD(ERM):
         if torch.is_tensor(penalty):
             penalty = penalty.item()
 
-        return {'loss': objective.item(), 'penalty': penalty, 'first_moment_diff': avg_mean_diff, 'second_moment_diff': avg_cov_diff}
-
+        return {'loss': objective.item(), 'penalty': penalty}
 
 class MMD(AbstractMMD):
     """

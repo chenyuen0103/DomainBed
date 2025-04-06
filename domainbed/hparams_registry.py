@@ -100,7 +100,8 @@ def _hparams(algorithm, dataset, random_seed, model_type='ViT-S'):
 
     elif algorithm == "Fishr":
         _hparam('lambda', 1000., lambda r: 10**r.uniform(1., 4.))
-        _hparam('penalty_anneal_iters', 1500, lambda r: int(r.uniform(0., 5000.)))
+        # _hparam('penalty_anneal_iters', 1500, lambda r: int(r.uniform(0., 5000.)))
+        _hparam('penalty_anneal_iters', 0, lambda r: int(r.uniform(0., 5000.)))
         _hparam('ema', 0.95, lambda r: r.uniform(0.90, 0.99))
 
     elif algorithm == "TRM":
@@ -150,8 +151,8 @@ def _hparams(algorithm, dataset, random_seed, model_type='ViT-S'):
             # divide the grad_alpha and hess_beta by (2048/384) for resnet
             _hparam('grad_alpha', 5000/((2048/384)), lambda r: 10 ** r.uniform(1, 4) / ((2048/384)))
             _hparam('hess_beta', 1000/((2048/384)**2), lambda r: 10 ** r.uniform(1, 4) / ((2048/384)**2))
-        _hparam('penalty_anneal_iters', 2500, lambda r: int(np.random.choice([500, 1500, 2500, 3500, 4500])))
-        # _hparam('penalty_anneal_iters', 0, lambda r: int(np.random.choice([500, 1500, 2500, 3500, 4500])))
+        # _hparam('penalty_anneal_iters', 2500, lambda r: int(np.random.choice([500, 1500, 2500, 3500, 4500])))
+        _hparam('penalty_anneal_iters', 0, lambda r: int(np.random.choice([500, 1500, 2500, 3500, 4500])))
 
 
 

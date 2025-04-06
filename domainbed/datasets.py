@@ -52,7 +52,8 @@ def num_environments(dataset_name):
 
 
 class MultipleDomainDataset:
-    N_STEPS = 5001           # Default, subclasses may override
+    # breakpoint()
+    N_STEPS = 5001         # Default, subclasses may override
     CHECKPOINT_FREQ = 100    # Default, subclasses may override
     N_WORKERS = 8            # Default, subclasses may override
     ENVIRONMENTS = None      # Subclasses should override
@@ -286,7 +287,7 @@ class SVIRO(MultipleEnvironmentImageFolder):
     ENVIRONMENTS = ["aclass", "escape", "hilux", "i3", "lexus", "tesla", "tiguan", "tucson", "x5", "zoe"]
     def __init__(self, root, test_envs, hparams):
         self.dir = os.path.join(root, "sviro/")
-        super().__init__(self.dir, test_envs, hparams['data_augmentation'], hparams)
+        super().__init__(self.dqir, test_envs, hparams['data_augmentation'], hparams)
 
 
 class WILDSEnvironment:
